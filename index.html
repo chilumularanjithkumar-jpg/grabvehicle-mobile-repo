@@ -1389,9 +1389,19 @@ async function capDetail(id){const c=(window._caps||[]).find(x=>x.id===id);if(!c
   ${urls[d.id]?(/\.pdf$/i.test(d.path)?`<a class="btn ghost sm" style="margin-top:8px" href="${urls[d.id]}" target="_blank">Open PDF</a>`:`<img src="${urls[d.id]}" alt="${esc(label(d.doc_type))}" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:8px;background:#f1f1f6" onerror="this.outerHTML='<div class=&quot;muted&quot; style=&quot;margin-top:6px&quot;>File not found in storage</div>'">`):'<div class="muted" style="margin-top:6px">File not found in storage</div>'}
   ${d.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}
   ${d.status!=='approved'?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn ghost sm" onclick="reviewDoc(${d.id},false,'${id}')">Reject</button><button class="btn green sm" onclick="reviewDoc(${d.id},true,'${id}')">Approve</button></div>`:''}</div>`).join('')||'<div class="empty">No documents uploaded yet</div>'}
- <div style="display:flex;gap:8px;margin-top:6px">${c.status==='pending'||c.status==='rejected'?`<button class="btn ghost" style="flex:1" onclick="setCap('${c.id}','rejected',this)">Reject captain</button><button class="btn green" style="flex:1" onclick="setCap('${c.id}','approved',this)">Approve captain</button>`:c.status==='approved'?`<button class="btn ghost" style="flex:1;color:var(--bad)" onclick="setCap('${c.id}','blocked',this)">Block</button>`:`<button class="btn" style="flex:1" onclick="setCap('${c.id}','approved',this)">Unblock</button>`}${c.phone?`<a class="btn ghost" href="tel:${esc(c.phone)}">📞</a>`:''}</div>`)}
+ <div style="display:flex;gap:8px;margin-top:6px">${c.status==='pending'||c.status==='rejected'?`<button class="btn ghost" style="flex:1" onclick="setCap('${c.id}','rejected',this)">Reject captain</button><button class="btn green" style="flex:1" onclick="approveCap('${c.id}',this)">Approve captain</button>`:c.status==='approved'?`<button class="btn ghost" style="flex:1;color:var(--bad)" onclick="setCap('${c.id}','blocked',this)">Block</button>`:`<button class="btn" style="flex:1" onclick="setCap('${c.id}','approved',this)">Unblock</button>`}${c.phone?`<a class="btn ghost" href="tel:${esc(c.phone)}">📞</a>`:''}</div>`)}
+async function approveCap(id,b,force){busy(b,true);let r;
+ try{r=await rpc('gv_admin_approve_captain',{p_id:id,p_force:!!force})}catch(e){busy(b,false);return}
+ if(r&&r.approved){toast(r.missing&&r.missing.length?'Captain approved (verified in person)':'Captain approved — documents approved too');closeSheet();render();return}
+ const miss=(r&&r.missing)||[];
+ openSheet(`<h3>Documents missing</h3><p class="muted" style="margin:6px 0 10px">All uploaded documents are approved. These were never uploaded by the captain:</p>
+ ${miss.map(m=>`<div class="card" style="padding:10px 12px;margin-bottom:6px">❌ ${esc(m)}</div>`).join('')}
+ <p class="muted" style="margin:10px 0">Ask the captain to upload them in the app, or approve now if you have checked the originals in person.</p>
+ <button class="btn green block" id="apF">Approve anyway — verified in person</button>
+ <button class="btn ghost block" style="margin-top:8px" onclick="capDetail('${id}')">Back</button>`);
+ $('#apF').onclick=function(){approveCap(id,this,true)}}
 function reviewDoc(docId,ok,capId){
- const go2=async note=>{try{await rpc('gv_admin_review_doc',{p_id:docId,p_ok:ok,p_note:note});toast(ok?'Document approved':'Document rejected');capDetail(capId)}catch(e){}};
+ const go2=async note=>{try{await rpc('gv_admin_review_doc',{p_id:docId,p_ok:ok,p_note:note});toast(ok?'Document approved':'Document rejected');const sc=document.querySelector('.sheet')?.scrollTop||0;await capDetail(capId);const sh=document.querySelector('.sheet');if(sh)sh.scrollTop=sc}catch(e){}};
  if(ok)return go2(null);
  openSheet(`<h3>Reject document</h3><div class="field"><label>Reason (shown to the captain)</label><input id="rjN" placeholder="e.g. Photo is blurred, licence expired"></div><button class="btn red block" id="rjB">Reject</button><button class="btn ghost block" style="margin-top:8px" onclick="capDetail('${capId}')">Back</button>`);
  $('#rjB').onclick=()=>{const n=$('#rjN').value.trim();if(n.length<3){toast('Enter a reason',true);return}go2(n)}}
