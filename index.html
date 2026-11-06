@@ -267,28 +267,35 @@ input[type=range]{width:100%;accent-color:var(--p1)}
     <div id="phStep2" class="hidden"><p class="muted" id="phSentTo"></p><p class="muted" id="phAuto" style="font-size:12.5px;margin-top:-6px"></p><div class="field"><label>6-digit OTP</label><input id="phCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="letter-spacing:8px;text-align:center;font-size:22px"></div>
       <div class="err" id="phErr2"></div><button class="btn block green" id="phVerify">Verify & continue</button>
       <div style="text-align:center"><button class="linkbtn" id="phResend">Resend OTP</button> · <button class="linkbtn" id="phChange">Change number</button></div></div>
-    <div style="text-align:center;margin-top:4px"><button class="linkbtn" id="toEmail">Use email instead</button></div>
+    <div style="text-align:center;margin-top:4px"><button class="linkbtn" id="toEmail">Back to log in</button></div>
   </div>
   <div class="lcard" id="signinCard">
-    <h2>Sign in</h2><p class="sub">Ride, drive or manage — one app.</p>
-    <div class="field"><label>Email</label><input id="lEmail" type="email" autocomplete="username"></div>
+    <h2>Log in</h2><p class="sub">Welcome back to GrabVehicle</p>
+    <div class="seg" id="inAs"><button type="button" class="on" data-as="rider">🚕 Rider<small>Book rides & parcels</small></button><button type="button" data-as="captain">🏍️ Captain<small>Drive & earn</small></button></div>
+    <div class="field"><label>Email or mobile number</label><input id="lEmail" type="text" inputmode="email" autocomplete="username" autocapitalize="off" placeholder="name@email.com or 98xxxxxxxx"></div>
     <div class="field"><label>Password</label><input id="lPass" type="password" autocomplete="current-password"></div>
     <div class="err" id="lErr"></div>
-    <button class="btn block" id="lBtn">Sign in</button>
-    <div style="text-align:center"><button class="linkbtn" id="toSignup">New here? Create an account</button></div>
-    <div style="text-align:center"><button class="linkbtn hidden" id="toPhone">📱 Use mobile number (OTP)</button></div>
+    <button class="btn block" id="lBtn">Log in</button>
+    <div class="row" style="justify-content:space-between;margin-top:6px"><button class="linkbtn" id="toForgot">Forgot password?</button><button class="linkbtn" id="toSignup"><b>New here? Sign up</b></button></div>
+    <button class="linkbtn hidden" id="toPhone"></button>
     <div class="demo" id="demoBox"><h4>Demo accounts — tap to fill</h4><div id="demoList"></div></div>
   </div>
   <div class="lcard hidden" id="signupCard">
-    <h2>Create account</h2><p class="sub">How will you use GrabVehicle?</p>
+    <h2>Sign up</h2><p class="sub">How will you use GrabVehicle?</p>
     <div class="seg" id="sAs"><button type="button" class="on" data-as="rider">🚕 Ride<small>Book rides & parcels</small></button><button type="button" data-as="captain">🏍️ Drive<small>Earn as a captain</small></button></div>
     <div class="field"><label>Full name</label><input id="sName"></div>
-    <div class="field"><label>Mobile</label><input id="sPhone" type="tel" placeholder="+91"></div>
-    <div class="field"><label>Email</label><input id="sEmail" type="email"></div>
-    <div class="field"><label>Password (min 8)</label><input id="sPass" type="password"></div>
+    <div class="field"><label>Mobile number</label><input id="sPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile"></div>
+    <div class="field"><label id="sEmailL">Email</label><input id="sEmail" type="email" autocapitalize="off"></div>
+    <div class="field"><label>Create password (min 8)</label><input id="sPass" type="password" autocomplete="new-password"></div>
     <div class="err" id="sErr"></div>
     <button class="btn block" id="sBtn">Create account</button>
-    <div style="text-align:center"><button class="linkbtn" id="toSignin">Already have an account? Sign in</button></div>
+    <div style="text-align:center"><button class="linkbtn" id="toSignin">Already have an account? <b>Log in</b></button></div>
+  </div>
+  <div class="lcard hidden" id="forgotCard">
+    <h2>Forgot password</h2><p class="sub">We'll send an OTP to reset it.</p>
+    <div class="field"><label>Email or mobile number</label><input id="fId" type="text" inputmode="email" autocapitalize="off"></div>
+    <div class="err" id="fErr"></div><button class="btn block" id="fBtn">Send OTP</button>
+    <div style="text-align:center"><button class="linkbtn" id="fBack">Back to log in</button></div>
   </div>
   <div class="lcard hidden" id="verifyCard">
     <h2>Verify your email</h2><p class="sub" id="vTo">We emailed you a verification code.</p>
@@ -446,37 +453,69 @@ $('#demoList').innerHTML=DEMO.map(d=>`<button data-e="${d[1]}" data-p="${d[2]}">
 $('#demoList').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('#lEmail').value=b.dataset.e;$('#lPass').value=b.dataset.p;$('#lErr').textContent=''};
 $('#toSignup').onclick=()=>showCard('signupCard');
 $('#toSignin').onclick=()=>showCard('signinCard');
-async function doLogin(){const b=$('#lBtn');$('#lErr').textContent='';busy(b,true);const {error}=await sb.auth.signInWithPassword({email:$('#lEmail').value.trim(),password:$('#lPass').value});busy(b,false);
+const inAs=()=>document.querySelector('#inAs button.on')?.dataset.as||'rider';
+const asPhone=v=>{const d=String(v||'').replace(/[\s\-()]/g,'').replace(/^\+?91(?=\d{10}$)/,'');return /^[6-9]\d{9}$/.test(d)?d:null};
+function wantsCaptain(){try{inAs()==='captain'?localStorage.setItem('gv_wants','captain'):localStorage.removeItem('gv_wants')}catch(e){}}
+async function doLogin(){const b=$('#lBtn');$('#lErr').textContent='';const id=$('#lEmail').value.trim(),pw=$('#lPass').value;
+ if(!id){$('#lErr').textContent='Enter your email or mobile number';return}if(!pw){$('#lErr').textContent='Enter your password';return}
+ const d=asPhone(id);
+ if(d){busy(b,true);try{const r=await fetch(`${CFG.url}/functions/v1/phone-login`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey},body:JSON.stringify({action:'password',phone:d,password:pw})});
+   const j=await r.json().catch(()=>({error:'Login server not reachable'}));
+   if(r.status===404){busy(b,false);if(!PHONE_OK){$('#lErr').textContent='No password set for this number yet. Open the GrabVehicle app to log in with OTP.';return}
+    toast('No password yet — we sent you an OTP');$('#phNum').value=d;PH_FORGOT=true;showCard('phoneCard');phSend();return}
+   if(!r.ok)throw new Error(j.error||'Login failed');
+   const {error}=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(error)throw error;wantsCaptain();$('#lPass').value='';await enter()}
+  catch(e){$('#lErr').textContent=e.message||String(e)}finally{busy(b,false)}return}
+ if(!/^\S+@\S+\.\S+$/.test(id)){$('#lErr').textContent='Enter a valid email or 10-digit mobile number';return}
+ busy(b,true);const {error}=await sb.auth.signInWithPassword({email:id,password:pw});busy(b,false);
  if(error){if(/not confirmed/i.test(error.message)){VEMAIL=$('#lEmail').value.trim();VPASS=$('#lPass').value;await vResend(true);return}
-  $('#lErr').textContent=error.message==='Invalid login credentials'?'Wrong email or password.':error.message;return}await enter()}
+  $('#lErr').textContent=error.message==='Invalid login credentials'?'Wrong email or password.':error.message;return}wantsCaptain();await enter()}
+$('#toForgot').onclick=()=>{$('#fId').value=$('#lEmail').value.trim();$('#fErr').textContent='';showCard('forgotCard')};$('#fBack').onclick=()=>showCard('signinCard');
+$('#fBtn').onclick=async e=>{const id=$('#fId').value.trim();$('#fErr').textContent='';const d=asPhone(id);
+ if(d){if(!PHONE_OK){$('#fErr').textContent='Mobile OTP works in the GrabVehicle app. Use your email here.';return}$('#phNum').value=d;PH_FORGOT=true;showCard('phoneCard');phSend();return}
+ if(!/^\S+@\S+\.\S+$/.test(id)){$('#fErr').textContent='Enter your email or 10-digit mobile number';return}
+ busy(e.target,true);const {error}=await sb.auth.resetPasswordForEmail(id);busy(e.target,false);
+ if(error){$('#fErr').textContent=/seconds|rate/i.test(error.message)?'Please wait a minute and try again.':error.message;return}
+ VEMAIL=id;VMODE='recovery';showVerify('We sent a code to '+id+'. Enter it to set a new password.')};
+$('#fId').onkeydown=e=>{if(e.key==='Enter')$('#fBtn').click()};
+document.querySelectorAll('#inAs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#inAs button').forEach(x=>x.classList.toggle('on',x===b))});
+$('#lEmail').onkeydown=e=>{if(e.key==='Enter')$('#lPass').focus()};
 $('#lBtn').onclick=doLogin;$('#lPass').onkeydown=e=>{if(e.key==='Enter')doLogin()};
 document.querySelectorAll('#sAs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#sAs button').forEach(x=>x.classList.toggle('on',x===b))});
 const signupAs=()=>document.querySelector('#sAs button.on')?.dataset.as||'rider';
 $('#sBtn').onclick=async e=>{try{localStorage.setItem('gv_signup_as',signupAs())}catch(x){}const b=e.target;$('#sErr').textContent='';const name=$('#sName').value.trim(),phone=$('#sPhone').value.trim(),email=$('#sEmail').value.trim(),pw=$('#sPass').value;
+ if(PHONE_OK){const d=asPhone(phone);if(name.length<2){$('#sErr').textContent='Enter your full name';return}if(!d){$('#sErr').textContent='Enter a valid 10-digit mobile number';return}
+  if(email&&!/^\S+@\S+\.\S+$/.test(email)){$('#sErr').textContent='Email looks wrong (or leave it empty)';return}if(pw.length<8){$('#sErr').textContent='Password must be at least 8 characters';return}
+  busy(b,true);try{const r=await fetch(`${CFG.url}/functions/v1/phone-login`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey},body:JSON.stringify({action:'check',phone:d})});const st=r.ok?await r.json():null;
+   if(st&&st.exists){busy(b,false);$('#sErr').textContent='This number is already registered. Log in or use Forgot password.';return}}catch(x){}busy(b,false);
+  window._signup={name,pw,email,as:signupAs()};PH_FORGOT=false;$('#phNum').value=d;showCard('phoneCard');phSend();return}
  if(name.length<2||phone.replace(/\D/g,'').length<10||!/^\S+@\S+\.\S+$/.test(email)||pw.length<8){$('#sErr').textContent='Fill all fields (password at least 8 characters).';return}
  busy(b,true);const {data,error}=await sb.auth.signUp({email,password:pw,options:{data:{full_name:name,phone}}});busy(b,false);
  if(error){$('#sErr').textContent=error.message;return}
  if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){$('#sErr').textContent='This email is already registered. Sign in instead.';return}
  if(!data.session){VEMAIL=email;VPASS=pw;showVerify();return}await enter()};
 /* ---------- email verification by code (works even when the email link can't open the app) ---------- */
-let VEMAIL='',VPASS='';
+let VEMAIL='',VPASS='',VMODE='signup';
 function showVerify(msg){$('#vTo').textContent=msg||('We sent a verification code to '+VEMAIL+'. Check inbox and spam.');$('#vErr').textContent='';$('#vCode').value='';showCard('verifyCard');setTimeout(()=>$('#vCode').focus(),100)}
 async function vVerify(){const code=$('#vCode').value.replace(/\D/g,'');$('#vErr').textContent='';if(code.length<6){$('#vErr').textContent='Enter the code from the email';return}
- const b=$('#vBtn');busy(b,true);let r=await sb.auth.verifyOtp({email:VEMAIL,token:code,type:'signup'});
+ const b=$('#vBtn');busy(b,true);let r;
+ if(VMODE==='recovery'){r=await sb.auth.verifyOtp({email:VEMAIL,token:code,type:'recovery'});busy(b,false);
+  if(r.error||!r.data.session){$('#vErr').textContent='Code is wrong or expired. Tap Resend code.';return}VMODE='signup';window._needPw='forgot';await enter();return}
+ r=await sb.auth.verifyOtp({email:VEMAIL,token:code,type:'signup'});
  if(r.error)r=await sb.auth.verifyOtp({email:VEMAIL,token:code,type:'email'});busy(b,false);
  if(r.error||!r.data.session){const m=String(r.error&&r.error.message||'');$('#vErr').textContent=/expired|invalid/i.test(m)?'Code is wrong or expired. Tap Resend code.':(m||'Could not verify. Try again.');return}
  VPASS='';await enter()}
-async function vResend(fromLogin){const b=$('#vResend');busy(b,true);const {error}=await sb.auth.resend({type:'signup',email:VEMAIL});busy(b,false);
+async function vResend(fromLogin){const b=$('#vResend');busy(b,true);const {error}=VMODE==='recovery'?await sb.auth.resetPasswordForEmail(VEMAIL):await sb.auth.resend({type:'signup',email:VEMAIL});busy(b,false);
  if(fromLogin)showVerify('Your email is not verified yet. We sent a new code to '+VEMAIL+'.');
  if(error)$('#vErr').textContent=/seconds|rate/i.test(error.message)?'Please wait a minute before asking for another code.':error.message;else if(!fromLogin)toast('New code sent')}
-$('#vBtn').onclick=vVerify;$('#vResend').onclick=()=>vResend(false);$('#vBack').onclick=()=>{$('#lEmail').value=VEMAIL;showCard('signinCard')};
+$('#vBtn').onclick=vVerify;$('#vResend').onclick=()=>vResend(false);$('#vBack').onclick=()=>{VMODE='signup';$('#lEmail').value=VEMAIL;showCard('signinCard')};
 $('#vCode').onkeydown=e=>{if(e.key==='Enter')vVerify()};
 /* ---------- mobile OTP login (Firebase verifies the number; server exchanges it for a Supabase session) ---------- */
 let PHONE_OK=false,VID=null,PH_L=[],phDoing=false;
 function FA(){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable&&C.isPluginAvailable('FirebaseAuthentication'))return C.registerPlugin('FirebaseAuthentication')}catch(e){}return null}
 async function initLogin(){let pc=null;try{pc=(await sb.rpc('gv_public_config')).data}catch(e){}
- PHONE_OK=!!(pc&&pc.phone_login&&FA());$('#toPhone').classList.toggle('hidden',!PHONE_OK);showCard(PHONE_OK?'phoneCard':'signinCard')}
-function showCard(id){['phoneCard','signinCard','signupCard','verifyCard'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id))}
+ PHONE_OK=!!(pc&&pc.phone_login&&FA());$('#sEmailL').textContent=PHONE_OK?'Email (optional)':'Email';showCard('signinCard')}
+function showCard(id){['phoneCard','signinCard','signupCard','verifyCard','forgotCard'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id))}
 async function clearPh(){for(const l of PH_L){try{await l.remove()}catch(e){}}PH_L=[]}
 function phStep(n){$('#phStep1').classList.toggle('hidden',n!==1);$('#phStep2').classList.toggle('hidden',n!==2);$('#phStep3').classList.toggle('hidden',n!==3)}
 let PH_FORGOT=false,PH_HASPW=false;
@@ -524,13 +563,19 @@ async function phDone(){if(phDoing)return;phDoing=true;const b=$('#phVerify');bu
   const {error}=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(error)throw error;
   try{await FA().signOut()}catch(e){}await clearPh();clearInterval(PHT);phStep(1);$('#phCode').value='';
   let lg=null;try{lg=(await sb.rpc('gv_my_login')).data}catch(x){}window._needPw=PH_FORGOT?'forgot':(lg&&!lg.has_password?'new':null);
+  const su=window._signup;window._signup=null;
+  if(su){try{await sb.auth.updateUser({password:su.pw});await sb.rpc('gv_mark_password');
+    const me=(await sb.rpc('gv_me')).data;await sb.rpc('gv_update_profile',{p_name:su.name,p_phone:me.phone||'',p_gender:me.gender||'',p_city:me.city||'Karimnagar',p_emergency:me.emergency_contact||''});
+    await sb.rpc('gv_set_onboarding',{p_as:su.as});try{su.as==='captain'?localStorage.setItem('gv_wants','captain'):localStorage.removeItem('gv_wants')}catch(x){}
+    window._needPw=null;j.new_user=false}catch(x){console.warn('signup finish',x)}}
+  else wantsCaptain();
   await enter();if(!window._needPw&&ME&&ME.onboarded!==false&&(j.new_user||!ME.full_name||/^\d+$/.test(ME.full_name))){toast('Welcome! Tell us your name');profileForm()}}
  catch(e){$('#phErr2').textContent=phMsg(e&&e.message)}finally{phDoing=false;busy(b,false)}}
 $('#phSend').onclick=phContinue;$('#phPwGo').onclick=phPwLogin;$('#phPw').onkeydown=e=>{if(e.key==='Enter')phPwLogin()};
 $('#phForgot').onclick=()=>{PH_FORGOT=true;phStep(1);phSend()};$('#phChange3').onclick=()=>{phStep(1);$('#phNum').focus()};$('#phVerify').onclick=phVerify;$('#phResend').onclick=()=>{phStep(1);phSend()};$('#phNum').onkeydown=e=>{if(e.key==='Enter')phContinue()};$('#phChange').onclick=()=>{VID=null;phStep(1)};
 $('#phCode').oninput=e=>{if(e.target.value.replace(/\D/g,'').length===6)phVerify()};
 document.querySelectorAll('[data-legal]').forEach(a=>{a.href=legalUrl(a.dataset.legal);a.target='_blank';a.rel='noopener'});
-$('#toEmail').onclick=()=>showCard('signinCard');$('#toPhone').onclick=()=>showCard('phoneCard');
+$('#toEmail').onclick=()=>{clearInterval(PHT);phStep(1);showCard('signinCard')};$('#toPhone').onclick=()=>showCard('phoneCard');
 async function enter(){
  let me;try{me=await rpc('gv_me',{},true)}catch(e){}
  if(!me){await sb.auth.signOut();showLogin();$('#lErr').textContent='This account is not a GrabVehicle account.';return}
@@ -540,8 +585,8 @@ async function enter(){
  GOOGLE=!!(CONF.google_maps_api_key&&!/^PASTE_/.test(CONF.google_maps_api_key)&&CONF.google_maps_api_key.length>=20);
  BOOK.city=ME.city;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');$('#avBtn').textContent=ini(ME.full_name);
  TAB='home';renderTabs();render();startLoop();
- const ob=()=>{if(ME.role==='rider'&&ME.onboarded===false)onboardChoose()};const np=window._needPw;window._needPw=null;
- setTimeout(()=>np?pwSheet(np==='forgot',ob):ob(),300)}
+ const ob=()=>{if(ME&&ME.role==='rider'&&ME.onboarded===false)onboardChoose()};const np=window._needPw;window._needPw=null;
+ setTimeout(()=>{if(!ME)return;np?pwSheet(np==='forgot',ob):ob()},300)}
 function showLogin(){$('#app').classList.add('hidden');$('#login').classList.remove('hidden');initLogin()}
 async function logout(){stopLoop();closeSheet();if(ME?.role==='captain'){try{await rpc('gv_set_online',{p_online:false,p_lat:null,p_lng:null},true)}catch(e){}}await sb.auth.signOut();try{const f=FA();f&&await f.signOut()}catch(e){}ME=null;$('#lPass').value='';showLogin()}
 $('#avBtn').onclick=()=>go('account');
