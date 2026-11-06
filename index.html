@@ -146,6 +146,43 @@ nav.tabs{box-shadow:0 -6px 20px rgba(13,71,161,.07)}nav.tabs svg{width:22px;heig
 /* laptop / desktop: banner on the left, sign-in box on the right */
 @media (min-width:900px){#login{flex-direction:row;height:100vh;min-height:560px}#login .lg-hero{flex:1 1 auto;justify-content:center;padding:48px 56px}
  #login .lg-sheet{flex:0 0 440px;align-self:center;margin:0 48px 0 0;border-radius:24px;max-height:calc(100vh - 48px);overflow:auto;padding:28px 26px}}
+/* ===== admin dashboard ===== */
+.dh{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:2px 0 14px}
+.dh h2{margin:0;font-size:22px;letter-spacing:-.01em}.dh .muted{font-size:13px}
+.seg2{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;box-shadow:var(--shadow)}
+.seg2 button{border:0;background:none;font:inherit;font-size:13px;font-weight:650;padding:7px 12px;border-radius:9px;color:var(--muted);cursor:pointer}
+.seg2 button.on{background:var(--p1);color:#fff}
+.livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:lp 1.8s infinite;margin-right:6px;vertical-align:middle}
+@keyframes lp{70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+.alerts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.alert{display:flex;gap:11px;align-items:center;background:#fff;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:14px;padding:11px 12px;cursor:pointer;box-shadow:var(--shadow);transition:transform .12s}
+.alert:hover{transform:translateY(-1px)}.alert.bad{border-left-color:var(--bad);background:#fff7f7}.alert.ok{border-left-color:var(--ok);cursor:default}
+.alert .ai{font-size:22px}.alert b{display:block;font-size:18px;line-height:1.1}.alert small{color:var(--muted);font-size:12px}
+.kgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.kc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px 14px 8px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-width:0}
+.kc.hero{background:var(--brand);color:#fff;border:0}.kc.hero small,.kc.hero .dl{color:#DCE9FB}
+.kc small{color:var(--muted);font-size:12px;font-weight:600;display:flex;gap:6px;align-items:center}
+.kc b{display:block;font-size:22px;margin:3px 0 1px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kc .dl{font-size:12px;font-weight:650}.kc .dl.up{color:var(--ok)}.kc .dl.down{color:var(--bad)}.kc.hero .dl.up,.kc.hero .dl.down{color:#fff}
+.kc svg.sp{display:block;width:100%;height:30px;margin-top:4px}
+.dgrid{display:grid;gap:12px}.dgrid>.card{margin:0;min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.ch h3{margin:0;font-size:15px}.ch a{font-size:12.5px;color:var(--p1);font-weight:650;cursor:pointer;text-decoration:none}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--muted)}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+svg.chart{width:100%;height:260px;display:block}svg.chart text{font-size:10.5px;fill:var(--muted);font-family:inherit}
+.livebox{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.livebox div{background:#F5F8FD;border-radius:12px;padding:9px 10px}.livebox b{display:block;font-size:20px}.livebox small{font-size:11.5px;color:var(--muted)}
+.dmap{height:210px;border-radius:14px;overflow:hidden;position:relative;background:#e8eef7}
+.ring{display:flex;align-items:center;gap:12px;margin:10px 0 2px}.ring svg{width:56px;height:56px;flex:none}
+.hm{display:grid;grid-template-columns:repeat(24,1fr);gap:3px}.hm i{display:block;height:26px;border-radius:5px;background:#EEF3FA}
+.hmx{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:4px}
+.hb{margin:9px 0}.hb .row{font-size:13px}.hb .bar{height:8px;margin-top:5px}
+.mini{width:100%;border-collapse:collapse;font-size:13px}.mini td,.mini th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.mini th{font-size:11.5px;color:var(--muted);font-weight:650}
+.mini td.r,.mini th.r{text-align:right}.mini tr:last-child td{border-bottom:0}.mini tr.cl{cursor:pointer}.mini tr.cl:hover td{background:#F7FAFE}
+.ell{max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.tax{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tax div{background:#F5F8FD;border-radius:12px;padding:9px 10px}.tax small{color:var(--muted);font-size:11.5px}.tax b{display:block;font-size:16px}
+@media (min-width:700px){.kgrid{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:1100px){.kgrid{grid-template-columns:repeat(5,1fr)}
+ .dgrid.g21{grid-template-columns:2fr 1fr}.dgrid.g111{grid-template-columns:1fr 1fr 1fr}.dgrid.g11{grid-template-columns:1fr 1fr}}
+@media (min-width:700px) and (max-width:1099px){.dgrid.g111{grid-template-columns:1fr 1fr}.dgrid.g11{grid-template-columns:1fr 1fr}}
 .lg-legal{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0}.lg-legal a{color:inherit;text-decoration:underline}
 .map .tag{position:absolute;left:10px;top:10px;z-index:500;background:#fff;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .cap-ic{font-size:22px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
@@ -794,16 +831,87 @@ async function capRates(v){const h=await rpc('gv_captain_home');let rate=+h.rate
   $('#rs').onclick=async e=>{busy(e.target,true);try{await rpc('gv_set_rate',{p_rate:rate});h.rate=rate;toast('Rate updated — riders see it now');draw()}catch(x){busy(e.target,false)}}};draw()}
 
 /* ================= ADMIN ================= */
-async function aHome(v){const d=await rpc('gv_admin_dashboard');const mx=Math.max(1,...d.by_day.map(x=>+x.gmv));
- v.innerHTML=`<div class="kpis"><div class="kpi dark"><small>Gross bookings (7d)</small><b>${inr0(d.gmv_7d)}</b></div><div class="kpi"><small>Platform revenue (7d)</small><b>${inr0(d.revenue_7d)}</b></div>
- <div class="kpi"><small>Rides today</small><b>${d.rides_today}</b></div><div class="kpi"><small>Active right now</small><b>${d.active_now}</b></div>
- <div class="kpi" onclick="go('caps')"><small>Captains online</small><b>${d.captains_online}/${d.captains_total}</b></div><div class="kpi" onclick="FIL='pending';go('caps')" style="${d.pending_captains?'border-color:#f59e0b':''}"><small>To verify</small><b>${d.pending_captains}</b></div>
- <div class="kpi"><small>Wallet-blocked captains</small><b>${d.blocked_wallet}</b></div><div class="kpi"><small>Cancel rate (7d)</small><b>${d.cancel_rate}%</b></div>
- <div class="kpi"><small>Riders</small><b>${d.riders}</b></div><div class="kpi" onclick="go('sos')" style="${d.sos_open?'border-color:var(--bad)':''}"><small>Open SOS</small><b style="color:${d.sos_open?'var(--bad)':'inherit'}">${d.sos_open}</b></div></div>
- <div class="card"><div class="row"><b>Day-pass revenue (7d)</b><b>${inr0(d.passes_7d)}</b></div><div class="muted">${d.pass_captains} captains on Day pass plan</div></div>
- <div class="card"><div class="row"><b>GST collected (7d)</b><b>${inr0(d.gst_7d)}</b></div><div class="muted">18% on platform fee + commission (Sec 9(5))</div></div>
- <div class="section-h"><h3>Last 7 days</h3></div><div class="card">${d.by_day.map(x=>`<div style="margin-bottom:9px"><div class="row" style="font-size:13px"><span>${fday(x.day)} · ${x.rides} rides</span><b>${inr0(x.gmv)}</b></div><div class="bar"><i style="width:${x.gmv/mx*100}%"></i></div></div>`).join('')||'<div class="muted">No completed rides yet</div>'}</div>
- <div class="section-h"><h3>Completed by vehicle</h3></div><div class="card">${Object.entries(d.by_type).map(([k,n])=>`<div class="row" style="padding:4px 0"><span>${vtIcon(k)} ${vtName(k)}</span><b>${n}</b></div>`).join('')||'<div class="muted">—</div>'}</div>`}
+let DASH_DAYS=7;
+async function aHome(v){let d;try{d=await rpc('gv_admin_overview',{p_days:DASH_DAYS})}catch(e){v.innerHTML=`<div class="card"><b>Dashboard needs a database update</b><p class="muted">Run <code>grabvehicle_update_v4.sql</code> in Supabase → SQL Editor, then reload.</p></div>`;return}
+ const k=d.kpi,L=d.live,T=d.todo,P=d.people,ser=d.series||[];const rev=+k.revenue+ +d.pass_revenue,revP=+k.revenue_prev+ +d.pass_revenue_prev;
+ const hr=new Date().getHours(),greet=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+ const delta=(a,b,inv)=>{a=+a;b=+b;if(!b&&!a)return '<span class="dl">—</span>';if(!b)return `<span class="dl up">New</span>`;const p=Math.round((a-b)/b*100);const good=inv?p<=0:p>=0;return `<span class="dl ${good?'up':'down'}">${p>=0?'▲':'▼'} ${Math.abs(p)}% vs prev ${d.days}d</span>`};
+ const spark=(vals,color)=>{const mx=Math.max(1,...vals),w=100,h=30,st=vals.length>1?w/(vals.length-1):w;const pts=vals.map((y,i)=>`${(i*st).toFixed(1)},${(h-2-(y/mx)*(h-6)).toFixed(1)}`).join(' ');
+  return `<svg class="sp" viewBox="0 0 100 30" preserveAspectRatio="none"><polyline points="0,30 ${pts} 100,30" fill="${color}" fill-opacity=".12" stroke="none"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`};
+ const kc=(cls,ic,label,val,dl,sp)=>`<div class="kc ${cls}"><small>${ic} ${label}</small><b>${val}</b>${dl}${sp||''}</div>`;
+ // needs attention
+ const al=[];const A=(c,ic,n,l,act)=>al.push(`<div class="alert ${c}" onclick="${act}"><span class="ai">${ic}</span><div><b>${n}</b><small>${l}</small></div></div>`);
+ if(+T.sos_open)A('bad','🚨',T.sos_open,'Open SOS alerts',"go('sos')");
+ if(+T.captains_pending)A('','🪪',T.captains_pending,'Captains to approve',"FIL='pending';go('caps')");
+ if(+T.docs_pending)A('','📄',T.docs_pending,'Documents to review',"FIL='pending';go('caps')");
+ if(+T.payouts_pending)A('','💸',inr0(T.payouts_amount),`${T.payouts_pending} payout request${T.payouts_pending>1?'s':''}`,"go('money')");
+ if(+T.wallet_blocked)A('','⛔',T.wallet_blocked,'Captains blocked by dues',"FIL='approved';go('caps')");
+ if(!al.length)al.push(`<div class="alert ok"><span class="ai">✅</span><div><b>All clear</b><small>Nothing waiting for you</small></div></div>`);
+ // chart: bookings (bars) + platform revenue (line)
+ const W=700,H=260,pl=46,pr=14,pt=14,pb=26,cw=W-pl-pr,chh=H-pt-pb,n=Math.max(1,ser.length),mx=Math.max(1,...ser.map(x=>+x.gmv)),mr=Math.max(1,...ser.map(x=>+x.revenue));
+ const nice=m=>{const e=Math.pow(10,Math.floor(Math.log10(m)));return Math.ceil(m/e/ (m/e>5?2:1))*e*(m/e>5?2:1)};const top=nice(mx);
+ const bw=Math.max(3,cw/n*.62),gx=i=>pl+cw/n*(i+.5),gy=val=>pt+chh-(val/top)*chh,ry=gy;
+ const every=Math.ceil(n/10);
+ const chart=`<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+  ${[0,.25,.5,.75,1].map(f=>`<line x1="${pl}" x2="${W-pr}" y1="${pt+chh*(1-f)}" y2="${pt+chh*(1-f)}" stroke="#E6ECF5" stroke-dasharray="${f?'3 4':''}"/><text x="${pl-8}" y="${pt+chh*(1-f)+3.5}" text-anchor="end">${f?'₹'+Math.round(top*f).toLocaleString('en-IN'):'0'}</text>`).join('')}
+  ${ser.map((x,i)=>`<rect x="${(gx(i)-bw/2).toFixed(1)}" y="${gy(+x.gmv).toFixed(1)}" width="${bw.toFixed(1)}" height="${(pt+chh-gy(+x.gmv)).toFixed(1)}" rx="4" fill="url(#gb)"><title>${fday(x.day)}: ${x.rides} rides · ${inr0(x.gmv)} bookings · ${inr(x.revenue)} revenue · ${x.cancelled} cancelled</title></rect>`).join('')}
+  <polyline points="${ser.map((x,i)=>`${gx(i).toFixed(1)},${ry(+x.revenue).toFixed(1)}`).join(' ')}" fill="none" stroke="#43A047" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  ${ser.map((x,i)=>`<circle cx="${gx(i).toFixed(1)}" cy="${ry(+x.revenue).toFixed(1)}" r="3" fill="#fff" stroke="#43A047" stroke-width="2"/>`).join('')}
+  ${ser.map((x,i)=>i%every===0||i===n-1?`<text x="${gx(i).toFixed(1)}" y="${H-8}" text-anchor="middle">${new Date(x.day).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</text>`:'').join('')}
+  <defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E88E5"/><stop offset="1" stop-color="#0D47A1"/></linearGradient></defs></svg>`;
+ // peak hours
+ const hmx=Math.max(1,...d.hours.map(x=>+x.n));const heat=`<div class="hm">${d.hours.map(x=>`<i title="${x.h}:00–${x.h+1}:00 · ${x.n} bookings" style="background:${+x.n?`rgba(13,71,161,${(.12+.88*x.n/hmx).toFixed(2)})`:'#EEF3FA'}"></i>`).join('')}</div><div class="hmx"><span>12 am</span><span>6 am</span><span>12 pm</span><span>6 pm</span><span>11 pm</span></div>`;
+ const peak=d.hours.reduce((a,b)=>+b.n>+a.n?b:a,{h:0,n:0});
+ const tt=Math.max(1,d.by_type.reduce((a,x)=>a+ +x.rides,0)),tp=Math.max(1,d.by_pay.reduce((a,x)=>a+ +x.rides,0));
+ const hbar=(lbl,n2,tot,amt,c)=>`<div class="hb"><div class="row"><span>${lbl}</span><span><b>${n2}</b> <span class="muted">· ${Math.round(n2/tot*100)}%${amt!=null?' · '+inr0(amt):''}</span></span></div><div class="bar"><i style="width:${n2/tot*100}%;${c?'background:'+c:''}"></i></div></div>`;
+ const onl=+L.captains_online,tot=Math.max(1,+L.captains_total),C=2*Math.PI*22;
+ const st={completed:'p-ok',cancelled:'p-bad',expired:'p-mute',rejected:'p-mute',requested:'p-warn',accepted:'p-info',arrived:'p-info',started:'p-info'};
+ v.innerHTML=`<div class="dh"><div><h2>${greet}, ${esc((ME.full_name||'').split(' ')[0]||'Admin')} 👋</h2><div class="muted"><span class="livedot"></span>Live · updated ${new Date(d.now).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'})} · ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div></div>
+  <div class="seg2">${[[1,'Today'],[7,'7 days'],[30,'30 days'],[90,'90 days']].map(([n2,l])=>`<button class="${DASH_DAYS===n2?'on':''}" onclick="DASH_DAYS=${n2};render()">${l}</button>`).join('')}</div></div>
+ <div class="alerts">${al.join('')}</div>
+ <div class="kgrid">
+  ${kc('hero','💰','Gross bookings',inr0(k.gmv),delta(k.gmv,k.gmv_prev),spark(ser.map(x=>+x.gmv),'#ffffff'))}
+  ${kc('','📈','Platform revenue',inr0(rev),delta(rev,revP),spark(ser.map(x=>+x.revenue),'#43A047'))}
+  ${kc('','🛺','Completed rides',k.rides,delta(k.rides,k.rides_prev),spark(ser.map(x=>+x.rides),'#1E88E5'))}
+  ${kc('','🧑‍✈️','Captain earnings',inr0(k.captain_earn),`<span class="dl muted">${k.rides?inr0(k.captain_earn/k.rides)+' per ride':'—'}</span>`,spark(ser.map(x=>+x.gmv),'#7CB342'))}
+  ${kc('','↩️','Cancellation rate',d.cancel.rate+'%',delta(d.cancel.rate,d.cancel.rate_prev,true),spark(ser.map(x=>+x.cancelled),'#d14343'))}
+ </div>
+ <div class="dgrid g21" style="margin-bottom:12px">
+  <div class="card"><div class="ch"><h3>Bookings & revenue</h3><div class="legend"><span><i style="background:#1565C0"></i>Bookings</span><span><i style="background:#43A047"></i>Platform revenue</span></div></div>${chart}
+   <div class="row muted" style="font-size:12.5px;margin-top:6px;flex-wrap:wrap;gap:6px"><span>Avg fare <b style="color:var(--ink)">${inr0(k.avg_fare)}</b></span><span>Distance <b style="color:var(--ink)">${Math.round(k.km)} km</b></span><span>Parcels <b style="color:var(--ink)">${k.parcels}</b></span><span>Day passes <b style="color:var(--ink)">${inr0(d.pass_revenue)}</b></span></div></div>
+  <div class="card"><div class="ch"><h3><span class="livedot"></span>Live now</h3><a onclick="go('rides')">All rides ›</a></div>
+   <div class="livebox"><div><b>${L.requested}</b><small>Searching</small></div><div><b>${L.on_way}</b><small>Captain on way</small></div><div><b>${L.on_trip}</b><small>On trip</small></div></div>
+   <div class="dmap" id="dMap"></div>
+   <div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="#EEF3FA" stroke-width="7"/><circle cx="28" cy="28" r="22" fill="none" stroke="#22c55e" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(onl/tot*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 28 28)"/><text x="28" y="32" text-anchor="middle" font-size="12" font-weight="800" fill="#0B1F3A">${Math.round(onl/tot*100)}%</text></svg>
+    <div><b>${onl} of ${L.captains_total} captains online</b><div class="muted" style="font-size:12.5px">Today: ${L.rides_today} rides · ${inr0(L.gmv_today)}</div></div></div></div>
+ </div>
+ <div class="dgrid g111" style="margin-bottom:12px">
+  <div class="card"><div class="ch"><h3>Peak booking hours</h3><span class="muted" style="font-size:12px">${+peak.n?'Busiest '+(peak.h%12||12)+(peak.h<12?' am':' pm'):''}</span></div>${heat}
+   <div class="tax" style="margin-top:12px"><div><small>Riders</small><b>${P.riders}</b><small>+${P.riders_new} new · ${P.riders_active} active</small></div><div><small>New captains</small><b>${P.captains_new}</b><small>in ${d.days===1?'today':d.days+' days'}</small></div></div></div>
+  <div class="card"><div class="ch"><h3>Vehicle mix</h3></div>${d.by_type.map(x=>hbar(vtIcon(x.vehicle_type)+' '+vtName(x.vehicle_type),+x.rides,tt,x.gmv)).join('')||'<div class="muted">No completed rides in this period</div>'}
+   <div class="ch" style="margin-top:14px"><h3>Payment modes</h3></div>${d.by_pay.map(x=>hbar(esc(x.pay_mode),+x.rides,tp,x.amount,'linear-gradient(90deg,#43A047,#7CB342)')).join('')||'<div class="muted">—</div>'}</div>
+  <div class="card"><div class="ch"><h3>Money & tax</h3><a onclick="go('invoices')">GST report ›</a></div>
+   <div class="tax"><div><small>GST this month</small><b>${inr(+d.gst_month.cgst+ +d.gst_month.sgst+ +d.gst_month.gst_9_5)}</b><small>CGST+SGST ${inr(+d.gst_month.cgst+ +d.gst_month.sgst)} · 9(5) ${inr(d.gst_month.gst_9_5)}</small></div>
+   <div><small>TDS this month</small><b>${inr(d.gst_month.tds)}</b><small>${d.gst_month.invoices} invoices</small></div>
+   <div><small>Online payments</small><b>${inr0(d.money_in.online_period)}</b><small>Today ${inr0(d.money_in.online_today)}${+d.money_in.failed_period?' · '+d.money_in.failed_period+' failed':''}</small></div>
+   <div><small>Captain dues</small><b style="color:${+P.captain_dues?'var(--bad)':'inherit'}">${inr0(P.captain_dues)}</b><small>Rider wallets ${inr0(P.rider_wallets)}</small></div></div>
+   <button class="btn sm ghost block" style="margin-top:10px" onclick="go('money')">Payments & payouts ›</button></div>
+ </div>
+ <div class="dgrid g11" style="margin-bottom:12px">
+  <div class="card"><div class="ch"><h3>🏆 Top captains</h3><a onclick="go('caps')">All captains ›</a></div>
+   <div style="overflow-x:auto"><table class="mini"><tr><th>Captain</th><th>Vehicle</th><th class="r">Trips</th><th class="r">Earned</th><th class="r">Rating</th></tr>
+   ${d.top_captains.map((c,i)=>`<tr><td>${['🥇','🥈','🥉'][i]||'·'} ${esc(c.name)}</td><td>${vtIcon(c.vehicle_type)} ${esc(c.vehicle_no)}</td><td class="r">${c.trips}</td><td class="r"><b>${inr0(c.earned)}</b></td><td class="r">${c.rating?'★ '+c.rating:'—'}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No trips yet</td></tr>'}</table></div></div>
+  <div class="card"><div class="ch"><h3>🪪 Waiting for approval</h3><a onclick="FIL='pending';go('caps')">Review all ›</a></div>
+   <div style="overflow-x:auto"><table class="mini"><tr><th>Name</th><th>Vehicle</th><th>City</th><th class="r">Docs</th><th class="r">Applied</th></tr>
+   ${d.pending_captains.map(c=>`<tr class="cl" onclick="capDetail('${c.id}')"><td><b>${esc(c.name)}</b></td><td>${vtIcon(c.vehicle_type)} ${esc(c.vehicle_no)}</td><td>${esc(c.city)}</td><td class="r">${c.docs>=4?'✅ ':''}${c.docs}/4</td><td class="r">${fdt(c.created_at)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No pending applications 🎉</td></tr>'}</table></div></div>
+ </div>
+ <div class="card"><div class="ch"><h3>Recent bookings</h3><a onclick="go('rides')">All rides ›</a></div>
+  <div style="overflow-x:auto"><table class="mini"><tr><th>#</th><th>Time</th><th>Rider</th><th>Captain</th><th>Route</th><th>Status</th><th class="r">Fare</th></tr>
+  ${d.recent.map(r=>`<tr><td>${r.service==='parcel'?'📦':vtIcon(r.vehicle_type)} ${r.id}</td><td>${fdt(r.created_at)}</td><td>${esc(r.rider)}</td><td>${esc(r.captain||'—')}</td><td class="ell">${esc(r.pickup_name)} → ${esc(r.drop_name)}</td><td><span class="pill ${st[r.status]||'p-mute'}">${esc(r.status)}</span></td><td class="r"><b>${inr0(r.total)}</b></td></tr>`).join('')||'<tr><td colspan="7" class="muted">No bookings yet</td></tr>'}</table></div></div>`;
+ // live map of captains and open requests
+ try{const pts=d.map.captains.map(c=>[+c.lat,+c.lng]).concat(d.map.requests.map(r=>[+r.lat,+r.lng]));const c0=CITIES[0]||{lat:18.4386,lng:79.1288};
+  await mapMount('dMap',pts[0]||[+c0.lat,+c0.lng]);d.map.captains.forEach(c=>mapPin(c.lat,c.lng,c.busy?'#f59e0b':'#22c55e',c.busy?'On a trip':'Available'));d.map.requests.forEach(r=>mapPin(r.lat,r.lng,'#e11d48','Searching for captain'));
+  if(pts.length>1)mapFit(pts);else if(pts.length)mapCenter(pts[0][0],pts[0][1],14)}catch(e){}}
 async function aCaps(v){const f=FIL||'all';const list=await rpc('gv_admin_captains',{p_status:f==='all'?null:f});window._caps=list;
  v.innerHTML=`<div class="chips">${[['all','All'],['pending','To verify'],['approved','Approved'],['blocked','Blocked']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l}</button>`).join('')}</div>`+
  (list.map(c=>`<div class="card" style="cursor:pointer" onclick="capDetail('${c.id}')"><div class="row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(c.name)};width:42px;height:42px">${ini(c.name)}</div><div><b>${esc(c.name)} ${c.gender==='F'?'👩':''}</b><div class="muted">${vtIcon(c.vehicle_type)} ${esc(c.vehicle_no)} · ${esc(c.vehicle_model)}</div><div class="muted">${esc(c.city)}${c.plan==='day_pass'?' · 🎟️ day pass':''}</div></div></div><div style="text-align:right">${pill(c.status)}${c.online?'<div class="muted">🟢 online</div>':''}</div></div>
