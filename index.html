@@ -191,6 +191,18 @@ svg.chart{width:100%;height:260px;display:block}svg.chart text{font-size:10.5px;
 .reason input{margin-top:3px;accent-color:var(--p1)}.reason.on{border-color:var(--p1);background:#F5F9FF}.reason.off{opacity:.55;cursor:not-allowed}
 .reason b{display:block;font-size:14.5px}.reason small{color:var(--muted);font-size:12px}.reason .fee{margin-left:auto;font-weight:800;white-space:nowrap}
 .dues{background:var(--warn-soft);border:1px solid #f3d39a;border-radius:16px;padding:12px 14px;margin-top:12px}
+.srch{position:fixed;inset:0;z-index:3000;background:var(--bg);display:flex;flex-direction:column;padding-top:var(--safe-t)}
+.srch .sh{display:flex;align-items:center;gap:12px;padding:10px 14px}.srch .sh b{font-size:20px}
+.sbox{margin:4px 14px 10px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:4px 12px;box-shadow:var(--shadow)}
+.sl{display:flex;align-items:center;gap:12px}.sl+.sl{border-top:1px solid var(--line)}.sl i{width:11px;height:11px;border-radius:50%;flex:none}
+.sl input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:16px;padding:12px 0;background:none;color:var(--ink)}.sl input[readonly]{color:var(--muted)}
+.schips{display:flex;gap:8px;padding:0 14px 8px;overflow-x:auto}.schips .chip{flex:none}
+#sRes{flex:1;overflow-y:auto;padding:0 14px calc(20px + var(--safe-b));-webkit-overflow-scrolling:touch}
+.sg{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 2px 4px}
+.sr{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px dashed var(--line);cursor:pointer}
+.sr .si{width:32px;height:32px;border-radius:50%;background:#EEF3FA;display:grid;place-items:center;flex:none;font-size:15px}
+.sr .st{flex:1;min-width:0}.sr .st b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sr .st small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr .sd{font-size:12px;color:var(--muted);white-space:nowrap}.sr .fav{border:0;background:none;font-size:20px;color:#c8d0dc;cursor:pointer;padding:4px}.sr .fav.on{color:#e11d48}
 .lg-legal{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0}.lg-legal a{color:inherit;text-decoration:underline}
 .map .tag{position:absolute;left:10px;top:10px;z-index:500;background:#fff;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .cap-ic{font-size:22px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
@@ -342,12 +354,12 @@ async function addrOf(lat,lng){lat=+lat;lng=+lng;const key=lat.toFixed(5)+','+ln
 async function geoRest(lat,lng){const k=CONF.google_maps_api_key;if(!k||/^PASTE_/.test(k))return null;
  const ctl=new AbortController();setTimeout(()=>ctl.abort(),7000);
  const j=await (await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${encodeURIComponent(k)}&language=en&region=in`,{signal:ctl.signal})).json();
- if(j.status!=='OK'){GEO.err=j.status+(j.error_message?': '+j.error_message:'');return null}return j.results||[]}
+ if(j.status!=='OK'){GEO.err=j.status+(j.error_message?': '+j.error_message:'');if(j.status==='REQUEST_DENIED')GEO.gOff=true;return null}return j.results||[]}
 async function addrOf0(lat,lng){GEO.src='near';
- if(GOOGLE){try{await loadGoogle();const {Geocoder}=await google.maps.importLibrary('geocoding');const {results}=await new Geocoder().geocode({location:{lat,lng}});
+ if(GOOGLE&&!GEO.gOff){try{await loadGoogle();const {Geocoder}=await google.maps.importLibrary('geocoding');const {results}=await new Geocoder().geocode({location:{lat,lng}});
    const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:t.includes('neighborhood')||t.includes('sublocality_level_2')?3:t.includes('sublocality')?4:9};
    const r=(results||[]).slice().sort((a,b)=>rank(a)-rank(b))[0];if(r&&rank(r)<99){const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=String(e&&e.message||e);console.warn('geocode',e)}
-  try{const res=await geoRest(lat,lng);if(res&&res.length){const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:9};
+  if(/REQUEST_DENIED|billing|not authorized|ApiNotActivated/i.test(GEO.err||'')){GEO.gOff=true}else try{const res=await geoRest(lat,lng);if(res&&res.length){const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:9};
    const r=res.slice().sort((a,b)=>rank(a)-rank(b))[0];const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=GEO.err||String(e&&e.message||e)}}
  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
   const j=await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`,{signal:ctl.signal})).json();
@@ -402,7 +414,10 @@ function mapMe0(p){if(!MK.map||!p)return;const lat=+p.lat,lng=+p.lng,acc=Math.mi
  if(acc>15)mapAdd(new google.maps.Circle({map:MK.map,center:{lat,lng},radius:acc,strokeColor:'#1E88E5',strokeWeight:1,strokeOpacity:.5,fillColor:'#1E88E5',fillOpacity:.12,clickable:false}));
  return mapAdd(new google.maps.Marker({map:MK.map,position:{lat,lng},title:'You are here',zIndex:5,icon:{path:google.maps.SymbolPath.CIRCLE,scale:7,fillColor:'#1E88E5',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}}))}
 function distKm(a,b,c,d){const t=x=>x*Math.PI/180;const h=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 2*6371*Math.asin(Math.sqrt(h))}
-function cityOf(lat,lng){let best=null,bd=1e9;CITIES.forEach(c=>{const d=distKm(+c.lat,+c.lng,+lat,+lng);if(d<=+c.radius_km&&d<bd){bd=d;best=c.name}});return best}
+function cityOf(lat,lng){lat=+lat;lng=+lng;if(!(lat>=6&&lat<=37.5&&lng>=68&&lng<=97.5))return null;let best=null,bd=1e9;CITIES.forEach(c=>{const d=distKm(+c.lat,+c.lng,lat,lng);if(d<=+c.radius_km&&d<bd){bd=d;best=c.name}});return best||'India'}
+/* places near a point (popular list follows the rider, not a fixed city) */
+const nearPlaces=(pt,km)=>PLACES.map(p=>({p,d:pt?distKm(+pt.lat,+pt.lng,+p.lat,+p.lng):0})).filter(x=>!pt||x.d<=(km||25)).sort((a,b)=>a.d-b.d).map(x=>x.p);
+const centerPt=()=>BOOK.from||GEO.pos||CITIES.find(x=>x.name===BOOK.city)||CITIES[0]||{lat:20.59,lng:78.96};
 
 /* ================= AUTH ================= */
 const DEMO=[['Rider','gvrider@example.com','Rider@123','Ranjith · ₹30 credit'],['Rider (woman)','gvrider2@example.com','Rider@123','Lavanya'],['Captain','gvcaptain@example.com','Captain@123','Srinivas · bike'],['Admin','gvadmin@example.com','Admin@123','Operations']];
@@ -515,13 +530,11 @@ async function riderHome(v){
  ACTIVE=await rpc('gv_active_ride');if(ACTIVE)return riderLive();
  let wants=null;try{wants=localStorage.getItem('gv_wants')}catch(e){}if(wants==='captain'){TAB='drive';renderTabs();return driveOnboard(v)}
  if(!CITIES.find(c=>c.name===BOOK.city))BOOK.city=CITIES[0]?.name;
- const P=PLACES.filter(p=>p.city===BOOK.city);const loc=p=>({name:p.name,lat:+p.lat,lng:+p.lng});
+ const P=nearPlaces(GEO.pos||BOOK.from||CITIES.find(x=>x.name===ME.city));const loc=p=>({name:p.name,lat:+p.lat,lng:+p.lng});
  if(!GEO.tried&&!BOOK.fromUser){GEO.tried=true;autoLocate()}
- if(!BOOK.from||cityOf(BOOK.from.lat,BOOK.from.lng)!==BOOK.city){BOOK.from=P[0]?loc(P[0]):null;BOOK.fromUser=false}
- if(BOOK.to&&(cityOf(BOOK.to.lat,BOOK.to.lng)!==BOOK.city||BOOK.to.name===BOOK.from?.name))BOOK.to=null;
- if(!BOOK.to&&!BOOK.from?.gps&&!GEO.pending)BOOK.to=P[3]?loc(P[3]):P[1]?loc(P[1]):null;
- v.innerHTML=`<div class="chips">${CITIES.map(c=>`<button class="chip ${c.name===BOOK.city?'on':''}" onclick="BOOK.city='${c.name}';BOOK.from=null;BOOK.to=null;render()">📍 ${c.name}</button>`).join('')}</div>
- <div class="map big" id="bMap"><div class="tag">${esc(BOOK.city)}</div><button class="locbtn" id="bLoc" title="My location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button></div><div id="bRoutes"></div>
+ if(!BOOK.from&&!GEO.pending&&GEO.tried&&P[0]){BOOK.from=loc(P[0]);BOOK.fromUser=false}
+ if(BOOK.to&&BOOK.to.name===BOOK.from?.name)BOOK.to=null;
+ v.innerHTML=`<div class="map big" id="bMap"><button class="locbtn" id="bLoc" title="My location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button></div><div id="bRoutes"></div>
  <div class="loc" id="bFrom" onclick="pickLoc('from')" style="cursor:pointer"><i style="background:#10b981"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">PICKUP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${GEO.pending&&!BOOK.fromUser?'📍 Locating you…':esc(BOOK.from?.name||'Choose pickup')}</b>${BOOK.from?.gps&&BOOK.from.acc?`<div class="muted" id="bAcc" style="font-size:11px">GPS ±${BOOK.from.acc} m</div>`:''}${BOOK.from?.gps&&GEO.src&&GEO.src!=='google'?`<div class="addr-hint">Approximate address — tap to fine-tune the pin${GEO.err?` · Google: ${esc(String(GEO.err).slice(0,60))}`:''}</div>`:''}</div><span class="muted">✎</span></div>
  <div class="loc" id="bTo" onclick="pickLoc('to')" style="cursor:pointer"><i style="background:#e11d48"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">DROP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${BOOK.to?'':'color:var(--muted)'}">${esc(BOOK.to?.name||'Where are you going?')}</b></div><span class="muted">✎</span></div>
  <div class="vtypes">${VT.map(x=>`<div class="vt ${BOOK.v===x.code?'on':''}" data-v="${x.code}"><span class="e">${x.icon}</span>${x.name}</div>`).join('')}</div>
@@ -533,7 +546,7 @@ async function riderHome(v){
  $('#tWomen')&&($('#tWomen').onclick=()=>{BOOK.women=!BOOK.women;render()});
  $('#bGo').onclick=e=>offers(e.target);
  $('#bLoc').onclick=e=>{e.stopPropagation();autoLocate(true)};
- const a=BOOK.from,b=BOOK.to;const c=CITIES.find(x=>x.name===BOOK.city);
+ const a=BOOK.from,b=BOOK.to;const c=centerPt();
  await mapMount('bMap',a?[a.lat,a.lng]:[+c.lat,+c.lng]);P.forEach(p=>{if(p.name!==a?.name&&p.name!==b?.name)mapDot(p.lat,p.lng,p.name)});
  if(GEO.pos&&cityOf(GEO.pos.lat,GEO.pos.lng)===BOOK.city)mapMe(GEO.pos);
  if(a&&!(a.gps&&GEO.pos&&distKm(a.lat,a.lng,GEO.pos.lat,GEO.pos.lng)<0.01))mapPin(a.lat,a.lng,'#10b981','Pickup');if(b)mapPin(b.lat,b.lng,'#e11d48','Drop');
@@ -557,17 +570,17 @@ async function autoLocate(manual){if(GEO.pending)return;GEO.pending=true;if(manu
  const pos=await getPos(!manual);
  if(!pos){GEO.pending=false;if(manual||GEO.denied)toast(GEO.denied?'Location permission is off — allow it in phone Settings → Apps → GrabVehicle → Permissions':'Could not get your location. Turn on GPS and try again',true);if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render();return}
  const c=cityOf(pos.lat,pos.lng);
- if(!c){GEO.pending=false;toast(`You're outside our service area (${CITIES.map(x=>x.name).join(', ')}). Choose a pickup in a service city.`,true);if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render();return}
- const name=await addrOf(pos.lat,pos.lng);GEO.pending=false;
- if(c!==BOOK.city){BOOK.city=c;BOOK.to=null}
- BOOK.from={name,lat:pos.lat,lng:pos.lng,acc:pos.acc,gps:true};BOOK.fromUser=false;geoWatch();
- if(GEO.src!=='google')setTimeout(async()=>{const f=BOOK.from;if(!f||!f.gps||BOOK.fromUser)return;const n2=await addrOf(f.lat,f.lng);if(GEO.src==='google'&&BOOK.from===f){f.name=n2;if(TAB==='home'&&!ACTIVE&&$('#bFrom'))render()}},4000);
+ if(!c){GEO.pending=false;toast('GrabVehicle works only in India',true);if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render();return}
+ GEO.pending=false;
+ BOOK.city=c;
+ const fr={name:'📍 Your current location',lat:pos.lat,lng:pos.lng,acc:pos.acc,gps:true};BOOK.from=fr;BOOK.fromUser=false;geoWatch();
+ addrOf(pos.lat,pos.lng).then(n=>{if(BOOK.from===fr){fr.name=n;if(TAB==='home'&&!ACTIVE&&$('#bFrom'))render()}});
  if(BOOK.to&&!BOOK.toUser)BOOK.to=null;
  if(manual&&pos.acc>100)toast(`GPS accuracy is low (±${pos.acc} m). Drag the map to set the exact pickup point.`);
  if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render()}
 /* Rapido-style pin: drag the map under a fixed pin, address updates live */
 async function mapPick(which,start){const isFrom=which==='from';const colr=isFrom?'#10b981':'#e11d48';
- let at=start||(isFrom?BOOK.from:BOOK.to)||GEO.pos||(()=>{const c=CITIES.find(x=>x.name===BOOK.city);return{lat:+c.lat,lng:+c.lng}})();
+ let at=start||(isFrom?BOOK.from:BOOK.to)||GEO.pos||centerPt();
  const box=document.createElement('div');box.className='mpick';box.id='mpick';
  box.innerHTML=`<div class="mp-map" id="mpMap"><div class="mp-top"><button class="mp-back" id="mpBack">←</button><span class="mp-hint">Move the map to place the pin</span></div>
   <div class="mp-dot"></div><div class="mp-pin" id="mpPin"><svg viewBox="0 0 40 52"><path d="M20 51C20 51 37 32 37 19A17 17 0 0 0 3 19C3 32 20 51 20 51Z" fill="${colr}" stroke="#fff" stroke-width="3"/><circle cx="20" cy="19" r="6.5" fill="#fff"/></svg></div>
@@ -579,7 +592,7 @@ async function mapPick(which,start){const isFrom=which==='from';const colr=isFro
  await mapMount('mpMap',[at.lat,at.lng]);mapCenter(at.lat,at.lng,17);if(GEO.pos)mapMe(GEO.pos);
  let cur={lat:+at.lat,lng:+at.lng},name=null,seq=0,tm=null,lis=null;
  const look=async()=>{const my=++seq;cur=mapGetCenter()||cur;$('#mpPin')?.classList.remove('up');const c=cityOf(cur.lat,cur.lng);
-  if(!c){$('#mpAddr').textContent='Outside service area';$('#mpErr').textContent=`We serve ${CITIES.map(x=>x.name).join(', ')} only.`;$('#mpOk').disabled=true;name=null;return}
+  if(!c){$('#mpAddr').textContent='Outside India';$('#mpErr').textContent='GrabVehicle works only in India.';$('#mpOk').disabled=true;name=null;return}
   $('#mpErr').textContent='';$('#mpOk').disabled=true;$('#mpAddr').textContent='Finding address…';const n=await addrOf(cur.lat,cur.lng);if(my!==seq||!$('#mpAddr'))return;name=n;$('#mpAddr').textContent=n;$('#mpOk').disabled=false};
  const moved=()=>{clearTimeout(tm);tm=setTimeout(look,450)};const moving=()=>{$('#mpPin')?.classList.add('up');$('#mpOk')&&($('#mpOk').disabled=true)};
  if(MK.prov==='l'){MK.map.on('moveend',moved);MK.map.on('movestart',moving);lis=()=>{MK.map.off('moveend',moved);MK.map.off('movestart',moving)}}
@@ -589,38 +602,67 @@ async function mapPick(which,start){const isFrom=which==='from';const colr=isFro
  $('#mpBack').onclick=close;
  $('#mpLoc').onclick=async()=>{toast('Finding your location…');const p=await getPos();if(!p){toast(GEO.denied?'Location permission is off':'Could not get your location',true);return}mapCenter(p.lat,p.lng,17);mapClear();mapMe(p);if(MK.prov==='l')moved()};
  $('#mpOk').onclick=()=>{if(!name)return;const c=cityOf(cur.lat,cur.lng);if(!c)return;
-  if(c!==BOOK.city){BOOK.city=c;if(isFrom)BOOK.to=null;else BOOK.from=null}
+  BOOK.city=c;
   BOOK[which]={name,lat:cur.lat,lng:cur.lng,gps:false};BOOK[which+'User']=true;if(isFrom)geoStop();close()}}
 
 /* location picker: Google Places (New) search when a key is set; otherwise popular places + current location */
 let PK={token:null,timer:null,sugg:[]};
-function pickLoc(which){const P=PLACES.filter(p=>p.city===BOOK.city);
- openSheet(`<h3>${which==='from'?'Pickup':'Drop'} location</h3><div class="field" style="margin-top:10px"><input id="lq" placeholder="${GOOGLE?'Search address, shop, landmark…':'Search popular places…'}" autocomplete="off"></div>
- <div class="menu-i" id="useGps"><span>📍 Use my current location</span><span class="muted">›</span></div>
- <div class="menu-i" id="useMap"><span>📌 Set ${which==='from'?'pickup':'drop'} on map</span><span class="muted">›</span></div>
- <div id="lres"></div><div class="section-h"><h3>Popular in ${esc(BOOK.city)}</h3></div><div id="lpop">${P.map(p=>`<div class="menu-i" data-p="${p.id}"><span>${esc(p.name)}</span><span class="muted">›</span></div>`).join('')}</div>`);
- const set=loc=>{const c=cityOf(loc.lat,loc.lng);if(!c){toast(loc.name+' is outside our service area',true);return}
-  if(c!==BOOK.city){BOOK.city=c;if(which==='from')BOOK.to=null;else BOOK.from=null}BOOK[which]=loc;BOOK[which+'User']=true;closeSheet();render()};
- $('#useMap').onclick=()=>mapPick(which);
- $('#lpop').onclick=e=>{const el=e.target.closest('[data-p]');if(!el)return;const p=PLACES.find(x=>x.id===+el.dataset.p);set({name:p.name,lat:+p.lat,lng:+p.lng})};
- $('#useGps').onclick=async()=>{toast('Getting your location…');const pos=await getPos();if(!pos){toast(GEO.denied?'Location permission is off — allow it in phone Settings → Apps → GrabVehicle → Permissions':'Could not get your location. Turn on GPS and try again',true);return}
-  if(!cityOf(pos.lat,pos.lng)){toast('Your location is outside our service area',true);return}
-  if(pos.acc>100){mapPick(which,pos);return}
-  set({name:await addrOf(pos.lat,pos.lng),lat:pos.lat,lng:pos.lng,gps:true})};
- PK.token=null;PK.sugg=[];
- $('#lq').oninput=e=>{clearTimeout(PK.timer);const q=e.target.value.trim();
-  if(!GOOGLE){document.querySelectorAll('#lpop [data-p]').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'});return}
-  if(q.length<3){$('#lres').innerHTML='';return}
-  PK.timer=setTimeout(async()=>{try{await loadGoogle();const {AutocompleteSessionToken,AutocompleteSuggestion}=await google.maps.importLibrary('places');
-   if(!PK.token)PK.token=new AutocompleteSessionToken();const c=CITIES.find(x=>x.name===BOOK.city);const d=(+c.radius_km)/111;
-   const {suggestions}=await AutocompleteSuggestion.fetchAutocompleteSuggestions({input:q,sessionToken:PK.token,includedRegionCodes:['in'],
-     locationRestriction:{south:+c.lat-d,north:+c.lat+d,west:+c.lng-d,east:+c.lng+d},origin:{lat:+c.lat,lng:+c.lng}});
-   PK.sugg=suggestions.filter(x=>x.placePrediction);
-   $('#lres').innerHTML=PK.sugg.map((x,i)=>`<div class="menu-i" data-s="${i}"><span>${esc(x.placePrediction.text.toString())}</span><span class="muted">›</span></div>`).join('')||'<div class="muted" style="padding:8px">No matches in '+esc(BOOK.city)+'</div>';
-  }catch(err){console.warn(err);$('#lres').innerHTML='<div class="muted" style="padding:8px">Search unavailable — choose a popular place</div>'}},350)};
- $('#lres').onclick=async e=>{const el=e.target.closest('[data-s]');if(!el)return;try{const pred=PK.sugg[+el.dataset.s].placePrediction;const place=pred.toPlace();
-  await place.fetchFields({fields:['displayName','location']});PK.token=null;
-  set({name:String(place.displayName||pred.text.toString()).slice(0,120),lat:place.location.lat(),lng:place.location.lng()})}catch(err){toast('Could not load that place',true)}}}
+/* ================= Rapido-style location search ================= */
+/* Places API (New) over HTTPS — used when the Maps JS Places library is unavailable; returns a clear error message */
+async function placesRest(q,o){const k=CONF.google_maps_api_key;if(!k||/^PASTE_/.test(k))return [];const ctl=new AbortController();setTimeout(()=>ctl.abort(),7000);
+ const r=await fetch('https://places.googleapis.com/v1/places:autocomplete',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json','X-Goog-Api-Key':k},
+  body:JSON.stringify({input:q,includedRegionCodes:['in'],languageCode:'en',origin:{latitude:+o.lat,longitude:+o.lng},locationBias:{circle:{center:{latitude:+o.lat,longitude:+o.lng},radius:30000}}})});
+ const j=await r.json();if(j.error)throw new Error(j.error.message||j.error.status);
+ return (j.suggestions||[]).filter(x=>x.placePrediction).map(x=>{const p=x.placePrediction;return {name:p.structuredFormat?.mainText?.text||p.text?.text,sub:p.structuredFormat?.secondaryText?.text||'',pid:p.placeId,dist:p.distanceMeters}})}
+async function placeRest(id){const k=CONF.google_maps_api_key;const r=await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(id)}?languageCode=en`,{headers:{'X-Goog-Api-Key':k,'X-Goog-FieldMask':'displayName,formattedAddress,location'}});const j=await r.json();if(j.error)throw new Error(j.error.message);return j}
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem('gv_'+k+'_'+(ME&&ME.id))||'null')??d}catch(e){return d}},set(k,v){try{localStorage.setItem('gv_'+k+'_'+(ME&&ME.id),JSON.stringify(v))}catch(e){}}};
+function rememberPlace(loc){if(!loc||loc.gps||!loc.name)return;const r=LS.get('recent',[]).filter(x=>x.name!==loc.name);r.unshift({name:loc.name,sub:loc.sub||'',lat:+loc.lat,lng:+loc.lng});LS.set('recent',r.slice(0,8))}
+function isFav(n){return LS.get('fav',[]).some(x=>x.name===n)}
+function toggleFav(loc){let f=LS.get('fav',[]);if(f.some(x=>x.name===loc.name))f=f.filter(x=>x.name!==loc.name);else f.unshift({name:loc.name,sub:loc.sub||'',lat:+loc.lat,lng:+loc.lng,label:loc.label||''});LS.set('fav',f.slice(0,12));return f.some(x=>x.name===loc.name)}
+async function osmSearch(q,c){const d=0.5;const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
+ const j=await (await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&countrycodes=in&accept-language=en&bounded=0&viewbox=${+c.lng-d},${+c.lat+d},${+c.lng+d},${+c.lat-d}&q=${encodeURIComponent(q)}`,{signal:ctl.signal})).json();
+ return (j||[]).map(x=>{const a=x.address||{};const name=x.name||(x.display_name||'').split(',')[0];return {name,sub:shortAddr((x.display_name||'').split(',').slice(1).join(',')),lat:+x.lat,lng:+x.lon}})}
+function pickLoc(which){const c0=centerPt();const isFrom=which==='from';
+ const box=document.createElement('div');box.className='srch';box.id='srch';
+ const row=(l,i,ic,extra)=>`<div class="sr" data-k="${i}"><span class="si">${ic}</span><div class="st"><b>${esc(l.label||l.name)}</b>${l.sub||l.label?`<small>${esc(l.label?l.name:l.sub)}</small>`:''}</div>${extra||''}<button class="fav ${isFav(l.name)?'on':''}" data-f="${i}" title="Save">♥</button></div>`;
+ box.innerHTML=`<div class="sh"><button class="mp-back" id="srB">←</button><b>${isFrom?'Pickup':'Drop'}</b></div>
+  <div class="sbox"><div class="sl"><i style="background:#10b981"></i><input id="sF" placeholder="Pickup location" value="${esc(BOOK.from?.name||'')}" ${isFrom?'':'readonly'}></div><div class="sl"><i style="background:#e11d48"></i><input id="sT" placeholder="Where are you going?" value="${esc(isFrom?(BOOK.to?.name||''):'')}" ${isFrom?'readonly':''}></div></div>
+  <div class="schips"><button class="chip" id="sMap">📌 Select on map</button><button class="chip" id="sGps">📍 Current location</button></div>
+  <div id="sRes"></div>`;
+ document.body.appendChild(box);const inp=$(isFrom?'#sF':'#sT');if(isFrom)inp.select();setTimeout(()=>inp.focus(),80);
+ let items=[];const org=isFrom?(GEO.pos||{lat:+c0.lat,lng:+c0.lng}):(BOOK.from||GEO.pos||{lat:+c0.lat,lng:+c0.lng});
+ const km=l=>{const d=distKm(+org.lat,+org.lng,+l.lat,+l.lng);return `<span class="sd">${d<1?Math.round(d*1000)+' m':d.toFixed(1)+' km'}</span>`};
+ const home=()=>{const fav=LS.get('fav',[]),rec=LS.get('recent',[]).filter(r=>!fav.some(f=>f.name===r.name)),P=nearPlaces(org,30).map(p=>({name:p.name,sub:p.city,lat:+p.lat,lng:+p.lng}));
+  items=[...fav,...rec,...P];let h='';
+  if(fav.length)h+=`<div class="sg">Saved</div>`+fav.map((l,i)=>row(l,i,'♥',km(l))).join('');
+  if(rec.length)h+=`<div class="sg">Recent</div>`+rec.map((l,i)=>row(l,fav.length+i,'🕘',km(l))).join('');
+  if(P.length)h+=`<div class="sg">Popular nearby</div>`+P.map((l,i)=>row(l,fav.length+rec.length+i,'📍',km(l))).join('');$('#sRes').innerHTML=h};
+ const done=loc=>{const c=cityOf(loc.lat,loc.lng);if(!c){toast(loc.name+' is outside our service area',true);return}
+  BOOK.city=c;BOOK[which]={name:loc.name,lat:+loc.lat,lng:+loc.lng,gps:!!loc.gps};BOOK[which+'User']=true;rememberPlace(loc);close()};
+ const close=()=>{box.remove();render()};
+ $('#srB').onclick=close;$('#sMap').onclick=()=>{box.remove();mapPick(which)};
+ $('#sGps').onclick=async()=>{toast('Getting your location…');const pos=await getPos();if(!pos){toast(GEO.denied?'Location permission is off':'Could not get your location',true);return}
+  if(!cityOf(pos.lat,pos.lng)){toast('Your location is outside our service area',true);return}if(pos.acc>100){box.remove();mapPick(which,pos);return}done({name:await addrOf(pos.lat,pos.lng),lat:pos.lat,lng:pos.lng,gps:true})};
+ $('#sRes').onclick=async e=>{const f=e.target.closest('[data-f]');if(f){e.stopPropagation();const l=items[+f.dataset.f];const on=toggleFav(l);f.classList.toggle('on',on);toast(on?'Saved to favourites':'Removed from favourites');return}
+  const el=e.target.closest('[data-k]');if(!el)return;const l=items[+el.dataset.k];
+  if(l.pid){try{const j=await placeRest(l.pid);done({name:(j.displayName&&j.displayName.text)||l.name,sub:shortAddr(j.formattedAddress||l.sub),lat:j.location.latitude,lng:j.location.longitude})}catch(x){toast('Could not load that place',true)}return}
+  if(l.pred){try{const place=l.pred.toPlace();await place.fetchFields({fields:['displayName','location','formattedAddress']});PK.token=null;
+    done({name:String(place.displayName||l.name).slice(0,120),sub:shortAddr(place.formattedAddress||l.sub),lat:place.location.lat(),lng:place.location.lng()})}catch(x){toast('Could not load that place',true)}return}
+  done(l)};
+ PK.token=null;home();
+ inp.oninput=e=>{clearTimeout(PK.timer);const q=e.target.value.trim();if(q.length<2){home();return}
+  PK.timer=setTimeout(async()=>{let res=[];$('#sRes').innerHTML='<div class="sg">Searching…</div>';
+   const loc=nearPlaces(org,30).filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).map(p=>({name:p.name,sub:p.city,lat:+p.lat,lng:+p.lng}));let gerr='';
+   if(GOOGLE&&!GEO.gOff){try{await loadGoogle();const {AutocompleteSessionToken,AutocompleteSuggestion}=await google.maps.importLibrary('places');if(!PK.token)PK.token=new AutocompleteSessionToken();
+     const {suggestions}=await AutocompleteSuggestion.fetchAutocompleteSuggestions({input:q,sessionToken:PK.token,includedRegionCodes:['in'],
+      locationBias:{center:{lat:+org.lat,lng:+org.lng},radius:30000},origin:{lat:+org.lat,lng:+org.lng}});
+     res=suggestions.filter(x=>x.placePrediction).map(x=>{const pp=x.placePrediction;return {name:pp.mainText?pp.mainText.toString():pp.text.toString(),sub:pp.secondaryText?pp.secondaryText.toString():'',pred:pp,dist:pp.distanceMeters}})}
+    catch(err){console.warn('places',err);gerr=String(err&&err.message||err)}
+    if(!res.length){try{res=await placesRest(q,org)}catch(x){gerr=String(x.message||x)}}}
+   if(!res.length){try{res=await osmSearch(q,org)}catch(x){}}
+   if($('#sRes')==null||inp.value.trim()!==q)return;
+   items=[...loc,...res.filter(r=>!loc.some(l=>l.name===r.name))];
+   $('#sRes').innerHTML=items.length?items.map((l,i)=>row(l,i,'📍',(l.pred||l.pid)?(l.dist!=null?`<span class="sd">${l.dist<1000?l.dist+' m':(l.dist/1000).toFixed(1)+' km'}</span>`:''):km(l))).join(''):`<div class="sg">No places found for "${esc(q)}" — try <b>Select on map</b></div>${gerr?`<div class="addr-hint">Google search: ${esc(gerr.slice(0,140))}</div>`:''}`},300)}}
 
 async function offers(btn){busy(btn,true);let r;if(!BOOK.from||!BOOK.to){toast('Choose pickup and drop',true);return}try{r=await rpc('gv_get_offers',{p_from:BOOK.from,p_to:BOOK.to,p_vtype:BOOK.v,p_women:BOOK.women})}catch(e){return busy(btn,false)}busy(btn,false);
  const credit=+ME.credit;window._offers=r;
@@ -1039,7 +1081,7 @@ async function showRoutes(slot,a,b,vt,id,onPick,noFit){const box=$('#'+slot);if(
   rs.forEach((r,i)=>{if(i!==sel){const n=MK.objs.length;mapPath(r.pts,{color:'#94A3B8',w:5,op:.85,click:()=>{sel=i;RT.sel[id]=i;draw()}});objs.push(...MK.objs.slice(n))}});
   const n=MK.objs.length;mapPath(rs[sel].pts,{color:'#1565C0',w:6,sel:true});objs.push(...MK.objs.slice(n));
   $('#'+slot).innerHTML=`<div class="rchips">${rs.map((r,i)=>`<button class="rchip ${i===sel?'on':''}" data-i="${i}"><small>${r.tag}</small><b>${fmin(r.min)}</b><small>${r.km.toFixed(1)} km${r.via?' · via '+esc(r.via):''}</small></button>`).join('')}</div>
-   <div class="rnote">${rs[sel].src==='google'?(rs[sel].free&&rs[sel].min-rs[sel].free>=1?`🚦 Traffic adds ~${Math.round(rs[sel].min-rs[sel].free)} min · ${fmin(rs[sel].free)} without traffic`:'🟢 Light traffic on this route'):'Times are estimates (no live traffic)'} · fare is locked and doesn't change with the route</div>`;
+   <div class="rnote">${rs[sel].src==='google'?(rs[sel].free&&rs[sel].min-rs[sel].free>=1?`🚦 Traffic adds ~${Math.round(rs[sel].min-rs[sel].free)} min · ${fmin(rs[sel].free)} without traffic`:'🟢 Light traffic on this route'):'Times are estimates (no live traffic'+(RT.err?' — Google: '+esc(String(RT.err).slice(0,50)):'')+')'} · fare is locked and doesn't change with the route</div>`;
   document.querySelectorAll('#'+slot+' .rchip').forEach(c=>c.onclick=()=>{sel=+c.dataset.i;RT.sel[id]=sel;draw()});if(onPick)onPick(rs[sel])};
  draw();if(!noFit){const P=rs[sel].pts;mapFit(P.filter((_,i)=>i%Math.max(1,Math.floor(P.length/40))===0).concat([P[P.length-1]]))}return rs}
 function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destination=${+to.lat},${+to.lng}&travelmode=${vt==='bike'?'two-wheeler':'driving'}&dir_action=navigate`}
