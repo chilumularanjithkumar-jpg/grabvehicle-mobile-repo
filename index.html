@@ -183,6 +183,14 @@ svg.chart{width:100%;height:260px;display:block}svg.chart text{font-size:10.5px;
 @media (min-width:1100px){.kgrid{grid-template-columns:repeat(5,1fr)}
  .dgrid.g21{grid-template-columns:2fr 1fr}.dgrid.g111{grid-template-columns:1fr 1fr 1fr}.dgrid.g11{grid-template-columns:1fr 1fr}}
 @media (min-width:700px) and (max-width:1099px){.dgrid.g111{grid-template-columns:1fr 1fr}.dgrid.g11{grid-template-columns:1fr 1fr}}
+.rchips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;margin:8px 0 2px;scrollbar-width:none}.rchips::-webkit-scrollbar{display:none}
+.rchip{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:8px 11px;font:inherit;text-align:left;cursor:pointer;min-width:118px}
+.rchip b{display:block;font-size:15px}.rchip small{color:var(--muted);font-size:11.5px;display:block}.rchip.on{border-color:var(--p1);background:#EEF4FF}.rchip.on b{color:var(--p1)}
+.rnote{font-size:11.5px;color:var(--muted);margin:0 0 6px}
+.reasons{display:grid;gap:8px;margin:10px 0}.reason{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;cursor:pointer;background:#fff}
+.reason input{margin-top:3px;accent-color:var(--p1)}.reason.on{border-color:var(--p1);background:#F5F9FF}.reason.off{opacity:.55;cursor:not-allowed}
+.reason b{display:block;font-size:14.5px}.reason small{color:var(--muted);font-size:12px}.reason .fee{margin-left:auto;font-weight:800;white-space:nowrap}
+.dues{background:var(--warn-soft);border:1px solid #f3d39a;border-radius:16px;padding:12px 14px;margin-top:12px}
 .lg-legal{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0}.lg-legal a{color:inherit;text-decoration:underline}
 .map .tag{position:absolute;left:10px;top:10px;z-index:500;background:#fff;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .cap-ic{font-size:22px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
@@ -329,11 +337,18 @@ async function getPos(quick){const g=geoPlugin();let r=null;
  if(r)GEO.pos=r;return r}
 const shortAddr=a=>{const x=String(a||'').split(',').map(t=>t.trim()).filter(t=>t&&!/^india$/i.test(t)&&!/\b\d{6}\b/.test(t)&&!/^[A-Z0-9]{4}\+[A-Z0-9]{2,3}/.test(t));return x.slice(0,3).join(', ')};
 const ADDR={};
-async function addrOf(lat,lng){lat=+lat;lng=+lng;const key=lat.toFixed(5)+','+lng.toFixed(5);if(ADDR[key])return ADDR[key];const a=await addrOf0(lat,lng);ADDR[key]=a;return a}
+async function addrOf(lat,lng){lat=+lat;lng=+lng;const key=lat.toFixed(5)+','+lng.toFixed(5);if(ADDR[key])return ADDR[key];const a=await addrOf0(lat,lng);if(GEO.src==='google')ADDR[key]=a;return a}
+/* Google Geocoding web service (used when the Maps JS geocoder is not available) */
+async function geoRest(lat,lng){const k=CONF.google_maps_api_key;if(!k||/^PASTE_/.test(k))return null;
+ const ctl=new AbortController();setTimeout(()=>ctl.abort(),7000);
+ const j=await (await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${encodeURIComponent(k)}&language=en&region=in`,{signal:ctl.signal})).json();
+ if(j.status!=='OK'){GEO.err=j.status+(j.error_message?': '+j.error_message:'');return null}return j.results||[]}
 async function addrOf0(lat,lng){GEO.src='near';
  if(GOOGLE){try{await loadGoogle();const {Geocoder}=await google.maps.importLibrary('geocoding');const {results}=await new Geocoder().geocode({location:{lat,lng}});
    const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:t.includes('neighborhood')||t.includes('sublocality_level_2')?3:t.includes('sublocality')?4:9};
-   const r=(results||[]).slice().sort((a,b)=>rank(a)-rank(b))[0];if(r&&rank(r)<99){const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=String(e&&e.message||e);console.warn('geocode',e)}}
+   const r=(results||[]).slice().sort((a,b)=>rank(a)-rank(b))[0];if(r&&rank(r)<99){const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=String(e&&e.message||e);console.warn('geocode',e)}
+  try{const res=await geoRest(lat,lng);if(res&&res.length){const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:9};
+   const r=res.slice().sort((a,b)=>rank(a)-rank(b))[0];const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=GEO.err||String(e&&e.message||e)}}
  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
   const j=await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`,{signal:ctl.signal})).json();
   const a=j.address||{};const house=[a.house_number,a.road||a.pedestrian||a.footway].filter(Boolean).join(' ');
@@ -506,14 +521,14 @@ async function riderHome(v){
  if(BOOK.to&&(cityOf(BOOK.to.lat,BOOK.to.lng)!==BOOK.city||BOOK.to.name===BOOK.from?.name))BOOK.to=null;
  if(!BOOK.to&&!BOOK.from?.gps&&!GEO.pending)BOOK.to=P[3]?loc(P[3]):P[1]?loc(P[1]):null;
  v.innerHTML=`<div class="chips">${CITIES.map(c=>`<button class="chip ${c.name===BOOK.city?'on':''}" onclick="BOOK.city='${c.name}';BOOK.from=null;BOOK.to=null;render()">📍 ${c.name}</button>`).join('')}</div>
- <div class="map big" id="bMap"><div class="tag">${esc(BOOK.city)}</div><button class="locbtn" id="bLoc" title="My location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button></div>
- <div class="loc" id="bFrom" onclick="pickLoc('from')" style="cursor:pointer"><i style="background:#10b981"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">PICKUP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${GEO.pending&&!BOOK.fromUser?'📍 Locating you…':esc(BOOK.from?.name||'Choose pickup')}</b>${BOOK.from?.gps&&BOOK.from.acc?`<div class="muted" id="bAcc" style="font-size:11px">GPS ±${BOOK.from.acc} m</div>`:''}${BOOK.from?.gps&&GEO.src&&GEO.src!=='google'?`<div class="addr-hint">Approximate address — tap to fine-tune the pin</div>`:''}</div><span class="muted">✎</span></div>
+ <div class="map big" id="bMap"><div class="tag">${esc(BOOK.city)}</div><button class="locbtn" id="bLoc" title="My location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button></div><div id="bRoutes"></div>
+ <div class="loc" id="bFrom" onclick="pickLoc('from')" style="cursor:pointer"><i style="background:#10b981"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">PICKUP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${GEO.pending&&!BOOK.fromUser?'📍 Locating you…':esc(BOOK.from?.name||'Choose pickup')}</b>${BOOK.from?.gps&&BOOK.from.acc?`<div class="muted" id="bAcc" style="font-size:11px">GPS ±${BOOK.from.acc} m</div>`:''}${BOOK.from?.gps&&GEO.src&&GEO.src!=='google'?`<div class="addr-hint">Approximate address — tap to fine-tune the pin${GEO.err?` · Google: ${esc(String(GEO.err).slice(0,60))}`:''}</div>`:''}</div><span class="muted">✎</span></div>
  <div class="loc" id="bTo" onclick="pickLoc('to')" style="cursor:pointer"><i style="background:#e11d48"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">DROP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${BOOK.to?'':'color:var(--muted)'}">${esc(BOOK.to?.name||'Where are you going?')}</b></div><span class="muted">✎</span></div>
  <div class="vtypes">${VT.map(x=>`<div class="vt ${BOOK.v===x.code?'on':''}" data-v="${x.code}"><span class="e">${x.icon}</span>${x.name}</div>`).join('')}</div>
  <div class="feat">${BOOK.v!=='parcel'?`<span class="tog ${BOOK.women?'on':''}" id="tWomen">👩 Women captains only</span>`:''}</div>
  <button class="btn block" id="bGo">${BOOK.v==='parcel'?'Find parcel captains':'See captain offers'} →</button>
  ${+ME.credit>0?`<div class="card" style="margin-top:12px;background:#ecfdf5;border-color:#a7f3d0"><b>🎁 ${inr0(ME.credit)} cancel-protection credit</b><div class="muted">Auto-applied to your next ride.</div></div>`:''}
- ${+ME.credit<0?`<div class="card" style="margin-top:12px;background:var(--warn-soft);border-color:#f3d39a"><b>${inr0(-ME.credit)} cancellation fee pending</b><div class="muted">Added to your next ride.</div></div>`:''}`;
+ ${+ME.credit<0?`<div class="card" style="margin-top:12px;background:var(--warn-soft);border-color:#f3d39a"><div class="row"><div><b>${inr0(-ME.credit)} cancellation fee pending</b><div class="muted">Added to your next ride, or pay now.</div></div><button class="btn sm" onclick="duesSheet()">Pay now</button></div></div>`:''}`;
  document.querySelectorAll('.vt').forEach(x=>x.onclick=()=>{BOOK.v=x.dataset.v;if(BOOK.v==='parcel')BOOK.women=false;render()});
  $('#tWomen')&&($('#tWomen').onclick=()=>{BOOK.women=!BOOK.women;render()});
  $('#bGo').onclick=e=>offers(e.target);
@@ -522,7 +537,7 @@ async function riderHome(v){
  await mapMount('bMap',a?[a.lat,a.lng]:[+c.lat,+c.lng]);P.forEach(p=>{if(p.name!==a?.name&&p.name!==b?.name)mapDot(p.lat,p.lng,p.name)});
  if(GEO.pos&&cityOf(GEO.pos.lat,GEO.pos.lng)===BOOK.city)mapMe(GEO.pos);
  if(a&&!(a.gps&&GEO.pos&&distKm(a.lat,a.lng,GEO.pos.lat,GEO.pos.lng)<0.01))mapPin(a.lat,a.lng,'#10b981','Pickup');if(b)mapPin(b.lat,b.lng,'#e11d48','Drop');
- if(a&&b){mapLine([a.lat,a.lng],[b.lat,b.lng],true);mapFit([[a.lat,a.lng],[b.lat,b.lng]])}else if(a)mapCenter(a.lat,a.lng,16)}
+ if(a&&b){mapFit([[a.lat,a.lng],[b.lat,b.lng]]);showRoutes('bRoutes',a,b,BOOK.v==='parcel'?'bike':BOOK.v,'book')}else if(a)mapCenter(a.lat,a.lng,16)}
 /* keep listening to GPS for ~45 s after locating: the first fix is often from Wi-Fi/cell towers, later ones are satellite-accurate */
 function geoStop(){clearTimeout(GEO.wt);if(GEO.wid!=null){const g=geoPlugin();try{g?g.clearWatch({id:GEO.wid}):navigator.geolocation.clearWatch(GEO.wid)}catch(e){}}GEO.wid=null}
 async function geoWatch(){geoStop();const g=geoPlugin();
@@ -546,6 +561,7 @@ async function autoLocate(manual){if(GEO.pending)return;GEO.pending=true;if(manu
  const name=await addrOf(pos.lat,pos.lng);GEO.pending=false;
  if(c!==BOOK.city){BOOK.city=c;BOOK.to=null}
  BOOK.from={name,lat:pos.lat,lng:pos.lng,acc:pos.acc,gps:true};BOOK.fromUser=false;geoWatch();
+ if(GEO.src!=='google')setTimeout(async()=>{const f=BOOK.from;if(!f||!f.gps||BOOK.fromUser)return;const n2=await addrOf(f.lat,f.lng);if(GEO.src==='google'&&BOOK.from===f){f.name=n2;if(TAB==='home'&&!ACTIVE&&$('#bFrom'))render()}},4000);
  if(BOOK.to&&!BOOK.toUser)BOOK.to=null;
  if(manual&&pos.acc>100)toast(`GPS accuracy is low (±${pos.acc} m). Drag the map to set the exact pickup point.`);
  if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render()}
@@ -650,12 +666,32 @@ async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTI
  <div class="card"><div><span style="color:#10b981">●</span> ${esc(s.pickup.name)}</div><div><span style="color:#e11d48">●</span> ${esc(s.drop.name)}</div><div class="muted" style="margin-top:4px">${s.distance_km} km · ${s.fixed_fare?'📌 fixed-fare route':'₹'+s.rate+'/km captain rate'}</div></div>
  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">${c.phone?`<a class="btn ghost" href="tel:${esc(c.phone)}">📞 Call</a>`:'<button class="btn ghost" disabled>📞 Call</button>'}<button class="btn ghost" onclick="shareTrip()">📡 Share</button><button class="sos" onclick="sos()">SOS</button></div>
  ${stg<3?`<button class="btn ghost block" style="margin-top:10px;color:var(--bad)" onclick="cancelRide('${s.status}')">Cancel ${s.status==='requested'?'request':'ride'}</button>`:''}`;
- if(update&&$('#lMap')&&MK.map){$('#lPanel').innerHTML=panel;mapClear()}else{v.innerHTML=`<div class="map" id="lMap"></div><div id="lPanel">${panel}</div>`;await mapMount('lMap',[s.pickup.lat,s.pickup.lng])}
- window._live=s;mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');mapLine([s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]);
+ if(update&&$('#lMap')&&MK.map){$('#lPanel').innerHTML=panel;mapClear()}else{v.innerHTML=`<div class="map" id="lMap"></div><div id="lRoutes"></div><div id="lPanel">${panel}</div>`;await mapMount('lMap',[s.pickup.lat,s.pickup.lng])}
+ window._live=s;mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');showRoutes('lRoutes',s.pickup,s.drop,s.vehicle_type,'ride'+s.id,null,true);
  const pts=[[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]];if(c.lat){mapCap(c.lat,c.lng,vtIcon(s.vehicle_type==='parcel'?'bike':s.vehicle_type));pts.push([c.lat,c.lng])}if(!update)mapFit(pts)}
 function shareTrip(){const s=window._live;const t=`I'm on a GrabVehicle ${s.service}: ${s.pickup.name} → ${s.drop.name}. Captain ${s.captain?.name}, ${s.captain?.vehicle_no}. Trip #${s.id}.`;location.href='https://wa.me/'+(ME.emergency_contact||'').replace(/\D/g,'')+'?text='+encodeURIComponent(t)}
-function cancelRide(st){const fee=st==='arrived';openSheet(`<h3>Cancel?</h3><p class="muted">${fee?'Captain has already arrived — a ₹10 fee goes to the captain for their time (added to your next ride).':'Free cancellation.'}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" onclick="closeSheet()">Keep</button><button class="btn red" id="cxBtn">Cancel${fee?' · ₹10':''}</button></div>`);
- $('#cxBtn').onclick=async e=>{busy(e.target,true);try{await rpc('gv_cancel_ride',{p_ride:ACTIVE,p_reason:'Rider cancelled'});ACTIVE=null;ME=await rpc('gv_me');closeSheet();toast('Cancelled');render()}catch(x){busy(e.target,false)}}}
+/* cancel with a reason: the fee (if any) depends on the reason and how far the trip has gone */
+async function cancelSheet(id,after){let o;try{o=await rpc('gv_cancel_options',{p_ride:id})}catch(e){return}const cap=o.who==='captain';let pick=null;
+ openSheet(`<h3>${cap?'Why are you cancelling?':'Cancel ride?'}</h3>
+ <p class="muted" style="margin:2px 0 0">${cap?'Choose a reason. It decides who pays.':o.grace_left?`Free to cancel for ${Math.ceil(o.grace_left/60)} more min. Then a small fee goes to the captain.`:o.status==='requested'?'Free while we look for a captain.':'Tell us why — no fee if the captain caused it.'}</p>
+ <div class="reasons">${o.reasons.map(r=>`<label class="reason ${r.allowed?'':'off'}" data-c="${r.code}"><input type="radio" name="cxr" value="${r.code}" ${r.allowed?'':'disabled'}><div><b>${esc(r.label)}</b><small>${esc(r.note||'')}</small></div><span class="fee" style="color:${+r.fee?'var(--bad)':'var(--ok)'}">${+r.fee?(cap?'+':'')+'₹'+(+r.fee):'Free'}</span></label>`).join('')}</div>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" onclick="closeSheet()">Keep ${cap?'ride':'my ride'}</button><button class="btn red" id="cxBtn" disabled>Cancel</button></div>`);
+ document.querySelectorAll('.reason:not(.off)').forEach(l=>l.onclick=()=>{document.querySelectorAll('.reason').forEach(x=>x.classList.toggle('on',x===l));l.querySelector('input').checked=true;pick=o.reasons.find(r=>r.code===l.dataset.c);
+  $('#cxBtn').disabled=false;$('#cxBtn').textContent=+pick.fee&&!cap?`Cancel · ₹${+pick.fee} fee`:'Cancel ride'});
+ $('#cxBtn').onclick=async e=>{if(!pick)return;busy(e.target,true);try{const r=await rpc('gv_cancel_ride',{p_ride:id,p_reason:pick.code});closeSheet();
+  if(cap){toast(+r.fee?`Cancelled — ₹${+r.fee} added to your wallet`:'Ride cancelled');after&&after();return}
+  ACTIVE=null;ME=await rpc('gv_me');render();if(+r.dues>0)setTimeout(()=>duesSheet(r.fee),250);else toast('Ride cancelled')}catch(x){busy(e.target,false)}}}
+function cancelRide(){cancelSheet(ACTIVE)}
+/* pending cancellation fee: pay now from wallet or UPI, or add it to the next ride */
+async function duesSheet(justNow){ME=await rpc('gv_me');const due=Math.max(0,-(+ME.credit||0));if(!due){toast('No pending dues');return}const w=+ME.wallet||0;
+ openSheet(`<div style="text-align:center"><div style="font-size:38px">🧾</div><h3>${justNow?'Ride cancelled':'Pending cancellation fee'}</h3><p class="muted">${justNow?`A ₹${+justNow} fee went to the captain for their time.`:'This goes to captains who came for you.'}</p>
+  <div class="num" style="font-size:30px;margin:4px 0">${inr(due)}</div><div class="muted">to pay</div></div>
+  ${w>=1?`<button class="btn block" id="dW" style="margin-top:14px">Pay ${inr(Math.min(w,due))} from wallet <span style="opacity:.8">(balance ${inr(w)})</span></button>`:''}
+  ${PAY.razorpay&&due-Math.min(w,due)>=1?`<button class="btn ${w>=1?'ghost':''} block" id="dU" style="margin-top:8px">Pay ${inr0(Math.ceil(due-Math.min(w,due)))} with UPI / card</button>`:''}
+  <button class="btn ghost block" style="margin-top:8px" onclick="closeSheet();toast('Added to your next ride')">Add to my next ride</button>
+  <p class="muted" style="text-align:center;font-size:12px;margin-top:8px">If you don't pay now, it is added to your next ride automatically.</p>`);
+ if($('#dW'))$('#dW').onclick=async e=>{busy(e.target,true);try{const r=await rpc('gv_pay_dues');ME=await rpc('gv_me');closeSheet();toast(r.dues>0?`Paid ${inr(r.paid)} — ${inr(r.dues)} still pending`:'Fee paid — thank you');render();if(r.dues>=1)setTimeout(duesSheet,300)}catch(x){busy(e.target,false)}};
+ if($('#dU'))$('#dU').onclick=async e=>{busy(e.target,true);try{await payOnline(Math.ceil(due-Math.min(w,due)),'Cancellation fee');if(w>=1)await rpc('gv_pay_dues').catch(()=>{});ME=await rpc('gv_me');closeSheet();toast(+ME.credit<0?'Payment received — some fee still pending':'Fee paid — thank you');render()}catch(x){busy(e.target,false);if(x&&x.message&&!/cancel/i.test(x.message))toast(x.message,true)}}}
 async function sos(){const pos=await getPos();openSheet(`<h3 style="color:var(--bad)">🚨 Emergency</h3><p class="muted">Alert GrabVehicle safety desk with your live location and trip details, and/or call police.</p><a class="btn red block" href="tel:112" style="margin-bottom:8px">Call 112 (Police)</a><button class="btn ghost block" id="sosBtn">Alert safety desk</button>`);
  $('#sosBtn').onclick=async e=>{busy(e.target,true);try{await rpc('gv_sos',{p_ride:ACTIVE,p_lat:pos?.lat??null,p_lng:pos?.lng??null});closeSheet();toast('Safety desk alerted — we are calling you')}catch(x){busy(e.target,false)}}}
 function rateSheet(id,s){let st=5,tip=0;openSheet(`<div style="text-align:center"><div style="font-size:44px">🎉</div><h3>${s.service==='parcel'?'Parcel delivered!':"You've arrived!"}</h3><p class="muted">${esc(s.pickup.name)} → ${esc(s.drop.name)}</p><div class="num" style="font-size:30px;margin:6px 0">${inr0(s.fare.total)}</div><div class="muted">${s.pay_mode==='Wallet'?'Paid from wallet':'Pay captain by '+s.pay_mode}</div></div>
@@ -781,7 +817,7 @@ async function capHome(v,update){const h=await rpc('gv_captain_home',{},update);
  else if(s){const nav=s.status==='started'?s.drop:s.pickup;box=`<div class="card" style="border:2px solid var(--p1)"><div class="row"><b>${{accepted:'Go to pickup',arrived:'Waiting for '+(s.service==='parcel'?'sender':'rider'),started:s.service==='parcel'?'Deliver parcel':'Drop rider'}[s.status]}</b>${pill(s.status)}</div>
   <div style="margin:8px 0"><div><span style="color:#10b981">●</span> ${esc(s.pickup.name)}</div><div><span style="color:#e11d48">●</span> ${esc(s.drop.name)}</div></div>
   <div class="row"><div><b>${esc(s.rider?.name||'')}</b><div class="muted">${s.pay_mode} · collect ${s.pay_mode==='Wallet'?'nothing (wallet)':inr0(s.fare.total)}</div>${s.parcel?`<div class="muted">📦 ${esc(s.parcel.item)} → ${esc(s.parcel.receiver_name)} ${esc(s.parcel.receiver_phone)}</div>`:''}</div>${s.rider?.phone?`<a class="btn ghost sm" href="tel:${esc(s.rider.phone)}">📞</a>`:''}</div>
-  <a class="btn ghost block" style="margin-top:10px" href="https://www.google.com/maps/dir/?api=1&destination=${nav.lat},${nav.lng}">🧭 Navigate to ${esc(nav.name)}</a>
+  <a class="btn block" style="margin-top:10px" href="${navUrl(nav,s.vehicle_type)}">🧭 Navigate to ${s.status==='started'?'drop':'pickup'} (Google Maps)</a>
   ${s.status==='accepted'?`<button class="btn block" style="margin-top:8px" onclick="capArrived(${s.id},this)">I've arrived</button>`:''}
   ${['accepted','arrived'].includes(s.status)?`<div class="row" style="margin-top:8px"><input id="cOtp" inputmode="numeric" maxlength="4" placeholder="${s.service==='parcel'?'Pickup':'Rider'} OTP" style="flex:1;min-width:0;padding:12px;font-size:18px;letter-spacing:4px;text-align:center;border:1px solid var(--line);border-radius:11px"><button class="btn green" onclick="capStart(${s.id},this)">Start</button></div>`:''}
   ${s.status==='started'?(s.service==='parcel'?`<div class="row" style="margin-top:8px"><input id="cDotp" inputmode="numeric" maxlength="4" placeholder="Receiver OTP" style="flex:1;min-width:0;padding:12px;font-size:18px;letter-spacing:4px;text-align:center;border:1px solid var(--line);border-radius:11px"><button class="btn green" onclick="capComplete(${s.id},this)">Delivered</button></div>`:`<button class="btn green block" style="margin-top:8px" onclick="capComplete(${s.id},this)">Complete trip</button>`):''}
@@ -791,22 +827,22 @@ async function capHome(v,update){const h=await rpc('gv_captain_home',{},update);
   ${h.blocked&&h.status==='approved'?`<button class="btn block" style="margin-bottom:10px" onclick="go('wallet')">Recharge wallet</button>`:''}
   ${h.needs_pass&&!h.blocked?`<div class="card" style="background:var(--warn-soft);border-color:#f3d39a"><b>Day pass needed</b><div class="muted">You're on the Day pass plan. Buy today's pass (${inr0(h.pass_fee)}, 0% commission) or switch to pay-per-ride.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn ghost sm" onclick="setPlan('per_ride',this)">Pay per ride</button><button class="btn green sm" onclick="buyPass(this)">Buy pass ${inr0(h.pass_fee)}</button></div></div>`:''}
   ${h.plan==='day_pass'&&h.pass_active?`<div class="card" style="background:#ecfdf5;border-color:#a7f3d0;padding:10px 12px">🎟️ <b>Day pass active</b> — 0% commission until midnight</div>`:''}
-  <div class="map" id="cMap"><div class="tag">${esc(h.city)} · ₹${h.rate}/km</div></div>
+  <div class="map" id="cMap"><div class="tag">${esc(h.city)} · ₹${h.rate}/km</div></div><div id="cRoutes"></div>
   <div class="kpis"><div class="kpi dark"><small>Today's earnings</small><b>${inr0(h.today_earned)}</b></div><div class="kpi"><small>Trips today</small><b>${h.today_trips}</b></div><div class="kpi" onclick="go('wallet')"><small>Wallet</small><b style="color:${+h.wallet<0?'var(--bad)':'inherit'}">${inr0(h.wallet)}</b></div><div class="kpi"><small>Rating</small><b>${h.rating?'★ '+h.rating:'—'}</b></div></div>`;
  const sig=JSON.stringify([s&&s.status,s&&s.id,h.online,h.blocked,s&&s.expires_in]);
  if(update&&v._sig===sig)return;v._sig=sig;
  const keepOtp=$('#cOtp')?.value,keepD=$('#cDotp')?.value;
  v.innerHTML=html;if(keepOtp&&$('#cOtp'))$('#cOtp').value=keepOtp;if(keepD&&$('#cDotp'))$('#cDotp').value=keepD;
  const cc=CITIES.find(x=>x.name===h.city)||{lat:18.43,lng:79.13};const c=[+(h.lat||cc.lat),+(h.lng||cc.lng)];await mapMount('cMap',c);mapCap(c[0],c[1],vtIcon(h.vehicle_type));
- if(s){mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');mapFit([c,[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]])}else mapFit([c])
+ if(s){mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');mapFit([c,[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]]);
+  if(s.status!=='requested'){const to=s.status==='started'?s.drop:s.pickup,from=s.status==='started'?s.pickup:{lat:c[0],lng:c[1]};showRoutes('cRoutes',from,to,s.vehicle_type,'cap'+s.id+s.status)}}else mapFit([c])
  $('#onSw').onclick=async e=>{const b=e.target;b.disabled=true;const p=h.online?null:await getPos();try{await rpc('gv_set_online',{p_online:!h.online,p_lat:p?.lat??null,p_lng:p?.lng??null});toast(h.online?'You are offline':'You are online')}catch(x){}b.disabled=false;v._sig=null;capHome(v)}}
 async function capRespond(id,ok,b){busy(b,true);try{await rpc('gv_captain_respond',{p_ride:id,p_accept:ok});toast(ok?'Accepted — head to pickup':'Skipped')}catch(e){}$('#view')._sig=null;capHome($('#view'))}
 async function capArrived(id,b){busy(b,true);try{await rpc('gv_captain_arrived',{p_ride:id});toast('Rider notified')}catch(e){}$('#view')._sig=null;capHome($('#view'))}
 async function capStart(id,b){const o=($('#cOtp')?.value||'').trim();if(!/^\d{4}$/.test(o)){toast('Enter the 4-digit OTP',true);return}busy(b,true);try{await rpc('gv_captain_start',{p_ride:id,p_otp:o});toast('Trip started')}catch(e){busy(b,false);return}$('#view')._sig=null;capHome($('#view'))}
 async function capComplete(id,b){const d=$('#cDotp')?$('#cDotp').value.trim():null;if($('#cDotp')&&!/^\d{4}$/.test(d)){toast('Enter receiver OTP',true);return}busy(b,true);try{const r=await rpc('gv_captain_complete',{p_ride:id,p_delivery_otp:d});
  openSheet(`<div style="text-align:center"><div style="font-size:40px">🏁</div><h3>${d?'Parcel delivered':'Trip completed'}</h3><p class="muted">${r.collect?'Collect from rider by '+r.pay_mode:'Paid from rider wallet'}</p><div class="num" style="font-size:30px">${inr0(r.collect)}</div></div><div class="card bd" style="margin-top:12px"><div class="row"><span>You earned</span><b style="color:var(--ok)">${inr(r.captain_net)}</b></div><div class="row"><span>Wallet balance</span><b>${inr(r.wallet)}</b></div><div class="muted">${r.collect?'Platform fee, commission and GST on this cash ride are adjusted from your wallet.':'Your earning has been added to your wallet.'}</div></div><button class="btn block" onclick="closeSheet();$('#view')._sig=null;capHome($('#view'))">Done</button>`)}catch(e){busy(b,false)}}
-function capCancel(id){openSheet(`<h3>Cancel this ride?</h3><p class="muted">The rider gets ₹20 credit and it counts on your cancellation record.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" onclick="closeSheet()">Keep</button><button class="btn red" id="ccB">Cancel ride</button></div>`);
- $('#ccB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_cancel_ride',{p_ride:id,p_reason:'Captain cancelled'});closeSheet();toast('Ride cancelled');$('#view')._sig=null;capHome($('#view'))}catch(x){busy(e.target,false)}}}
+function capCancel(id){cancelSheet(id,()=>{$('#view')._sig=null;capHome($('#view'))})}
 function planCard(h,passWeek,commWeek){const pass=h.plan==='day_pass';
  return`<div class="card"><b>My plan</b><div class="muted" style="margin:2px 0 10px">Choose what suits you — switch any time when you're not on a ride.</div>
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -930,7 +966,12 @@ async function aSettings(v){const {data:s}=await sb.from('gv_settings').select('
  <div class="field"><label>GST on ride fare u/s 9(5) (%)</label><input id="sRg" type="number" step="0.5" value="${s.ride_gst_pct}"></div><div class="field"><label>GST on fee & commission (%)</label><input id="sGs" type="number" step="1" value="${s.gst_pct}"></div><div class="field"><label>TDS on captain (% of net ride value, 194-O)</label><input id="sTd" type="number" step="0.1" value="${s.tds_pct}"></div>
  <div class="field"><label>Captain wallet floor (₹, hard block below)</label><input id="sFl" type="number" step="50" value="${s.captain_floor}"></div>
  <div class="field"><label>Rider cancel fee after arrival (₹)</label><input id="sCf" type="number" value="${s.cancel_fee}"></div><div class="field"><label>Cancel-protection credit (₹)</label><input id="sCc" type="number" value="${s.cancel_credit}"></div>
- <button class="btn block" id="sSave">Save</button></div><div class="card"><b>How a fare splits</b><div class="muted">Example ₹200 ride: rider pays ₹${fareCalc(200).gross} · GST u/s 9(5) ₹${fareCalc(200).rg} · commission ₹${fareCalc(200).cc} + GST ₹${fareCalc(200).cg} · TDS ₹${fareCalc(200).td} · captain gets ₹${fareCalc(200).net}</div></div>
+ <button class="btn block" id="sSave">Save</button></div><div class="card"><b>Cancellation rules</b><div class="muted" style="margin-bottom:8px">Rider pays the "after arrival" fee above if the captain has arrived. No fee when the reason is the captain's fault.</div>
+  <div class="field"><label>Free cancellation after captain accepts (seconds)</label><input id="cGr" type="number" step="30" value="${s.cancel_grace_sec??120}"></div>
+  <div class="field"><label>Fee after the free period (₹, captain on the way)</label><input id="cFa" type="number" step="1" value="${s.cancel_fee_accepted??5}"></div>
+  <div class="field"><label>Captain can mark rider "no-show" after waiting (minutes)</label><input id="cNs" type="number" step="1" value="${s.noshow_wait_min??5}"></div>
+  <button class="btn sm block" onclick="saveCancelRules(this)">Save cancellation rules</button></div>
+  <div class="card"><b>How a fare splits</b><div class="muted">Example ₹200 ride: rider pays ₹${fareCalc(200).gross} · GST u/s 9(5) ₹${fareCalc(200).rg} · commission ₹${fareCalc(200).cc} + GST ₹${fareCalc(200).cg} · TDS ₹${fareCalc(200).td} · captain gets ₹${fareCalc(200).net}</div></div>
   <div class="card"><b>Google Maps check</b><div class="muted" id="gmRes">Tests the address lookup that sets exact pickup addresses.</div><button class="btn sm ghost" style="margin-top:8px" onclick="mapsCheck(this)">Run check</button></div>
   <div class="card"><b>Captain day pass (₹/day incl. GST)</b><div class="muted">0 = not offered for that vehicle</div>${VT.filter(x=>x.code!=='parcel').map(x=>`<div class="row" style="margin-top:8px"><span>${x.icon} ${x.name}</span><input id="pf_${x.code}" type="number" value="${x.day_pass_fee}" style="width:90px;padding:8px;border:1px solid var(--line);border-radius:9px;font-size:16px"><button class="btn sm ghost" onclick="savePassFee('${x.code}',this)">Save</button></div>`).join('')}</div>
   <div class="card"><div class="row"><b>Fixed-fare routes</b><button class="btn sm" onclick="routeForm()">+ Add</button></div><div id="frList" class="muted" style="margin-top:8px">Loading…</div></div>
@@ -942,10 +983,12 @@ async function aSettings(v){const {data:s}=await sb.from('gv_settings').select('
  $('#sSave').onclick=async e=>{busy(e.target,true);try{await rpc('gv_admin_update_settings',{p_rider_fee:+$('#sRf').value,p_comm:+$('#sCm').value,p_floor:+$('#sFl').value,p_cancel_fee:+$('#sCf').value,p_cancel_credit:+$('#sCc').value,p_ride_gst:+$('#sRg').value,p_tds:+$('#sTd').value,p_gst:+$('#sGs').value});
    const {data:st}=await sb.from('gv_settings').select('*').maybeSingle();SET=st||SET;toast('Settings saved')}catch(x){}busy(e.target,false)}}
 
+async function saveCancelRules(b){busy(b,true);try{await rpc('gv_admin_cancel_rules',{p_fee_accepted:+$('#cFa').value,p_grace_sec:+$('#cGr').value,p_noshow_min:+$('#cNs').value});toast('Cancellation rules saved')}catch(e){}busy(b,false)}
 async function mapsCheck(b){const out=$('#gmRes');busy(b,true);const c=CITIES[0]||{lat:18.4386,lng:79.1288};
  if(!GOOGLE){out.innerHTML='⚪ No Google key set (google_maps_api_key). Addresses come from OpenStreetMap and are approximate.';busy(b,false);return}
  try{await loadGoogle();const {Geocoder}=await google.maps.importLibrary('geocoding');const {results}=await new Geocoder().geocode({location:{lat:+c.lat,lng:+c.lng}});
-  out.innerHTML='✅ Google address lookup works: <b>'+esc(shortAddr((results[0]||{}).formatted_address||''))+'</b>'}
+  out.innerHTML='✅ Google address lookup works: <b>'+esc(shortAddr((results[0]||{}).formatted_address||''))+'</b>';
+  RT.cache={};const rs=await getRoutes({lat:+c.lat,lng:+c.lng},{lat:+c.lat+.02,lng:+c.lng+.02},'bike');out.innerHTML+='<br>'+(rs&&rs[0].src==='google'?'✅ Google routes with live traffic work':'⚠️ Google Routes API not available'+(RT.err?': '+esc(RT.err):'')+' — enable <b>Routes API</b> for this key. Using free OpenStreetMap routes meanwhile.')}
  catch(e){const m=String(e&&e.message||e);out.innerHTML='❌ <b>'+esc(m)+'</b><br>'+(/billing/i.test(m)?'Turn on billing for the Google Cloud project that owns this key.':/not authorized|REQUEST_DENIED|ApiNotActivated/i.test(m)?'Enable the <b>Geocoding API</b> for this key (Google Cloud → APIs & Services → Library) and allow it in the key\'s API restrictions.':'Check the key in Google Cloud → Credentials.')}
  busy(b,false)}
 async function savePassFee(code,b){busy(b,true);try{await rpc('gv_admin_set_pass_fee',{p_vtype:code,p_fee:+$('#pf_'+code).value});const {data}=await sb.from('gv_vehicle_types').select('*').order('sort');VT=data||VT;toast('Day pass fee saved')}catch(e){}busy(b,false)}
@@ -962,6 +1005,44 @@ function routeForm(id){const r=id?window._routes.find(x=>x.id===id):{vehicle_typ
  $('#rS').onclick=async e=>{busy(e.target,true);try{await rpc('gv_admin_save_fixed_route',{p_id:id||null,p_from:+$('#rF').value,p_to:+$('#rT').value,p_vtype:$('#rV').value,p_fare:+$('#rA').value,p_active:$('#rOn').checked});closeSheet();toast('Route saved');loadRoutes()}catch(x){busy(e.target,false)}}}
 function routeFormCity(){const c=window._rc;const P=PLACES.filter(p=>p.city===c);const o=P.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('#rF').innerHTML=o;$('#rT').innerHTML=o;if(P[1])$('#rT').value=P[1].id;document.querySelectorAll('.sheet .chip').forEach(x=>x.classList.toggle('on',x.textContent===c))}
 
+
+
+/* ================= ROUTES: Google Routes API (traffic-aware, alternatives) → OSRM fallback ================= */
+const RT={cache:{},sel:{}};
+function decodePoly(str){let i=0,lat=0,lng=0;const pts=[];while(i<str.length){let b,sh=0,r=0;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);lat+=(r&1)?~(r>>1):(r>>1);sh=0;r=0;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32);lng+=(r&1)?~(r>>1):(r>>1);pts.push([lat/1e5,lng/1e5])}return pts}
+async function getRoutes(a,b,vt){const key=[a.lat,a.lng,b.lat,b.lng].map(x=>(+x).toFixed(4)).join(',')+vt;if(RT.cache[key])return RT.cache[key];let out=null;
+ const k=CONF.google_maps_api_key;
+ if(GOOGLE&&k&&!/^PASTE_/.test(k)){try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),8000);
+  const r=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json','X-Goog-Api-Key':k,
+   'X-Goog-FieldMask':'routes.duration,routes.staticDuration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.description,routes.routeLabels'},
+   body:JSON.stringify({origin:{location:{latLng:{latitude:+a.lat,longitude:+a.lng}}},destination:{location:{latLng:{latitude:+b.lat,longitude:+b.lng}}},
+    travelMode:vt==='bike'?'TWO_WHEELER':'DRIVE',routingPreference:'TRAFFIC_AWARE',computeAlternativeRoutes:true,languageCode:'en-IN',units:'METRIC'})});
+  const j=await r.json();if(j.routes&&j.routes.length)out=j.routes.map(x=>({km:x.distanceMeters/1000,min:parseInt(x.duration)/60,free:parseInt(x.staticDuration||x.duration)/60,pts:decodePoly(x.polyline.encodedPolyline),via:x.description||'',src:'google'}));else RT.err=j.error?.message}catch(e){RT.err=String(e.message||e)}}
+ if(!out){try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),8000);
+  const j=await (await fetch(`https://router.project-osrm.org/route/v1/driving/${+a.lng},${+a.lat};${+b.lng},${+b.lat}?alternatives=3&overview=full&geometries=polyline`,{signal:ctl.signal})).json();
+  if(j.routes&&j.routes.length)out=j.routes.map(x=>({km:x.distance/1000,min:x.duration/60*(vt==='bike'?.85:1.15),free:null,pts:decodePoly(x.geometry),via:'',src:'osm'}))}catch(e){}}
+ if(out){out=out.slice(0,3);const fast=out.reduce((m,x,i)=>x.min<out[m].min?i:m,0),short=out.reduce((m,x,i)=>x.km<out[m].km?i:m,0);
+  out.forEach((x,i)=>{x.tag=i===fast?'⚡ Fastest':i===short?'📏 Shortest':'Route '+(i+1)});if(fast===short&&out.length>1)out.forEach((x,i)=>{if(i!==fast)x.tag='Alternative'})}
+ RT.cache[key]=out;return out}
+const fmin=m=>m>=60?Math.floor(m/60)+' h '+Math.round(m%60)+' min':Math.max(1,Math.round(m))+' min';
+function mapPath(pts,o){if(!MK.map||!pts||!pts.length)return;if(MK.prov==='l'){const casing=mapAdd(L.polyline(pts,{color:'#fff',weight:(o.w||6)+3,opacity:o.sel?1:0}).addTo(MK.map));
+  const l=mapAdd(L.polyline(pts,{color:o.color,weight:o.w||6,opacity:o.op||1,dashArray:o.dash||null}).addTo(MK.map));if(o.click)l.on('click',o.click);if(o.sel)l.bringToFront();return l}
+ if(o.sel)mapAdd(new google.maps.Polyline({map:MK.map,path:pts.map(p=>({lat:p[0],lng:p[1]})),strokeColor:'#fff',strokeWeight:(o.w||6)+3,strokeOpacity:1,zIndex:2}));
+ const l=mapAdd(new google.maps.Polyline({map:MK.map,path:pts.map(p=>({lat:p[0],lng:p[1]})),strokeColor:o.color,strokeWeight:o.w||6,strokeOpacity:o.dash?0:(o.op||1),zIndex:o.sel?3:1,
+  icons:o.dash?[{icon:{path:'M 0,-1 0,1',strokeOpacity:1,strokeColor:o.color,scale:3},offset:'0',repeat:'12px'}]:null}));if(o.click)l.addListener('click',o.click);return l}
+/* draw route options between a and b; the chips under the map let the user pick one */
+async function showRoutes(slot,a,b,vt,id,onPick,noFit){const box=$('#'+slot);if(box)box.innerHTML='<div class="rnote">Finding routes…</div>';
+ const rs=await getRoutes(a,b,vt);if(!$('#'+slot))return null;
+ if(!rs||!rs.length){$('#'+slot).innerHTML='<div class="rnote">Route not available — showing straight line</div>';mapLine([a.lat,a.lng],[b.lat,b.lng],true);return null}
+ let sel=Math.min(RT.sel[id]||0,rs.length-1);const objs=[];
+ const draw=()=>{objs.splice(0).forEach(o=>{try{MK.prov==='l'?o.remove():o.setMap(null)}catch(e){}});
+  rs.forEach((r,i)=>{if(i!==sel){const n=MK.objs.length;mapPath(r.pts,{color:'#94A3B8',w:5,op:.85,click:()=>{sel=i;RT.sel[id]=i;draw()}});objs.push(...MK.objs.slice(n))}});
+  const n=MK.objs.length;mapPath(rs[sel].pts,{color:'#1565C0',w:6,sel:true});objs.push(...MK.objs.slice(n));
+  $('#'+slot).innerHTML=`<div class="rchips">${rs.map((r,i)=>`<button class="rchip ${i===sel?'on':''}" data-i="${i}"><small>${r.tag}</small><b>${fmin(r.min)}</b><small>${r.km.toFixed(1)} km${r.via?' · via '+esc(r.via):''}</small></button>`).join('')}</div>
+   <div class="rnote">${rs[sel].src==='google'?(rs[sel].free&&rs[sel].min-rs[sel].free>=1?`🚦 Traffic adds ~${Math.round(rs[sel].min-rs[sel].free)} min · ${fmin(rs[sel].free)} without traffic`:'🟢 Light traffic on this route'):'Times are estimates (no live traffic)'} · fare is locked and doesn't change with the route</div>`;
+  document.querySelectorAll('#'+slot+' .rchip').forEach(c=>c.onclick=()=>{sel=+c.dataset.i;RT.sel[id]=sel;draw()});if(onPick)onPick(rs[sel])};
+ draw();if(!noFit){const P=rs[sel].pts;mapFit(P.filter((_,i)=>i%Math.max(1,Math.floor(P.length/40))===0).concat([P[P.length-1]]))}return rs}
+function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destination=${+to.lat},${+to.lng}&travelmode=${vt==='bike'?'two-wheeler':'driving'}&dir_action=navigate`}
 
 /* ================= TAX INVOICES ================= */
 function words(n){n=Math.round(+n||0);if(!n)return 'Zero';const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
