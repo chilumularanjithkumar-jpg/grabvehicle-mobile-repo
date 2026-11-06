@@ -1,8 +1,1032 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GrabVehicle</title><meta name="description" content="GrabVehicle — rides, autos, cabs and parcels with captain-set prices and zero surge."><link rel="stylesheet" href="site.css"></head><body>
-<header><div class="in"><a href="./">GrabVehicle</a><h1>Your ride. Captain's price. Zero surge.</h1><p>Bike, auto, cab and parcel booking for Karimnagar and Warangal</p></div></header><main>
-<section><h2>About</h2><p>GrabVehicle lets riders choose from nearby captains, each offering their own per-km price, with the fare locked at booking. Captains pay a low commission or a daily pass. A product of CVV Technologies.</p></section>
-<section><h2>Legal</h2><ul><li><a href="privacy.html">Privacy policy</a></li><li><a href="terms.html">Terms of use</a></li><li><a href="delete-account.html">Delete your account</a></li></ul></section>
-<section class="contact"><h2>Contact</h2><p><b>Email:</b> <span data-email="GrabVehicle">—</span> · <b>Phone:</b> <span data-phone>—</span></p></section>
-</main><footer><nav class="links"><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of use</a><a href="delete-account.html">Delete your account</a></nav>
-<p>GrabVehicle is operated by CVV Technologies, Karimnagar, Telangana, India.</p></footer><script src="site.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0D47A1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GrabVehicle</title>
+<link rel="stylesheet" href="leaflet.css">
+<style>
+:root{
+  --p1:#0D47A1;--p2:#1E88E5;--s1:#43A047;--s2:#7CB342;--y:#FDD835;
+  --brand:linear-gradient(120deg,#0B3C91 0%,#1565C0 42%,#1E88E5 68%,#43A047 100%);
+  --ink:#0B1F3A;--bg:#F2F6FB;--card:#fff;--line:#DDE6F1;--muted:#5D6B82;--shadow:0 6px 20px rgba(13,71,161,.08);
+  --ok:#0f9d6e;--ok-soft:#dcf5ec;--warn:#b7791f;--warn-soft:#fbf0d9;--bad:#d14343;--bad-soft:#fbe4e4;--info-soft:#E3EFFD;
+  --safe-b:var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px));--safe-t:var(--safe-area-inset-top,env(safe-area-inset-top,0px));
+}
+@font-face{font-family:Outfit;font-weight:400;font-display:swap;src:url(fonts/outfit-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:Outfit;font-weight:600;font-display:swap;src:url(fonts/outfit-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:Outfit;font-weight:700;font-display:swap;src:url(fonts/outfit-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:Outfit;font-weight:800;font-display:swap;src:url(fonts/outfit-latin-800-normal.woff2) format('woff2')}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow-x:hidden;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;letter-spacing:-.015em;font-family:Outfit,-apple-system,sans-serif;font-weight:700}
+.num,.kpi b,.btn,nav.tabs button span,.pill,.chip{font-family:Outfit,-apple-system,sans-serif}
+.hidden{display:none!important}
+.grad{background:linear-gradient(135deg,var(--p1),var(--p2))}.grad2{background:linear-gradient(135deg,var(--s1),var(--s2))}
+.btn{border:0;border-radius:14px;padding:13px 16px;font-weight:600;letter-spacing:.01em;box-shadow:0 4px 14px rgba(13,71,161,.18);cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--p1),var(--p2));display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+.btn:disabled{opacity:.55}.btn.block{width:100%}.btn.green{background:linear-gradient(135deg,var(--s1),var(--s2))}.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.red{background:var(--bad)}.btn.sm{padding:8px 12px;font-size:13px;border-radius:9px}
+.field{margin-bottom:12px}.field label{display:block;font-size:12.5px;font-weight:650;margin-bottom:5px;color:#3b3f5c}
+.field input,.field select,.field textarea{width:100%;padding:12px;font-size:16px;border:1px solid var(--line);border-radius:11px;background:#fafaff;outline:none}
+.field input:focus,.field select:focus{border-color:var(--p1);background:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.card.grad{background:var(--brand);border:0}.card.grad2{background:linear-gradient(135deg,var(--s1),var(--s2));border:0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.muted{color:var(--muted);font-size:13px}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;text-transform:capitalize}
+.p-ok{background:var(--ok-soft);color:var(--ok)}.p-warn{background:var(--warn-soft);color:var(--warn)}.p-bad{background:var(--bad-soft);color:var(--bad)}.p-info{background:var(--info-soft);color:var(--p1)}.p-mute{background:#eef0f5;color:#475569}
+.num{font-variant-numeric:tabular-nums;font-weight:700}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}.kpi small{color:var(--muted);font-size:12px}.kpi b{display:block;font-size:21px;margin-top:3px;font-variant-numeric:tabular-nums}
+.kpi{box-shadow:var(--shadow)}.kpi.dark{background:var(--brand);color:#fff;border:0}.kpi.dark small{color:#D6E6FB}
+.section-h{display:flex;justify-content:space-between;align-items:center;margin:16px 0 9px}.section-h h3{font-size:16px}
+.toast{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--safe-b));background:var(--ink);color:#fff;padding:11px 18px;border-radius:14px;font-size:14px;z-index:2000;max-width:90%;text-align:center}
+.toast.err{background:var(--bad)}
+.loading,.empty{text-align:center;color:var(--muted);padding:30px 10px}
+
+#login{min-height:100%;display:flex;flex-direction:column;background:var(--brand);position:relative;overflow-x:clip}
+#login:before{content:"";position:absolute;width:460px;height:460px;border-radius:50%;right:-180px;top:-160px;background:radial-gradient(circle,rgba(255,255,255,.18),rgba(255,255,255,0) 65%)}
+.lg-hero{flex:1 0 auto;display:flex;flex-direction:column;padding:calc(26px + var(--safe-t)) 22px 18px;color:#fff;position:relative;min-height:340px}
+.lg-top{display:flex;align-items:center;gap:12px}
+.lg-badge{width:58px;height:58px;border-radius:18px;background:#fff;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.lg-badge .gvlogo{width:38px;height:42px}
+.wordmark{font-family:Outfit,sans-serif;font-weight:800;font-size:27px;letter-spacing:-.02em;line-height:1}.wordmark span{color:#B9F06B}
+.lg-tag{font-family:Outfit,sans-serif;font-size:11.5px;letter-spacing:.22em;color:#D6E6FB;margin-top:5px}
+.lg-h{font-size:32px;line-height:1.08;font-weight:800;margin:26px 0 0;letter-spacing:-.025em}.lg-h em{font-style:normal;color:var(--y)}
+.lg-scene{position:relative;height:96px;margin:18px -22px 0;flex:1;min-height:96px;max-height:170px}
+.lg-scene svg.city{position:absolute;left:0;right:0;bottom:30px;width:100%;height:70%;opacity:.35}
+.lg-road{position:absolute;left:0;right:0;bottom:0;height:34px;background:#0A2E66;box-shadow:inset 0 3px 0 rgba(255,255,255,.12)}
+.lg-road:after{content:"";position:absolute;left:0;right:0;top:15px;height:3px;background:repeating-linear-gradient(90deg,var(--y) 0 22px,transparent 22px 40px);animation:dash 1.2s linear infinite}
+@keyframes dash{to{background-position:-40px 0}}
+.lg-veh{position:absolute;bottom:14px;font-size:26px;animation:drive 9s linear infinite;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35))}
+.lg-veh.v2{animation-delay:-3s;font-size:28px}.lg-veh.v3{animation-delay:-6s;font-size:30px}
+@keyframes drive{from{transform:translateX(-60px)}to{transform:translateX(110vw)}}
+.lg-feats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.lg-feat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:10px 11px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.lg-feat b{display:block;font-family:Outfit,sans-serif;font-size:14px}.lg-feat small{color:#D6E6FB;font-size:11.5px}
+.lg-sheet{flex:0 0 auto;background:#fff;border-radius:28px 28px 0 0;padding:22px 20px calc(18px + var(--safe-b));box-shadow:0 -10px 30px rgba(0,0,0,.18);position:relative;z-index:2}
+.lg-sheet:before{content:"";display:block;width:44px;height:5px;border-radius:9px;background:#DDE6F1;margin:-8px auto 14px}
+.lcard{background:#fff}.lcard h2{font-size:22px}.lcard .sub{color:var(--muted);margin:4px 0 16px;font-size:14px}
+.lg-foot{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;color:var(--muted);font-size:11.5px}.lg-foot img{height:30px}
+@media(min-height:820px){.lg-h{font-size:36px}.lg-feat{padding:13px}}
+@media(max-height:760px){.lg-hero{min-height:0;padding-top:calc(18px + var(--safe-t))}.lg-h{font-size:25px;margin-top:14px}.lg-scene{flex:none;height:78px;min-height:78px;margin-top:10px}.lg-feats{grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.lg-feat{padding:7px 6px;text-align:center}.lg-feat small{display:none}.lg-feat b{font-size:11px;line-height:1.25}}
+.err{color:var(--bad);font-size:13px;min-height:17px;margin:-4px 0 8px}
+.demo{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
+.demo h4{margin:0 0 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.demo button{width:100%;font-family:inherit;display:flex;justify-content:space-between;align-items:center;text-align:left;background:#fafaff;border:1px solid var(--line);border-radius:11px;padding:9px 12px;margin-bottom:7px;cursor:pointer}
+.demo button span{font-size:12px;color:var(--muted)}
+.linkbtn{background:none;border:0;color:var(--p1);font-weight:650;cursor:pointer;padding:8px 0}
+
+#app{min-height:100%;padding-bottom:calc(74px + var(--safe-b))}
+header.top{position:sticky;top:0;z-index:1000;color:#fff;padding:calc(12px + var(--safe-t)) 16px 15px;display:flex;justify-content:space-between;align-items:center;background:var(--brand)}
+header.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:repeating-linear-gradient(90deg,var(--y) 0 18px,transparent 18px 32px);opacity:.9}
+.hl{display:flex;align-items:center;gap:10px;min-width:0}.hlogo{width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.15)}.hlogo .gvlogo{width:24px;height:27px}
+header.top small{display:block;color:#D6E6FB;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header.top h2{font-size:20px}
+.av{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--p1);display:grid;place-items:center;font-weight:800;border:0;cursor:pointer}
+main{padding:14px;max-width:720px;margin:0 auto}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:#fff;border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + var(--safe-b))}
+nav.tabs button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);padding:5px 0;cursor:pointer}
+nav.tabs{box-shadow:0 -6px 20px rgba(13,71,161,.07)}nav.tabs svg{width:22px;height:22px;padding:3px 14px;box-sizing:content-box;border-radius:99px;transition:.2s}nav.tabs button.on{color:var(--p1);font-weight:700}nav.tabs button.on svg{background:#E3EFFD;color:var(--p1)}
+
+.map{height:240px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#e8eaf3;margin-bottom:12px;position:relative;z-index:1}
+.map.big{height:300px}
+.locbtn{position:absolute;right:10px;bottom:34px;z-index:500;width:42px;height:42px;border-radius:50%;border:0;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.18);display:grid;place-items:center;color:#1565C0;cursor:pointer}
+.locbtn svg{width:22px;height:22px}
+.mpick{position:fixed;inset:0;z-index:3000;background:#e8eaf3;display:flex;flex-direction:column}
+.mpick .mp-map{position:relative;flex:1;min-height:0}
+.mpick .mp-top{position:absolute;left:0;right:0;top:0;z-index:600;padding:calc(10px + var(--safe-t)) 12px 10px;display:flex;gap:10px;align-items:center;pointer-events:none}
+.mpick .mp-top>*{pointer-events:auto}
+.mpick .mp-back{width:42px;height:42px;border-radius:50%;border:0;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.18);font-size:20px;cursor:pointer}
+.mpick .mp-hint{background:#0b1b3a;color:#fff;border-radius:99px;padding:7px 12px;font-size:12.5px;font-weight:600}
+.mpick .mp-pin{position:absolute;left:50%;top:50%;z-index:550;transform:translate(-50%,-100%);pointer-events:none;transition:transform .15s}
+.mpick .mp-pin.up{transform:translate(-50%,-118%)}
+.mpick .mp-pin svg{width:40px;height:52px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
+.mpick .mp-dot{position:absolute;left:50%;top:50%;z-index:540;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:rgba(11,27,58,.45);pointer-events:none}
+.mpick .mp-card{background:var(--bg);border-radius:22px 22px 0 0;padding:16px 16px calc(18px + var(--safe-b));box-shadow:0 -6px 24px rgba(0,0,0,.12)}
+.mpick .mp-addr{display:flex;gap:10px;align-items:flex-start;margin:6px 0 14px}
+.mpick .mp-addr i{width:12px;height:12px;border-radius:50%;margin-top:5px;flex:none}
+/* sign-up choice */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 12px}
+.seg button{border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:11px 8px;font:inherit;font-weight:650;cursor:pointer;color:var(--ink)}
+.seg button small{display:block;font-weight:500;color:var(--muted);font-size:11.5px;margin-top:2px}
+.seg button.on{border-color:var(--p1);background:#EEF4FF;color:var(--p1)}
+.choose{display:grid;gap:12px;margin:14px 0}
+.choose button{display:flex;gap:14px;align-items:center;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:18px;padding:16px;font:inherit;cursor:pointer}
+.choose button:hover,.choose button:focus{border-color:var(--p1);background:#F5F9FF}
+.choose .ic{font-size:34px;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:#EEF4FF;flex:none}
+.choose b{display:block;font-size:16.5px}.choose span.muted{font-size:13px}
+.steps{counter-reset:st;margin:6px 0}.step{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line)}.step:last-child{border:0}
+.step i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;background:#EEF4FF;color:var(--p1);flex:none}
+.step.done i{background:var(--ok);color:#fff}.step.now i{background:var(--p1);color:#fff}
+/* tax invoice */
+.inv{background:#fff;color:#111;border:1px solid var(--line);border-radius:14px;padding:16px;font-size:13px}
+.inv h4{margin:0;font-size:16px;letter-spacing:.02em}.inv .co{font-weight:800;font-size:15px}
+.inv table{width:100%;border-collapse:collapse;margin:8px 0}.inv td,.inv th{padding:6px 4px;border-bottom:1px solid #eef0f4;text-align:left;vertical-align:top}
+.inv td.r,.inv th.r{text-align:right;white-space:nowrap}.inv tr.t td{font-weight:800;border-bottom:2px solid #111}
+.inv .meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin:10px 0;font-size:12.5px}.inv .meta b{display:block;font-size:11px;color:#667;font-weight:600}
+.inv .words{font-size:12px;color:#334;margin:4px 0 10px}.inv .foot{font-size:11px;color:#667;margin-top:10px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:12px;overflow:hidden}
+.tbl th,.tbl td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.tbl th{background:#F5F8FD;font-size:12px;color:var(--muted)}
+.tbl td.r,.tbl th.r{text-align:right}.tbl tr{cursor:pointer}.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+.addr-hint{font-size:11px;color:var(--warn);margin-top:2px}
+/* admin on a laptop / desktop: sidebar + wide content */
+@media (min-width:900px){
+ body.role-admin nav.tabs{top:0;bottom:0;right:auto;width:220px;flex-direction:column;justify-content:flex-start;gap:4px;padding:86px 10px 20px;border-top:0;border-right:1px solid var(--line);box-shadow:none;z-index:900}
+ body.role-admin nav.tabs button{flex:none;flex-direction:row;gap:12px;font-size:14.5px;padding:8px 10px;justify-content:flex-start;border-radius:12px}
+ body.role-admin nav.tabs button.on{background:#EEF4FF}body.role-admin nav.tabs svg{padding:3px}
+ body.role-admin header.top{padding-left:24px}body.role-admin #app{padding-bottom:30px}
+ body.role-admin main{margin-left:220px;max-width:1180px;padding:22px 28px}
+ body.role-admin .kpis{grid-template-columns:repeat(5,1fr)}
+ body.role-admin .sheet-bg{align-items:center}body.role-admin .sheet{max-width:680px;border-radius:22px}
+}
+.lg-legal{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0}.lg-legal a{color:inherit;text-decoration:underline}
+.map .tag{position:absolute;left:10px;top:10px;z-index:500;background:#fff;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.cap-ic{font-size:22px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
+.loc{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px 12px;margin-bottom:8px}
+.loc i{width:10px;height:10px;border-radius:50%;flex:none}.loc select{flex:1;border:0;background:none;padding:10px 0;outline:none;font-weight:600;font-size:16px;min-width:0}
+.vtypes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.vt{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer;font-size:12px}
+.vt .e{font-size:24px;display:block}.vt.on{border-color:var(--p1);background:#E8F1FD;font-weight:700}
+.feat{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+.tog{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 11px;font-size:12.5px;cursor:pointer}
+.tog.on{background:#fdf2f8;border-color:#ec4899;color:#be185d;font-weight:650}
+.offer{display:flex;gap:12px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:9px;cursor:pointer}
+.offer.best{border-color:var(--s1)}
+.cap-av{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:800}
+.offer .mid{flex:1;min-width:0}.offer .mid b{display:block}
+.star{color:#f59e0b}
+.bd{font-size:13.5px}.bd .row{padding:5px 0}.bd .tot{border-top:1px dashed var(--line);margin-top:6px;padding-top:9px;font-size:16px}
+.otp{display:flex;gap:6px}.otp span{width:38px;height:44px;border-radius:10px;background:#E8F1FD;display:grid;place-items:center;font-size:20px;font-weight:800;color:var(--p1)}
+.steps{display:flex;gap:4px;margin:10px 0 2px}.steps i{flex:1;height:5px;border-radius:9px;background:#e5e7f0}.steps i.on{background:linear-gradient(90deg,var(--s1),var(--s2))}
+.sos{background:var(--bad);color:#fff;border:0;border-radius:12px;padding:12px;font-weight:800;cursor:pointer}
+.switch{width:56px;height:32px;border-radius:99px;background:#d4d4e0;position:relative;border:0;cursor:pointer;flex:none}
+.switch:after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on{background:var(--s1)}.switch.on:after{left:27px}
+.req{border:2px solid var(--s1);animation:pulse 1.4s infinite}@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(16,185,129,.15)}}
+.list-i{display:flex;gap:11px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px}
+.sheet-bg{position:fixed;inset:0;height:100dvh;background:rgba(15,15,40,.45);z-index:1500;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:720px;max-height:92vh;max-height:calc(100dvh - 24px);overflow:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(20px + var(--safe-b));animation:up .2s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.5}to{transform:none;opacity:1}}
+.grab{width:42px;height:5px;background:#d0d0de;border-radius:9px;margin:0 auto 12px}
+.stars{display:flex;gap:6px;justify-content:center;font-size:34px;margin:10px 0}.stars span{cursor:pointer;color:#d4d4e0}.stars span.on{color:#f59e0b}
+.chips{display:flex;gap:7px;overflow-x:auto;margin-bottom:10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 12px;font-size:13px;white-space:nowrap;cursor:pointer}.chip.on{background:var(--p1);color:#fff;border-color:var(--p1)}
+.bar{height:8px;background:#ececf5;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--p1),var(--p2))}
+.menu-i{display:flex;justify-content:space-between;align-items:center;padding:14px;background:#fff;border:1px solid var(--line);border-radius:13px;margin-bottom:8px;cursor:pointer}
+.cmp td,.cmp th{padding:7px 6px;border-bottom:1px solid var(--line);font-size:12.5px;text-align:left}.cmp{width:100%;border-collapse:collapse}.cmp th{color:var(--muted);font-weight:600}
+.cmp td.y{color:var(--ok);font-weight:700}.cmp td.n{color:var(--bad)}
+input[type=range]{width:100%;accent-color:var(--p1)}
+</style>
+</head>
+<body>
+<section id="setup" class="hidden" style="padding:40px 20px"><div class="card"><h3>App not configured</h3><p class="muted">Add your Supabase Project URL and publishable key in <b>config.js</b>, then rebuild.</p></div></section>
+
+<section id="login" class="hidden">
+ <div class="lg-hero">
+  <div class="lg-top"><div class="lg-badge"><svg class="gvlogo" viewBox="0 0 64 72" aria-hidden="true"><defs><linearGradient id="gvPin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2196F3"/><stop offset=".55" stop-color="#0D47A1"/><stop offset="1" stop-color="#43A047"/></linearGradient><linearGradient id="gvRoad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1565C0"/><stop offset="1" stop-color="#7CB342"/></linearGradient></defs><path d="M32 2C17.6 2 6 13.4 6 27.6 6 46 32 70 32 70S58 46 58 27.6C58 13.4 46.4 2 32 2z" fill="url(#gvPin)"/><circle cx="32" cy="27.5" r="19" fill="#fff"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="url(#gvRoad)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="#fff" stroke-width="1.3" stroke-dasharray="2.6 2.6"/><path d="M21.3 34.4A12.6 12.6 0 0 0 31 40" fill="none" stroke="#FDD835" stroke-width="1.6" stroke-linecap="round"/></svg></div><div><div class="wordmark">Grab<span>Vehicle</span></div><div class="lg-tag">RIDE · DELIVER · EARN</div></div></div>
+  <h1 class="lg-h">Your ride.<br><em>Captain's price.</em><br>Zero surge.</h1>
+  <div class="lg-scene"><svg class="city" viewBox="0 0 400 80" preserveAspectRatio="none"><path fill="#fff" d="M0 80V52h18V30h14v22h10V40h16v40zm60 0V24h22v56zm26 0V46h12V34h18v46zm34 0V18h10V8h8v10h8v62zm32 0V40h24v40zm28 0V28h14V16h14v64zm32 0V44h20v36zm24 0V22h22v58zm26 0V36h16v-8h12v52zm32 0V48h18v32zm22 0V30h24v50zm28 0V42h14v38z"/></svg>
+   <div class="lg-road"></div><span class="lg-veh">🏍️</span><span class="lg-veh v2">🛺</span><span class="lg-veh v3">🚗</span></div>
+  <div class="lg-feats"><div class="lg-feat"><b>🔒 No surge, ever</b><small>Fare locked at booking</small></div><div class="lg-feat"><b>💸 You choose</b><small>Captains set their price</small></div><div class="lg-feat"><b>👩 Women mode</b><small>Women captains only</small></div><div class="lg-feat"><b>📦 Rides + parcels</b><small>OTP-safe delivery</small></div></div>
+ </div>
+ <div class="lg-sheet">
+  <div class="lcard hidden" id="phoneCard">
+    <h2>Welcome</h2><p class="sub">Log in or sign up with your mobile number.</p>
+    <div id="phStep1"><div class="field"><label>Mobile number</label><div class="row"><span style="padding:12px;border:1px solid var(--line);border-radius:11px;background:#fafaff;font-weight:650">+91</span><input id="phNum" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile" style="flex:1;min-width:0"></div></div>
+      <div class="err" id="phErr"></div><button class="btn block" id="phSend">Send OTP</button></div>
+    <div id="phStep2" class="hidden"><p class="muted" id="phSentTo"></p><p class="muted" id="phAuto" style="font-size:12.5px;margin-top:-6px"></p><div class="field"><label>6-digit OTP</label><input id="phCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="letter-spacing:8px;text-align:center;font-size:22px"></div>
+      <div class="err" id="phErr2"></div><button class="btn block green" id="phVerify">Verify & continue</button>
+      <div style="text-align:center"><button class="linkbtn" id="phResend">Resend OTP</button> · <button class="linkbtn" id="phChange">Change number</button></div></div>
+    <div style="text-align:center;margin-top:4px"><button class="linkbtn" id="toEmail">Use email instead</button></div>
+  </div>
+  <div class="lcard" id="signinCard">
+    <h2>Sign in</h2><p class="sub">Ride, drive or manage — one app.</p>
+    <div class="field"><label>Email</label><input id="lEmail" type="email" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="lPass" type="password" autocomplete="current-password"></div>
+    <div class="err" id="lErr"></div>
+    <button class="btn block" id="lBtn">Sign in</button>
+    <div style="text-align:center"><button class="linkbtn" id="toSignup">New here? Create an account</button></div>
+    <div style="text-align:center"><button class="linkbtn hidden" id="toPhone">📱 Use mobile number (OTP)</button></div>
+    <div class="demo" id="demoBox"><h4>Demo accounts — tap to fill</h4><div id="demoList"></div></div>
+  </div>
+  <div class="lcard hidden" id="signupCard">
+    <h2>Create account</h2><p class="sub">How will you use GrabVehicle?</p>
+    <div class="seg" id="sAs"><button type="button" class="on" data-as="rider">🚕 Ride<small>Book rides & parcels</small></button><button type="button" data-as="captain">🏍️ Drive<small>Earn as a captain</small></button></div>
+    <div class="field"><label>Full name</label><input id="sName"></div>
+    <div class="field"><label>Mobile</label><input id="sPhone" type="tel" placeholder="+91"></div>
+    <div class="field"><label>Email</label><input id="sEmail" type="email"></div>
+    <div class="field"><label>Password (min 8)</label><input id="sPass" type="password"></div>
+    <div class="err" id="sErr"></div>
+    <button class="btn block" id="sBtn">Create account</button>
+    <div style="text-align:center"><button class="linkbtn" id="toSignin">Already have an account? Sign in</button></div>
+  </div>
+  <div class="lcard hidden" id="verifyCard">
+    <h2>Verify your email</h2><p class="sub" id="vTo">We emailed you a verification code.</p>
+    <div class="field"><label>Verification code</label><input id="vCode" inputmode="numeric" maxlength="10" autocomplete="one-time-code" style="letter-spacing:6px;text-align:center;font-size:22px"></div>
+    <div class="err" id="vErr"></div>
+    <button class="btn block" id="vBtn">Verify &amp; continue</button>
+    <div style="text-align:center;display:flex;justify-content:center;gap:14px;flex-wrap:wrap"><button class="linkbtn" id="vResend">Resend code</button><button class="linkbtn" id="vBack">Back to sign in</button></div>
+    <p class="muted" style="font-size:12px;text-align:center;margin-top:8px">Enter the code from the email. Don't tap the link in the email — it opens a web page, not the app.</p>
+  </div>
+  <p class="lg-legal">By continuing you agree to our <a href="#" data-legal="terms">Terms</a> and <a href="#" data-legal="privacy">Privacy policy</a>.</p>
+  <div class="lg-foot"><span>A product of</span><img src="cvv-logo.png" alt="CVV Technologies"></div>
+ </div>
+</section>
+
+<section id="app" class="hidden">
+  <header class="top"><div class="hl"><span class="hlogo"><svg class="gvlogo" viewBox="0 0 64 72" aria-hidden="true"><defs><linearGradient id="gvPin2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2196F3"/><stop offset=".55" stop-color="#0D47A1"/><stop offset="1" stop-color="#43A047"/></linearGradient><linearGradient id="gvRoad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1565C0"/><stop offset="1" stop-color="#7CB342"/></linearGradient></defs><path d="M32 2C17.6 2 6 13.4 6 27.6 6 46 32 70 32 70S58 46 58 27.6C58 13.4 46.4 2 32 2z" fill="url(#gvPin2)"/><circle cx="32" cy="27.5" r="19" fill="#fff"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="url(#gvRoad2)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="#fff" stroke-width="1.3" stroke-dasharray="2.6 2.6"/><path d="M21.3 34.4A12.6 12.6 0 0 0 31 40" fill="none" stroke="#FDD835" stroke-width="1.6" stroke-linecap="round"/></svg></span><div style="min-width:0"><small id="hSub"></small><h2 id="hTitle"></h2></div></div><button class="av" id="avBtn"></button></header>
+  <main id="view"></main>
+  <nav class="tabs" id="tabs"></nav>
+</section>
+<div id="sheetRoot"></div>
+
+<script src="capacitor.js"></script>
+<script src="supabase.js"></script>
+<script src="leaflet.js"></script>
+<script src="config.js"></script>
+<script>
+/* ================= SETUP ================= */
+const CFG=window.GV_CONFIG||{};const LEGAL_BASE=CFG.legalBase||'https://chilumularanjithkumar-jpg.github.io/grabvehicle-mobile-repo';const $=s=>document.querySelector(s);
+if(!CFG.url||!CFG.anonKey){$('#setup').classList.remove('hidden');throw new Error('Missing config')}
+const sb=supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'grabvehicle-auth'}});
+let ME=null,TAB='home',FIL=null,VT=[],PLACES=[],CITIES=[],CONF={},GOOGLE=false,BOOK={city:null,from:null,to:null,v:'bike',women:false},ACTIVE=null,POLL=null,LOCW=null,CH=null;
+
+/* ================= HELPERS ================= */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr=n=>{n=+n||0;return'₹'+n.toLocaleString('en-IN',{maximumFractionDigits:2,minimumFractionDigits:Math.round(n)===n?0:2})};
+const inr0=n=>'₹'+Math.round(+n||0).toLocaleString('en-IN');
+const IST={timeZone:'Asia/Kolkata'};
+const fdt=s=>s?new Date(s).toLocaleString('en-IN',{...IST,day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'—';
+const fday=s=>new Date(s+'T00:00:00+05:30').toLocaleDateString('en-IN',{...IST,weekday:'short',day:'numeric'});
+const ini=n=>((n||'?').replace(/[^A-Za-z\s]/g,' ').trim().split(/\s+/).map(x=>x[0]).join('').slice(0,2)||'?').toUpperCase();
+const COLORS=['#1565C0','#0d9488','#be185d','#b45309','#9333ea','#0369a1','#1e293b','#15803d'];const col=s=>COLORS[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length];
+function toast(t,err){const e=document.createElement('div');e.className='toast'+(err?' err':'');e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),err?3800:2400)}
+const cleanErr=m=>(m||'Something went wrong').replace(/^.*?exception:\s*/i,'');
+async function rpc(fn,args,quiet){const {data,error}=await sb.rpc(fn,args||{});if(error){if(!quiet)toast(cleanErr(error.message),true);throw error}return data}
+function busy(b,on){if(!b)return;b.disabled=on;if(on){b._t=b.innerHTML;b.innerHTML='Please wait…'}else if(b._t)b.innerHTML=b._t}
+const PILL={completed:'ok',cancelled:'bad',expired:'mute',rejected:'mute',requested:'warn',accepted:'info',arrived:'info',started:'warn',approved:'ok',pending:'warn',blocked:'bad',open:'bad',resolved:'ok'};
+const pill=s=>`<span class="pill p-${PILL[s]||'mute'}">${esc(s)}</span>`;
+const vtIcon=c=>(VT.find(v=>v.code===c)||{}).icon||'🚘';const vtName=c=>(VT.find(v=>v.code===c)||{}).name||c;
+function icon(n){const p={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',trips:'<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',rupee:'<path d="M6 4h12M6 9h12M6 4c7 0 7 10 0 10l8 7"/>',tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 13.9H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1.3z"/>'}[n];return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`}
+/* ---------- location: native GPS when available (accurate, like Rapido), browser GPS otherwise ---------- */
+const GEO={pos:null,tried:false,pending:false,denied:false};
+function geoPlugin(){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable&&C.isPluginAvailable('Geolocation'))return C.registerPlugin('Geolocation')}catch(e){}return null}
+function webPos(maxMs){return new Promise(res=>{if(!navigator.geolocation)return res(null);let best=null,id=null,fin=false;
+ const done=()=>{if(fin)return;fin=true;try{navigator.geolocation.clearWatch(id)}catch(e){}res(best)};const t=setTimeout(done,maxMs);
+ id=navigator.geolocation.watchPosition(p=>{const c=p.coords;if(!best||c.accuracy<best.acc)best={lat:c.latitude,lng:c.longitude,acc:Math.round(c.accuracy)};if(c.accuracy<=25){clearTimeout(t);done()}},
+  e=>{if(e&&e.code===1)GEO.denied=true;clearTimeout(t);done()},{enableHighAccuracy:true,maximumAge:0,timeout:maxMs})})}
+async function getPos(quick){const g=geoPlugin();let r=null;
+ if(g){try{let pm=await g.checkPermissions();if(pm.location!=='granted')pm=await g.requestPermissions({permissions:['location','coarseLocation']});
+   if(pm.location!=='granted'&&pm.coarseLocation!=='granted'){GEO.denied=true;return null}
+   if(pm.location!=='granted'&&!GEO.warnedCoarse){GEO.warnedCoarse=true;toast('Turn on "Precise location" for GrabVehicle (phone Settings → Apps → GrabVehicle → Permissions → Location) for an exact pickup',true)}
+   const p=await g.getCurrentPosition({enableHighAccuracy:true,timeout:quick?10000:15000,maximumAge:0});r={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0)}}
+  catch(e){console.warn('native gps',e);if(/denied|permission/i.test(String(e&&e.message)))GEO.denied=true}}
+ if(!r&&!GEO.denied)r=await webPos(quick?6000:12000);
+ if(r)GEO.pos=r;return r}
+const shortAddr=a=>{const x=String(a||'').split(',').map(t=>t.trim()).filter(t=>t&&!/^india$/i.test(t)&&!/\b\d{6}\b/.test(t)&&!/^[A-Z0-9]{4}\+[A-Z0-9]{2,3}/.test(t));return x.slice(0,3).join(', ')};
+const ADDR={};
+async function addrOf(lat,lng){lat=+lat;lng=+lng;const key=lat.toFixed(5)+','+lng.toFixed(5);if(ADDR[key])return ADDR[key];const a=await addrOf0(lat,lng);ADDR[key]=a;return a}
+async function addrOf0(lat,lng){GEO.src='near';
+ if(GOOGLE){try{await loadGoogle();const {Geocoder}=await google.maps.importLibrary('geocoding');const {results}=await new Geocoder().geocode({location:{lat,lng}});
+   const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:t.includes('neighborhood')||t.includes('sublocality_level_2')?3:t.includes('sublocality')?4:9};
+   const r=(results||[]).slice().sort((a,b)=>rank(a)-rank(b))[0];if(r&&rank(r)<99){const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=String(e&&e.message||e);console.warn('geocode',e)}}
+ try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
+  const j=await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`,{signal:ctl.signal})).json();
+  const a=j.address||{};const house=[a.house_number,a.road||a.pedestrian||a.footway].filter(Boolean).join(' ');
+  const parts=[a.amenity||a.shop||a.building||a.house_name||a.office,house,a.neighbourhood||a.suburb||a.quarter||a.residential||a.hamlet||a.city_district,a.village||a.town||a.city||a.county];
+  const u=[];parts.forEach(t=>{if(t&&!u.includes(t))u.push(t)});
+  if(u.length>=2){GEO.src='osm';return u.slice(0,3).join(', ')}
+  let best=null,bd=1e9;PLACES.forEach(pl=>{const d=distKm(+pl.lat,+pl.lng,lat,lng);if(d<bd){bd=d;best=pl}});
+  if(best&&bd<3){GEO.src='near';return `Near ${best.name}${u[0]&&u[0]!==best.name?', '+u[0]:''}`}if(u.length){GEO.src='osm';return u[0]}}catch(e){}
+ let best=null,bd=1e9;PLACES.forEach(pl=>{const d=distKm(+pl.lat,+pl.lng,lat,lng);if(d<bd){bd=d;best=pl}});
+ return best&&bd<1.5?`Near ${best.name}`:'Pinned location'}
+
+/* ================= MAP (Google when a key is set in Supabase gv_app_config, else OpenStreetMap) =================
+   One map instance per app session, moved between screens — Google bills about one map load per session. */
+const MK={prov:null,host:null,map:null,objs:[],gp:null};
+function loadGoogle(){if(MK.gp)return MK.gp;MK.gp=new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('Google Maps timeout')),9000);
+ (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({key:CONF.google_maps_api_key,v:'weekly',region:'IN',language:'en'});
+ window.gm_authFailure=()=>{GOOGLE=false;toast('Google Maps key rejected — check the key restrictions',true)};
+ google.maps.importLibrary('maps').then(()=>{clearTimeout(t);res(true)}).catch(e=>{clearTimeout(t);MK.gp=null;rej(e)})});return MK.gp}
+async function mapMount(id,center){const el=document.getElementById(id);if(!el)return;
+ if(!MK.host){MK.host=document.createElement('div');MK.host.style.cssText='position:absolute;inset:0;z-index:0'}
+ el.insertBefore(MK.host,el.firstChild);
+ if(!MK.map){MK.making=MK.making||mapCreate(center);try{await MK.making}finally{MK.making=null}}
+ else if(MK.prov==='l'){MK.map.invalidateSize()}
+ mapClear()}
+/* create the single map instance once, even if two screens ask at the same time */
+async function mapCreate(center){if(MK.map)return;
+  if(GOOGLE&&CONF.map_display!=='osm'){try{await loadGoogle();const {Map}=await google.maps.importLibrary('maps');
+    MK.map=new Map(MK.host,{center:{lat:center[0],lng:center[1]},zoom:14,disableDefaultUI:true,clickableIcons:false,gestureHandling:'greedy'});MK.prov='g'}catch(e){console.warn(e);MK.map=null}}
+  if(!MK.map){MK.map=L.map(MK.host,{zoomControl:false,attributionControl:true}).setView(center,14);
+    L.tileLayer(CFG.tiles||'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(MK.map);MK.prov='l'}}
+function mapClear(){MK.objs.forEach(o=>{try{MK.prov==='l'?o.remove():o.setMap(null)}catch(e){}});MK.objs=[]}
+function mapAdd(o){MK.objs.push(o);return o}
+function mapPin(lat,lng,color,title){if(!MK.map)return;lat=+lat;lng=+lng;if(MK.prov==='l')return mapAdd(L.circleMarker([lat,lng],{radius:9,color:'#fff',weight:3,fillColor:color,fillOpacity:1}).addTo(MK.map));
+ return mapAdd(new google.maps.Marker({map:MK.map,position:{lat,lng},title:title||'',icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:color,fillOpacity:1,strokeColor:'#fff',strokeWeight:3}}))}
+function mapDot(lat,lng,title){if(!MK.map)return;lat=+lat;lng=+lng;if(MK.prov==='l')return mapAdd(L.circleMarker([lat,lng],{radius:4,color:'#9aa0bf',fillOpacity:.8,weight:1}).bindTooltip(title).addTo(MK.map));
+ return mapAdd(new google.maps.Marker({map:MK.map,position:{lat,lng},title,icon:{path:google.maps.SymbolPath.CIRCLE,scale:4,fillColor:'#9aa0bf',fillOpacity:.9,strokeWeight:0}}))}
+function mapCap(lat,lng,e){if(!MK.map)return;lat=+lat;lng=+lng;if(MK.prov==='l')return mapAdd(L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<div class="cap-ic">${e}</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).addTo(MK.map));
+ return mapAdd(new google.maps.Marker({map:MK.map,position:{lat,lng},label:{text:e,fontSize:'22px'},icon:{path:google.maps.SymbolPath.CIRCLE,scale:0}}))}
+function mapLine(a,b,dashed){if(!MK.map)return;a=a.map(Number);b=b.map(Number);if(MK.prov==='l')return mapAdd(L.polyline([a,b],{color:'#1565C0',weight:4,opacity:.7,dashArray:dashed?'2 8':null}).addTo(MK.map));
+ return mapAdd(new google.maps.Polyline({map:MK.map,path:[{lat:a[0],lng:a[1]},{lat:b[0],lng:b[1]}],strokeColor:'#1565C0',strokeOpacity:dashed?0:.7,strokeWeight:4,icons:dashed?[{icon:{path:'M 0,-1 0,1',strokeOpacity:1,scale:3},offset:'0',repeat:'12px'}]:[]}))}
+function mapFit(pts){if(!MK.map||!pts.length)return;pts=pts.map(p=>p.map(Number));if(MK.prov==='l'){if(pts.length===1)MK.map.setView(pts[0],15);else MK.map.fitBounds(pts,{padding:[30,30],maxZoom:16});return}
+ if(pts.length===1){MK.map.setCenter({lat:pts[0][0],lng:pts[0][1]});MK.map.setZoom(15);return}
+ const bd=new google.maps.LatLngBounds();pts.forEach(p=>bd.extend({lat:p[0],lng:p[1]}));MK.map.fitBounds(bd,40)}
+function mapCenter(lat,lng,z){if(!MK.map)return;lat=+lat;lng=+lng;if(MK.prov==='l')MK.map.setView([lat,lng],z||MK.map.getZoom());else{MK.map.setCenter({lat,lng});if(z)MK.map.setZoom(z)}}
+function mapGetCenter(){if(!MK.map)return null;const c=MK.map.getCenter();return MK.prov==='l'?{lat:c.lat,lng:c.lng}:{lat:c.lat(),lng:c.lng()}}
+function mapUnMe(){(GEO.me||[]).forEach(o=>{try{MK.prov==='l'?o.remove():o.setMap(null)}catch(e){}const i=MK.objs.indexOf(o);if(i>=0)MK.objs.splice(i,1)});GEO.me=[]}
+function mapMe(p){mapUnMe();if(!MK.map||!p)return;const n=MK.objs.length;const r=mapMe0(p);GEO.me=MK.objs.slice(n);return r}
+function mapMe0(p){if(!MK.map||!p)return;const lat=+p.lat,lng=+p.lng,acc=Math.min(+p.acc||0,500);
+ if(MK.prov==='l'){if(acc>15)mapAdd(L.circle([lat,lng],{radius:acc,color:'#1E88E5',weight:1,fillColor:'#1E88E5',fillOpacity:.12,interactive:false}).addTo(MK.map));
+  return mapAdd(L.circleMarker([lat,lng],{radius:7,color:'#fff',weight:3,fillColor:'#1E88E5',fillOpacity:1}).addTo(MK.map))}
+ if(acc>15)mapAdd(new google.maps.Circle({map:MK.map,center:{lat,lng},radius:acc,strokeColor:'#1E88E5',strokeWeight:1,strokeOpacity:.5,fillColor:'#1E88E5',fillOpacity:.12,clickable:false}));
+ return mapAdd(new google.maps.Marker({map:MK.map,position:{lat,lng},title:'You are here',zIndex:5,icon:{path:google.maps.SymbolPath.CIRCLE,scale:7,fillColor:'#1E88E5',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}}))}
+function distKm(a,b,c,d){const t=x=>x*Math.PI/180;const h=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 2*6371*Math.asin(Math.sqrt(h))}
+function cityOf(lat,lng){let best=null,bd=1e9;CITIES.forEach(c=>{const d=distKm(+c.lat,+c.lng,+lat,+lng);if(d<=+c.radius_km&&d<bd){bd=d;best=c.name}});return best}
+
+/* ================= AUTH ================= */
+const DEMO=[['Rider','gvrider@example.com','Rider@123','Ranjith · ₹30 credit'],['Rider (woman)','gvrider2@example.com','Rider@123','Lavanya'],['Captain','gvcaptain@example.com','Captain@123','Srinivas · bike'],['Admin','gvadmin@example.com','Admin@123','Operations']];
+if(CFG.showDemoLogins===false)$('#demoBox').classList.add('hidden');
+$('#demoList').innerHTML=DEMO.map(d=>`<button data-e="${d[1]}" data-p="${d[2]}"><div><b>${d[0]}</b> <span>· ${d[3]}</span><br><span>${d[1]}</span></div><span>${d[2]}</span></button>`).join('');
+$('#demoList').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('#lEmail').value=b.dataset.e;$('#lPass').value=b.dataset.p;$('#lErr').textContent=''};
+$('#toSignup').onclick=()=>showCard('signupCard');
+$('#toSignin').onclick=()=>showCard('signinCard');
+async function doLogin(){const b=$('#lBtn');$('#lErr').textContent='';busy(b,true);const {error}=await sb.auth.signInWithPassword({email:$('#lEmail').value.trim(),password:$('#lPass').value});busy(b,false);
+ if(error){if(/not confirmed/i.test(error.message)){VEMAIL=$('#lEmail').value.trim();VPASS=$('#lPass').value;await vResend(true);return}
+  $('#lErr').textContent=error.message==='Invalid login credentials'?'Wrong email or password.':error.message;return}await enter()}
+$('#lBtn').onclick=doLogin;$('#lPass').onkeydown=e=>{if(e.key==='Enter')doLogin()};
+document.querySelectorAll('#sAs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#sAs button').forEach(x=>x.classList.toggle('on',x===b))});
+const signupAs=()=>document.querySelector('#sAs button.on')?.dataset.as||'rider';
+$('#sBtn').onclick=async e=>{try{localStorage.setItem('gv_signup_as',signupAs())}catch(x){}const b=e.target;$('#sErr').textContent='';const name=$('#sName').value.trim(),phone=$('#sPhone').value.trim(),email=$('#sEmail').value.trim(),pw=$('#sPass').value;
+ if(name.length<2||phone.replace(/\D/g,'').length<10||!/^\S+@\S+\.\S+$/.test(email)||pw.length<8){$('#sErr').textContent='Fill all fields (password at least 8 characters).';return}
+ busy(b,true);const {data,error}=await sb.auth.signUp({email,password:pw,options:{data:{full_name:name,phone}}});busy(b,false);
+ if(error){$('#sErr').textContent=error.message;return}
+ if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){$('#sErr').textContent='This email is already registered. Sign in instead.';return}
+ if(!data.session){VEMAIL=email;VPASS=pw;showVerify();return}await enter()};
+/* ---------- email verification by code (works even when the email link can't open the app) ---------- */
+let VEMAIL='',VPASS='';
+function showVerify(msg){$('#vTo').textContent=msg||('We sent a verification code to '+VEMAIL+'. Check inbox and spam.');$('#vErr').textContent='';$('#vCode').value='';showCard('verifyCard');setTimeout(()=>$('#vCode').focus(),100)}
+async function vVerify(){const code=$('#vCode').value.replace(/\D/g,'');$('#vErr').textContent='';if(code.length<6){$('#vErr').textContent='Enter the code from the email';return}
+ const b=$('#vBtn');busy(b,true);let r=await sb.auth.verifyOtp({email:VEMAIL,token:code,type:'signup'});
+ if(r.error)r=await sb.auth.verifyOtp({email:VEMAIL,token:code,type:'email'});busy(b,false);
+ if(r.error||!r.data.session){const m=String(r.error&&r.error.message||'');$('#vErr').textContent=/expired|invalid/i.test(m)?'Code is wrong or expired. Tap Resend code.':(m||'Could not verify. Try again.');return}
+ VPASS='';await enter()}
+async function vResend(fromLogin){const b=$('#vResend');busy(b,true);const {error}=await sb.auth.resend({type:'signup',email:VEMAIL});busy(b,false);
+ if(fromLogin)showVerify('Your email is not verified yet. We sent a new code to '+VEMAIL+'.');
+ if(error)$('#vErr').textContent=/seconds|rate/i.test(error.message)?'Please wait a minute before asking for another code.':error.message;else if(!fromLogin)toast('New code sent')}
+$('#vBtn').onclick=vVerify;$('#vResend').onclick=()=>vResend(false);$('#vBack').onclick=()=>{$('#lEmail').value=VEMAIL;showCard('signinCard')};
+$('#vCode').onkeydown=e=>{if(e.key==='Enter')vVerify()};
+/* ---------- mobile OTP login (Firebase verifies the number; server exchanges it for a Supabase session) ---------- */
+let PHONE_OK=false,VID=null,PH_L=[],phDoing=false;
+function FA(){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable&&C.isPluginAvailable('FirebaseAuthentication'))return C.registerPlugin('FirebaseAuthentication')}catch(e){}return null}
+async function initLogin(){let pc=null;try{pc=(await sb.rpc('gv_public_config')).data}catch(e){}
+ PHONE_OK=!!(pc&&pc.phone_login&&FA());$('#toPhone').classList.toggle('hidden',!PHONE_OK);showCard(PHONE_OK?'phoneCard':'signinCard')}
+function showCard(id){['phoneCard','signinCard','signupCard','verifyCard'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id))}
+async function clearPh(){for(const l of PH_L){try{await l.remove()}catch(e){}}PH_L=[]}
+function phStep(n){$('#phStep1').classList.toggle('hidden',n!==1);$('#phStep2').classList.toggle('hidden',n!==2)}
+async function phSend(){const d=$('#phNum').value.replace(/\D/g,'').slice(-10);$('#phErr').textContent='';$('#phErr2').textContent='';
+ if(!/^[6-9]\d{9}$/.test(d)){$('#phErr').textContent='Enter a valid 10-digit mobile number';return}
+ const fa=FA();if(!fa){$('#phErr').textContent='Mobile login is not available in this build';return}
+ const b=$('#phSend');busy(b,true);warmLogin();await clearPh();
+ try{PH_L.push(await fa.addListener('phoneCodeSent',e=>{VID=e.verificationId;busy(b,false);$('#phSentTo').textContent='OTP sent to +91 '+d.slice(0,5)+' '+d.slice(5);phStep(2);phTimer();setTimeout(()=>$('#phCode').focus(),100)}));
+  PH_L.push(await fa.addListener('phoneVerificationCompleted',()=>phDone()));
+  PH_L.push(await fa.addListener('phoneVerificationFailed',e=>{busy(b,false);busy($('#phVerify'),false);(VID?$('#phErr2'):$('#phErr')).textContent=phMsg(e&&e.message)}));
+  await fa.signInWithPhoneNumber({phoneNumber:'+91'+d,timeout:60})}catch(e){busy(b,false);$('#phErr').textContent=phMsg(e&&e.message)}}
+/* wake the login server while the SMS is on its way, so verifying the code is instant */
+function warmLogin(){try{fetch(`${CFG.url}/functions/v1/phone-login`,{method:'GET',headers:{apikey:CFG.anonKey}}).catch(()=>{})}catch(e){}}
+let PHT=null;function phTimer(){clearInterval(PHT);let n=45;const rb=$('#phResend'),st=$('#phAuto');rb.disabled=true;
+ const tick=()=>{if(n<=0){clearInterval(PHT);rb.disabled=false;rb.textContent='Resend OTP';st.textContent='';return}rb.textContent='Resend in '+n+'s';st.textContent=n>30?'⏳ Reading the OTP from your SMS automatically…':'';n--};tick();PHT=setInterval(tick,1000)}
+function phMsg(m){m=String(m||'');if(/invalid.*(code|verification)/i.test(m))return 'Wrong OTP. Check the SMS and try again.';if(/expired/i.test(m))return 'OTP expired. Tap Resend OTP.';if(/too-many|blocked|quota/i.test(m))return 'Too many attempts. Please try again later.';if(/network/i.test(m))return 'No internet connection.';return m||'Could not verify. Try again.'}
+async function phVerify(){const code=$('#phCode').value.replace(/\D/g,'');$('#phErr2').textContent='';if(code.length!==6){$('#phErr2').textContent='Enter the 6-digit OTP';return}
+ const b=$('#phVerify');busy(b,true);try{await FA().confirmVerificationCode({verificationId:VID,verificationCode:code});await phDone()}catch(e){$('#phErr2').textContent=phMsg(e&&e.message)}finally{busy(b,false)}}
+async function phDone(){if(phDoing)return;phDoing=true;const b=$('#phVerify');busy(b,true);
+ try{const {token}=await FA().getIdToken({forceRefresh:false});
+  const r=await fetch(`${CFG.url}/functions/v1/phone-login`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey},body:JSON.stringify({id_token:token})});
+  const j=await r.json().catch(()=>({error:'Login server not reachable'}));if(!r.ok)throw new Error(j.error||'Login failed');
+  const {error}=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(error)throw error;
+  try{await FA().signOut()}catch(e){}await clearPh();clearInterval(PHT);phStep(1);$('#phCode').value='';
+  await enter();if(ME&&ME.onboarded!==false&&(j.new_user||!ME.full_name||/^\d+$/.test(ME.full_name))){toast('Welcome! Tell us your name');profileForm()}}
+ catch(e){$('#phErr2').textContent=phMsg(e&&e.message)}finally{phDoing=false;busy(b,false)}}
+$('#phSend').onclick=phSend;$('#phVerify').onclick=phVerify;$('#phResend').onclick=()=>{phStep(1);phSend()};$('#phChange').onclick=()=>{VID=null;phStep(1)};
+$('#phCode').oninput=e=>{if(e.target.value.replace(/\D/g,'').length===6)phVerify()};
+document.querySelectorAll('[data-legal]').forEach(a=>{a.href=legalUrl(a.dataset.legal);a.target='_blank';a.rel='noopener'});
+$('#toEmail').onclick=()=>showCard('signinCard');$('#toPhone').onclick=()=>showCard('phoneCard');
+async function enter(){
+ let me;try{me=await rpc('gv_me',{},true)}catch(e){}
+ if(!me){await sb.auth.signOut();showLogin();$('#lErr').textContent='This account is not a GrabVehicle account.';return}
+ ME=me;const [{data:v},{data:p},{data:cf},{data:ct},{data:st}]=await Promise.all([sb.from('gv_vehicle_types').select('*').order('sort'),sb.from('gv_places').select('*').order('city').order('name'),sb.from('gv_app_config').select('key,value'),sb.from('gv_cities').select('*'),sb.from('gv_settings').select('*').maybeSingle()]);SET=st||{};
+ document.body.classList.toggle('role-admin',ME.role==='admin');
+ VT=v||[];PLACES=p||[];CITIES=ct||[];CONF={};(cf||[]).forEach(x=>CONF[x.key]=x.value);try{PAY=await rpc('gv_payments_enabled',{},true)}catch(e){}
+ GOOGLE=!!(CONF.google_maps_api_key&&!/^PASTE_/.test(CONF.google_maps_api_key)&&CONF.google_maps_api_key.length>=20);
+ BOOK.city=ME.city;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');$('#avBtn').textContent=ini(ME.full_name);
+ TAB='home';renderTabs();render();startLoop();
+ if(ME.role==='rider'&&ME.onboarded===false)setTimeout(onboardChoose,300)}
+function showLogin(){$('#app').classList.add('hidden');$('#login').classList.remove('hidden');initLogin()}
+async function logout(){stopLoop();closeSheet();if(ME?.role==='captain'){try{await rpc('gv_set_online',{p_online:false,p_lat:null,p_lng:null},true)}catch(e){}}await sb.auth.signOut();try{const f=FA();f&&await f.signOut()}catch(e){}ME=null;$('#lPass').value='';showLogin()}
+$('#avBtn').onclick=()=>go('account');
+
+/* ================= LOOP (live ride / requests) ================= */
+function startLoop(){stopLoop();POLL=setInterval(tick,3000);
+ try{CH=sb.channel('rides-'+ME.id).on('postgres_changes',{event:'*',schema:'public',table:'gv_rides'},()=>tick()).subscribe()}catch(e){}}
+function stopLoop(){clearInterval(POLL);POLL=null;if(LOCW){clearInterval(LOCW);LOCW=null}try{CH&&sb.removeChannel(CH)}catch(e){}CH=null}
+let ticking=false;
+async function tick(){if(ticking||!ME||document.hidden)return;ticking=true;try{
+ if(ME.role==='rider'&&TAB==='home'&&ACTIVE)await riderLive(true);
+ else if(ME.role==='captain'&&TAB==='home'&&!$('#sbg'))await capHome($('#view'),true);
+}catch(e){}finally{ticking=false}}
+
+/* ================= NAV ================= */
+const TABS={rider:[['home','Ride','home'],['trips','Trips','trips'],['wallet','Wallet','wallet'],['account','Account','user']],
+ captain:[['home','Drive','home'],['earn','Earnings','rupee'],['rates','My Rate','tag'],['wallet','Wallet','wallet'],['account','Account','user']],
+ admin:[['home','Dashboard','chart'],['caps','Captains','user'],['rides','Rides','trips'],['money','Money','rupee'],['more','More','gear']]};
+const TITLES={home:'',trips:'My Trips',wallet:'Wallet',account:'Account',earn:'Earnings',rates:'My Rate',caps:'Captains',rides:'Rides',sos:'Safety Alerts',settings:'Settings',why:'Why GrabVehicle',money:'Money',more:'More',docs:'My documents'};
+function renderTabs(){$('#tabs').innerHTML=TABS[ME.role].map(([k,l,i])=>`<button data-k="${k}" class="${TAB===k?'on':''}">${icon(i)}<span>${l}</span></button>`).join('')}
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(b)go(b.dataset.k)};
+function go(t){TAB=t;FIL=null;renderTabs();render();scrollTo(0,0)}
+async function render(){
+ $('#hTitle').textContent=TAB==='drive'?'Drive with us':TAB==='invoices'?'Invoices':TAB==='company'?'Company & invoices':TAB==='home'?(ME.role==='rider'?'Where to?':ME.role==='captain'?'Drive':'Dashboard'):TITLES[TAB];
+ $('#hSub').textContent=`${ME.full_name} · ${ME.role==='captain'?'Captain':ME.role==='admin'?'Admin':ME.city}`;
+ const v=$('#view');v.innerHTML='<div class="loading">Loading…</div>';
+ const V={rider:{home:riderHome,trips:trips,wallet:wallet,account:account,why:why,docs:docsView,drive:driveOnboard,invoices:myInvoices},captain:{home:capHome,earn:capEarn,rates:capRates,wallet:wallet,account:account,trips:trips,why:why,docs:docsView,invoices:myInvoices},admin:{home:aHome,caps:aCaps,rides:aRides,money:aMoney,more:aMore,sos:aSos,settings:aSettings,account:account,why:why,invoices:aInvoices,company:aCompany}};
+ try{await V[ME.role][TAB](v)}catch(e){console.error(e);v.innerHTML=`<div class="empty">Could not load.<br><button class="btn sm ghost" style="margin-top:10px" onclick="render()">Retry</button></div>`}}
+
+/* ================= RIDER: BOOK ================= */
+async function riderHome(v){
+ ACTIVE=await rpc('gv_active_ride');if(ACTIVE)return riderLive();
+ let wants=null;try{wants=localStorage.getItem('gv_wants')}catch(e){}if(wants==='captain'){TAB='drive';renderTabs();return driveOnboard(v)}
+ if(!CITIES.find(c=>c.name===BOOK.city))BOOK.city=CITIES[0]?.name;
+ const P=PLACES.filter(p=>p.city===BOOK.city);const loc=p=>({name:p.name,lat:+p.lat,lng:+p.lng});
+ if(!GEO.tried&&!BOOK.fromUser){GEO.tried=true;autoLocate()}
+ if(!BOOK.from||cityOf(BOOK.from.lat,BOOK.from.lng)!==BOOK.city){BOOK.from=P[0]?loc(P[0]):null;BOOK.fromUser=false}
+ if(BOOK.to&&(cityOf(BOOK.to.lat,BOOK.to.lng)!==BOOK.city||BOOK.to.name===BOOK.from?.name))BOOK.to=null;
+ if(!BOOK.to&&!BOOK.from?.gps&&!GEO.pending)BOOK.to=P[3]?loc(P[3]):P[1]?loc(P[1]):null;
+ v.innerHTML=`<div class="chips">${CITIES.map(c=>`<button class="chip ${c.name===BOOK.city?'on':''}" onclick="BOOK.city='${c.name}';BOOK.from=null;BOOK.to=null;render()">📍 ${c.name}</button>`).join('')}</div>
+ <div class="map big" id="bMap"><div class="tag">${esc(BOOK.city)}</div><button class="locbtn" id="bLoc" title="My location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button></div>
+ <div class="loc" id="bFrom" onclick="pickLoc('from')" style="cursor:pointer"><i style="background:#10b981"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">PICKUP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${GEO.pending&&!BOOK.fromUser?'📍 Locating you…':esc(BOOK.from?.name||'Choose pickup')}</b>${BOOK.from?.gps&&BOOK.from.acc?`<div class="muted" id="bAcc" style="font-size:11px">GPS ±${BOOK.from.acc} m</div>`:''}${BOOK.from?.gps&&GEO.src&&GEO.src!=='google'?`<div class="addr-hint">Approximate address — tap to fine-tune the pin</div>`:''}</div><span class="muted">✎</span></div>
+ <div class="loc" id="bTo" onclick="pickLoc('to')" style="cursor:pointer"><i style="background:#e11d48"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">DROP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${BOOK.to?'':'color:var(--muted)'}">${esc(BOOK.to?.name||'Where are you going?')}</b></div><span class="muted">✎</span></div>
+ <div class="vtypes">${VT.map(x=>`<div class="vt ${BOOK.v===x.code?'on':''}" data-v="${x.code}"><span class="e">${x.icon}</span>${x.name}</div>`).join('')}</div>
+ <div class="feat">${BOOK.v!=='parcel'?`<span class="tog ${BOOK.women?'on':''}" id="tWomen">👩 Women captains only</span>`:''}</div>
+ <button class="btn block" id="bGo">${BOOK.v==='parcel'?'Find parcel captains':'See captain offers'} →</button>
+ ${+ME.credit>0?`<div class="card" style="margin-top:12px;background:#ecfdf5;border-color:#a7f3d0"><b>🎁 ${inr0(ME.credit)} cancel-protection credit</b><div class="muted">Auto-applied to your next ride.</div></div>`:''}
+ ${+ME.credit<0?`<div class="card" style="margin-top:12px;background:var(--warn-soft);border-color:#f3d39a"><b>${inr0(-ME.credit)} cancellation fee pending</b><div class="muted">Added to your next ride.</div></div>`:''}`;
+ document.querySelectorAll('.vt').forEach(x=>x.onclick=()=>{BOOK.v=x.dataset.v;if(BOOK.v==='parcel')BOOK.women=false;render()});
+ $('#tWomen')&&($('#tWomen').onclick=()=>{BOOK.women=!BOOK.women;render()});
+ $('#bGo').onclick=e=>offers(e.target);
+ $('#bLoc').onclick=e=>{e.stopPropagation();autoLocate(true)};
+ const a=BOOK.from,b=BOOK.to;const c=CITIES.find(x=>x.name===BOOK.city);
+ await mapMount('bMap',a?[a.lat,a.lng]:[+c.lat,+c.lng]);P.forEach(p=>{if(p.name!==a?.name&&p.name!==b?.name)mapDot(p.lat,p.lng,p.name)});
+ if(GEO.pos&&cityOf(GEO.pos.lat,GEO.pos.lng)===BOOK.city)mapMe(GEO.pos);
+ if(a&&!(a.gps&&GEO.pos&&distKm(a.lat,a.lng,GEO.pos.lat,GEO.pos.lng)<0.01))mapPin(a.lat,a.lng,'#10b981','Pickup');if(b)mapPin(b.lat,b.lng,'#e11d48','Drop');
+ if(a&&b){mapLine([a.lat,a.lng],[b.lat,b.lng],true);mapFit([[a.lat,a.lng],[b.lat,b.lng]])}else if(a)mapCenter(a.lat,a.lng,16)}
+/* keep listening to GPS for ~45 s after locating: the first fix is often from Wi-Fi/cell towers, later ones are satellite-accurate */
+function geoStop(){clearTimeout(GEO.wt);if(GEO.wid!=null){const g=geoPlugin();try{g?g.clearWatch({id:GEO.wid}):navigator.geolocation.clearWatch(GEO.wid)}catch(e){}}GEO.wid=null}
+async function geoWatch(){geoStop();const g=geoPlugin();
+ const onFix=async(lat,lng,acc)=>{acc=Math.round(acc||0);const old=GEO.pos;GEO.pos={lat,lng,acc};
+  const onHome=TAB==='home'&&!ACTIVE&&ME?.role==='rider'&&$('#bMap')&&!$('#mpick');
+  if(onHome&&cityOf(lat,lng)===BOOK.city)mapMe(GEO.pos);
+  const f=BOOK.from;if(!f||!f.gps||BOOK.fromUser||!cityOf(lat,lng))return;
+  const moved=distKm(f.lat,f.lng,lat,lng)*1000,better=acc&&(!f.acc||acc<f.acc*0.7);
+  if(!(better||moved>25))return;
+  BOOK.from={...f,lat,lng,acc};if(onHome){$('#bAcc')&&($('#bAcc').textContent=`GPS ±${acc} m`);if(BOOK.to&&moved>40)render()}
+  clearTimeout(GEO.gt);GEO.gt=setTimeout(async()=>{const fr=BOOK.from;if(!fr||!fr.gps||BOOK.fromUser)return;const nm=await addrOf(fr.lat,fr.lng);if(BOOK.from===fr||(BOOK.from&&BOOK.from.gps&&!BOOK.fromUser)){BOOK.from.name=nm;$('#bFrom b')&&TAB==='home'&&($('#bFrom b').textContent=nm)}},800)};
+ try{if(g){GEO.wid=await g.watchPosition({enableHighAccuracy:true,timeout:20000,maximumAge:0},(p,err)=>{if(p&&p.coords)onFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy)})}
+  else if(navigator.geolocation){GEO.wid=navigator.geolocation.watchPosition(p=>onFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}}catch(e){console.warn('watch',e)}
+ GEO.wt=setTimeout(geoStop,45000)}
+/* set pickup to the phone's GPS position (on first open, or when the locate button is tapped) */
+async function autoLocate(manual){if(GEO.pending)return;GEO.pending=true;if(manual)toast('Finding your location…');else if(TAB==='home'&&!ACTIVE&&$('#bFrom'))$('#bFrom b').textContent='📍 Locating you…';
+ const pos=await getPos(!manual);
+ if(!pos){GEO.pending=false;if(manual||GEO.denied)toast(GEO.denied?'Location permission is off — allow it in phone Settings → Apps → GrabVehicle → Permissions':'Could not get your location. Turn on GPS and try again',true);if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render();return}
+ const c=cityOf(pos.lat,pos.lng);
+ if(!c){GEO.pending=false;toast(`You're outside our service area (${CITIES.map(x=>x.name).join(', ')}). Choose a pickup in a service city.`,true);if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render();return}
+ const name=await addrOf(pos.lat,pos.lng);GEO.pending=false;
+ if(c!==BOOK.city){BOOK.city=c;BOOK.to=null}
+ BOOK.from={name,lat:pos.lat,lng:pos.lng,acc:pos.acc,gps:true};BOOK.fromUser=false;geoWatch();
+ if(BOOK.to&&!BOOK.toUser)BOOK.to=null;
+ if(manual&&pos.acc>100)toast(`GPS accuracy is low (±${pos.acc} m). Drag the map to set the exact pickup point.`);
+ if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render()}
+/* Rapido-style pin: drag the map under a fixed pin, address updates live */
+async function mapPick(which,start){const isFrom=which==='from';const colr=isFrom?'#10b981':'#e11d48';
+ let at=start||(isFrom?BOOK.from:BOOK.to)||GEO.pos||(()=>{const c=CITIES.find(x=>x.name===BOOK.city);return{lat:+c.lat,lng:+c.lng}})();
+ const box=document.createElement('div');box.className='mpick';box.id='mpick';
+ box.innerHTML=`<div class="mp-map" id="mpMap"><div class="mp-top"><button class="mp-back" id="mpBack">←</button><span class="mp-hint">Move the map to place the pin</span></div>
+  <div class="mp-dot"></div><div class="mp-pin" id="mpPin"><svg viewBox="0 0 40 52"><path d="M20 51C20 51 37 32 37 19A17 17 0 0 0 3 19C3 32 20 51 20 51Z" fill="${colr}" stroke="#fff" stroke-width="3"/><circle cx="20" cy="19" r="6.5" fill="#fff"/></svg></div>
+  <button class="locbtn" id="mpLoc" style="bottom:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button></div>
+  <div class="mp-card"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.06em">${isFrom?'PICKUP POINT':'DROP POINT'}</div>
+  <div class="mp-addr"><i style="background:${colr}"></i><b id="mpAddr" style="flex:1;min-width:0">Finding address…</b></div>
+  <div class="err" id="mpErr"></div><button class="btn block ${isFrom?'green':''}" id="mpOk">Confirm ${isFrom?'pickup':'drop'}</button></div>`;
+ document.body.appendChild(box);closeSheet();
+ await mapMount('mpMap',[at.lat,at.lng]);mapCenter(at.lat,at.lng,17);if(GEO.pos)mapMe(GEO.pos);
+ let cur={lat:+at.lat,lng:+at.lng},name=null,seq=0,tm=null,lis=null;
+ const look=async()=>{const my=++seq;cur=mapGetCenter()||cur;$('#mpPin')?.classList.remove('up');const c=cityOf(cur.lat,cur.lng);
+  if(!c){$('#mpAddr').textContent='Outside service area';$('#mpErr').textContent=`We serve ${CITIES.map(x=>x.name).join(', ')} only.`;$('#mpOk').disabled=true;name=null;return}
+  $('#mpErr').textContent='';$('#mpOk').disabled=true;$('#mpAddr').textContent='Finding address…';const n=await addrOf(cur.lat,cur.lng);if(my!==seq||!$('#mpAddr'))return;name=n;$('#mpAddr').textContent=n;$('#mpOk').disabled=false};
+ const moved=()=>{clearTimeout(tm);tm=setTimeout(look,450)};const moving=()=>{$('#mpPin')?.classList.add('up');$('#mpOk')&&($('#mpOk').disabled=true)};
+ if(MK.prov==='l'){MK.map.on('moveend',moved);MK.map.on('movestart',moving);lis=()=>{MK.map.off('moveend',moved);MK.map.off('movestart',moving)}}
+ else if(MK.map){const l1=MK.map.addListener('idle',moved),l2=MK.map.addListener('dragstart',moving);lis=()=>{l1.remove();l2.remove()}}
+ look();
+ const close=()=>{clearTimeout(tm);seq++;try{lis&&lis()}catch(e){}box.remove();render()};
+ $('#mpBack').onclick=close;
+ $('#mpLoc').onclick=async()=>{toast('Finding your location…');const p=await getPos();if(!p){toast(GEO.denied?'Location permission is off':'Could not get your location',true);return}mapCenter(p.lat,p.lng,17);mapClear();mapMe(p);if(MK.prov==='l')moved()};
+ $('#mpOk').onclick=()=>{if(!name)return;const c=cityOf(cur.lat,cur.lng);if(!c)return;
+  if(c!==BOOK.city){BOOK.city=c;if(isFrom)BOOK.to=null;else BOOK.from=null}
+  BOOK[which]={name,lat:cur.lat,lng:cur.lng,gps:false};BOOK[which+'User']=true;if(isFrom)geoStop();close()}}
+
+/* location picker: Google Places (New) search when a key is set; otherwise popular places + current location */
+let PK={token:null,timer:null,sugg:[]};
+function pickLoc(which){const P=PLACES.filter(p=>p.city===BOOK.city);
+ openSheet(`<h3>${which==='from'?'Pickup':'Drop'} location</h3><div class="field" style="margin-top:10px"><input id="lq" placeholder="${GOOGLE?'Search address, shop, landmark…':'Search popular places…'}" autocomplete="off"></div>
+ <div class="menu-i" id="useGps"><span>📍 Use my current location</span><span class="muted">›</span></div>
+ <div class="menu-i" id="useMap"><span>📌 Set ${which==='from'?'pickup':'drop'} on map</span><span class="muted">›</span></div>
+ <div id="lres"></div><div class="section-h"><h3>Popular in ${esc(BOOK.city)}</h3></div><div id="lpop">${P.map(p=>`<div class="menu-i" data-p="${p.id}"><span>${esc(p.name)}</span><span class="muted">›</span></div>`).join('')}</div>`);
+ const set=loc=>{const c=cityOf(loc.lat,loc.lng);if(!c){toast(loc.name+' is outside our service area',true);return}
+  if(c!==BOOK.city){BOOK.city=c;if(which==='from')BOOK.to=null;else BOOK.from=null}BOOK[which]=loc;BOOK[which+'User']=true;closeSheet();render()};
+ $('#useMap').onclick=()=>mapPick(which);
+ $('#lpop').onclick=e=>{const el=e.target.closest('[data-p]');if(!el)return;const p=PLACES.find(x=>x.id===+el.dataset.p);set({name:p.name,lat:+p.lat,lng:+p.lng})};
+ $('#useGps').onclick=async()=>{toast('Getting your location…');const pos=await getPos();if(!pos){toast(GEO.denied?'Location permission is off — allow it in phone Settings → Apps → GrabVehicle → Permissions':'Could not get your location. Turn on GPS and try again',true);return}
+  if(!cityOf(pos.lat,pos.lng)){toast('Your location is outside our service area',true);return}
+  if(pos.acc>100){mapPick(which,pos);return}
+  set({name:await addrOf(pos.lat,pos.lng),lat:pos.lat,lng:pos.lng,gps:true})};
+ PK.token=null;PK.sugg=[];
+ $('#lq').oninput=e=>{clearTimeout(PK.timer);const q=e.target.value.trim();
+  if(!GOOGLE){document.querySelectorAll('#lpop [data-p]').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'});return}
+  if(q.length<3){$('#lres').innerHTML='';return}
+  PK.timer=setTimeout(async()=>{try{await loadGoogle();const {AutocompleteSessionToken,AutocompleteSuggestion}=await google.maps.importLibrary('places');
+   if(!PK.token)PK.token=new AutocompleteSessionToken();const c=CITIES.find(x=>x.name===BOOK.city);const d=(+c.radius_km)/111;
+   const {suggestions}=await AutocompleteSuggestion.fetchAutocompleteSuggestions({input:q,sessionToken:PK.token,includedRegionCodes:['in'],
+     locationRestriction:{south:+c.lat-d,north:+c.lat+d,west:+c.lng-d,east:+c.lng+d},origin:{lat:+c.lat,lng:+c.lng}});
+   PK.sugg=suggestions.filter(x=>x.placePrediction);
+   $('#lres').innerHTML=PK.sugg.map((x,i)=>`<div class="menu-i" data-s="${i}"><span>${esc(x.placePrediction.text.toString())}</span><span class="muted">›</span></div>`).join('')||'<div class="muted" style="padding:8px">No matches in '+esc(BOOK.city)+'</div>';
+  }catch(err){console.warn(err);$('#lres').innerHTML='<div class="muted" style="padding:8px">Search unavailable — choose a popular place</div>'}},350)};
+ $('#lres').onclick=async e=>{const el=e.target.closest('[data-s]');if(!el)return;try{const pred=PK.sugg[+el.dataset.s].placePrediction;const place=pred.toPlace();
+  await place.fetchFields({fields:['displayName','location']});PK.token=null;
+  set({name:String(place.displayName||pred.text.toString()).slice(0,120),lat:place.location.lat(),lng:place.location.lng()})}catch(err){toast('Could not load that place',true)}}}
+
+async function offers(btn){busy(btn,true);let r;if(!BOOK.from||!BOOK.to){toast('Choose pickup and drop',true);return}try{r=await rpc('gv_get_offers',{p_from:BOOK.from,p_to:BOOK.to,p_vtype:BOOK.v,p_women:BOOK.women})}catch(e){return busy(btn,false)}busy(btn,false);
+ const credit=+ME.credit;window._offers=r;
+ if(!r.offers.length){openSheet(`<h3>No captains nearby</h3><p class="muted">No ${BOOK.women?'women ':''}${vtName(BOOK.v)} captains are online near ${esc(r.pickup)} right now. Try another vehicle type${BOOK.women?' or turn off women-only':''}.</p><button class="btn block" onclick="closeSheet()">OK</button>`);return}
+ openSheet(`<h3 style="font-size:18px">Choose your captain</h3><p class="muted" style="margin:4px 0 12px">${esc(r.pickup)} → ${esc(r.drop)} · ${r.distance_km} km · <b>Fare locked — no surge</b></p>
+ ${r.fixed_fare?`<div class="card" style="background:#ecfdf5;border-color:#a7f3d0;padding:10px 12px">📌 <b>Fixed-fare route</b> — every captain charges the same captain fare (${inr0(r.fixed_fare)}). Pick the nearest or best rated.</div>`:''}
+ ${r.offers.map((o,i)=>{const pay=Math.max(0,Math.round(+o.total-credit));return`<div class="offer ${i===0?'best':''}" onclick="confirmRide(${i})"><div class="cap-av" style="background:${col(o.name)}">${ini(o.name)}</div>
+  <div class="mid"><b>${esc(o.name)} ${o.gender==='F'?'👩':''}</b><div class="muted">${o.rating?`<span class="star">★</span> ${o.rating} · `:''}${(+o.trips).toLocaleString('en-IN')} trips · ${o.eta_min} min away</div><div class="muted">${esc(o.vehicle_model)} · ${r.fixed_fare?'fixed fare':'₹'+o.rate+'/km'}${i===0&&!r.fixed_fare?' · <b style="color:#0f9d6e">Best price</b>':''}</div></div>
+  <div style="text-align:right"><div class="num" style="font-size:19px">${inr0(pay)}</div>${credit!==0?`<div class="muted" style="text-decoration:${credit>0?'line-through':'none'}">${inr0(o.total)}</div>`:''}</div></div>`}).join('')}
+ <p class="muted" style="text-align:center">Captains set their own per-km rate. You choose.</p>`)}
+/* same maths as the server (CVV.xlsx): used only for previews */
+function fareCalc(cf,pass){const fp=+SET.rider_fee_pct||0,g=+SET.gst_pct||18,rgp=+SET.ride_gst_pct||5,cp=+SET.captain_comm_pct||0,tp=+SET.tds_pct||0,r2=x=>Math.round(x*100)/100;
+ const fee=Math.round(cf*fp/100),rg=r2(cf*rgp/(100+rgp)),n=cf-rg,cc=pass?0:r2(n*cp/100),cg=r2(cc*g/100),td=r2(n*tp/100);return{fee,rg,cc,cg,td,net:r2(cf-rg-cc-cg-td),gross:cf+fee}}
+function bdHTML(f,credit,mode){const tot=Math.max(0,Math.round(+f.captain_fare+ +f.rider_fee+ +f.rider_gst-credit));return`<div class="bd"><div class="row"><span>Ride fare <span class="muted">(incl. GST)</span></span><span class="num">${inr(f.captain_fare)}</span></div><div class="row"><span>Convenience fee <span class="muted">(incl. GST)</span></span><span>${inr(+f.rider_fee+ +f.rider_gst)}</span></div>${credit>0?`<div class="row" style="color:var(--ok)"><span>Cancel-protection credit</span><span>−${inr0(credit)}</span></div>`:''}${credit<0?`<div class="row" style="color:var(--warn)"><span>Pending cancellation fee</span><span>+${inr0(-credit)}</span></div>`:''}<div class="row tot"><b>${mode||'You pay'}</b><b class="num">${inr0(tot)}</b></div><div class="muted" style="margin-top:6px">Captain gets <b>${inr(f.captain_net)}</b> after GST, commission and TDS${+f.captain_comm===0?' — day-pass captain, 0% commission':''}. No surge, no hidden charges.</div></div>`}
+function confirmRide(i){const r=window._offers,o=r.offers[i];const credit=+ME.credit>0?Math.min(+ME.credit,+o.total):+ME.credit;const parcel=BOOK.v==='parcel';
+ openSheet(`<h3>Confirm ${parcel?'parcel':'ride'}</h3><div class="card row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(o.name)}">${ini(o.name)}</div><div><b>${esc(o.name)}</b><div class="muted">${esc(o.vehicle_model)} · ${esc(o.vehicle_no)}</div></div></div>${o.rating?`<span class="star">★ ${o.rating}</span>`:''}</div>
+ <div class="card">${bdHTML(o.fare,credit)}</div>
+ ${parcel?`<div class="card"><b>📦 Parcel details</b><div class="field" style="margin-top:8px"><label>Receiver name</label><input id="pRn"></div><div class="field"><label>Receiver mobile</label><input id="pRp" type="tel" placeholder="+91"></div><div class="field"><label>Item</label><input id="pIt" placeholder="e.g. Documents, keys, lunch box"></div><div class="field"><label>Weight (kg, max 10)</label><input id="pW" type="number" inputmode="decimal" value="1" min="0.1" max="10" step="0.1"></div></div>`:''}
+ <div class="field"><label>Pay with</label><select id="payM"><option value="Wallet">Wallet (${inr0(ME.wallet)})${PAY.razorpay?' — top up with UPI/card if needed':''}</option><option value="UPI">UPI to captain (your UPI app)</option><option value="Cash">Cash</option></select></div>
+ <button class="btn block green" id="bkBtn">Book ${parcel?'parcel pickup':vtName(BOOK.v)}</button>`);
+ $('#bkBtn').onclick=async e=>{busy(e.target,true);try{const pay=Math.max(0,Math.round(+o.total-credit));
+  if($('#payM').value==='Wallet'&&+ME.wallet<pay){const need=Math.ceil(pay-+ME.wallet);if(!PAY.razorpay&&!PAY.demo)throw new Error('Not enough wallet balance');
+   if(PAY.razorpay)await payOnline(need,'Add money for ride');else await rpc('gv_demo_topup',{p_amount:[100,200,500,1000].find(x=>x>=need)||1000});ME=await rpc('gv_me')}
+  const args={p_captain:o.captain_id,p_from:BOOK.from,p_to:BOOK.to,p_vtype:BOOK.v,p_pay:$('#payM').value,p_women:BOOK.women};
+  if(parcel)Object.assign(args,{p_receiver_name:$('#pRn').value,p_receiver_phone:$('#pRp').value,p_item:$('#pIt').value,p_weight:+$('#pW').value});
+  ACTIVE=await rpc('gv_request_ride',args);closeSheet();toast('Request sent to '+o.name);render()}catch(x){if(x&&x.message&&!x.code)toast(cleanErr(x.message),true);busy(e.target,false)}}}
+
+/* ================= RIDER: LIVE ================= */
+const STAGE={requested:0,accepted:1,arrived:2,started:3,completed:4};
+async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTIVE},true);const v=$('#view');
+ if(['completed','cancelled','expired','rejected'].includes(s.status)){const id=ACTIVE;ACTIVE=null;ME=await rpc('gv_me');
+  if(s.status==='completed'){render();return rateSheet(id,s)}
+  toast(s.status==='expired'?'Captain did not respond — choose another':s.status==='rejected'?'Captain is unavailable — choose another':s.cancelled_by==='captain'?`Captain cancelled. ₹${ME.credit>0?'20 credit added':''}`:'Ride cancelled',s.status!=='cancelled');render();return}
+ const c=s.captain||{};const stg=STAGE[s.status];const parcel=s.service==='parcel';
+ const head={requested:`Waiting for ${esc(c.name)} to accept · ${s.expires_in}s`,accepted:`${esc(c.name)} is on the way`,arrived:`${esc(c.name)} has arrived`,started:parcel?'Parcel on the way':'On trip'}[s.status];
+ const panel=`<div class="card"><div class="row"><b style="font-size:16px">${head}</b>${pill(s.status)}</div><div class="steps">${[0,1,2,3].map(i=>`<i class="${i<=stg?'on':''}"></i>`).join('')}</div>
+  <div class="row" style="margin-top:12px"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(c.name)}">${ini(c.name)}</div><div><b>${esc(c.name)} ${c.gender==='F'?'👩':''}</b><div class="muted">${esc(c.vehicle_model)} · <b>${esc(c.vehicle_no)}</b></div>${c.rating?`<div class="muted"><span class="star">★</span> ${c.rating}</div>`:''}</div></div>
+  <div style="text-align:right"><div class="num" style="font-size:19px">${inr0(s.fare.total)}</div><div class="muted">${s.pay_mode} · locked</div></div></div></div>
+ ${c.upi_id&&s.status==='started'?`<a class="btn green block" style="margin-bottom:10px" href="${upiLink(c.upi_id,c.name,s.fare.total,'GrabVehicle ride #'+s.id)}">Pay ${inr0(s.fare.total)} to captain with UPI app</a>`:''}
+ ${s.otp?`<div class="card row"><div><b>${parcel?'Pickup OTP':'Share this OTP'}</b><div class="muted">Give it to the captain at pickup</div></div><div class="otp">${s.otp.split('').map(d=>`<span>${d}</span>`).join('')}</div></div>`:''}
+ ${parcel&&s.parcel?.delivery_otp?`<div class="card row"><div><b>Delivery OTP</b><div class="muted">Send to ${esc(s.parcel.receiver_name)} — captain needs it to complete delivery</div></div><div class="otp">${s.parcel.delivery_otp.split('').map(d=>`<span>${d}</span>`).join('')}</div></div>
+   <button class="btn ghost block" style="margin-bottom:10px" onclick="location.href='https://wa.me/${(s.parcel.receiver_phone||'').replace(/\D/g,'')}?text='+encodeURIComponent('GrabVehicle parcel (${esc(s.parcel.item)}) is coming. Share delivery OTP ${s.parcel.delivery_otp} with the captain.')">Send OTP to receiver on WhatsApp</button>`:''}
+ <div class="card"><div><span style="color:#10b981">●</span> ${esc(s.pickup.name)}</div><div><span style="color:#e11d48">●</span> ${esc(s.drop.name)}</div><div class="muted" style="margin-top:4px">${s.distance_km} km · ${s.fixed_fare?'📌 fixed-fare route':'₹'+s.rate+'/km captain rate'}</div></div>
+ <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">${c.phone?`<a class="btn ghost" href="tel:${esc(c.phone)}">📞 Call</a>`:'<button class="btn ghost" disabled>📞 Call</button>'}<button class="btn ghost" onclick="shareTrip()">📡 Share</button><button class="sos" onclick="sos()">SOS</button></div>
+ ${stg<3?`<button class="btn ghost block" style="margin-top:10px;color:var(--bad)" onclick="cancelRide('${s.status}')">Cancel ${s.status==='requested'?'request':'ride'}</button>`:''}`;
+ if(update&&$('#lMap')&&MK.map){$('#lPanel').innerHTML=panel;mapClear()}else{v.innerHTML=`<div class="map" id="lMap"></div><div id="lPanel">${panel}</div>`;await mapMount('lMap',[s.pickup.lat,s.pickup.lng])}
+ window._live=s;mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');mapLine([s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]);
+ const pts=[[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]];if(c.lat){mapCap(c.lat,c.lng,vtIcon(s.vehicle_type==='parcel'?'bike':s.vehicle_type));pts.push([c.lat,c.lng])}if(!update)mapFit(pts)}
+function shareTrip(){const s=window._live;const t=`I'm on a GrabVehicle ${s.service}: ${s.pickup.name} → ${s.drop.name}. Captain ${s.captain?.name}, ${s.captain?.vehicle_no}. Trip #${s.id}.`;location.href='https://wa.me/'+(ME.emergency_contact||'').replace(/\D/g,'')+'?text='+encodeURIComponent(t)}
+function cancelRide(st){const fee=st==='arrived';openSheet(`<h3>Cancel?</h3><p class="muted">${fee?'Captain has already arrived — a ₹10 fee goes to the captain for their time (added to your next ride).':'Free cancellation.'}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" onclick="closeSheet()">Keep</button><button class="btn red" id="cxBtn">Cancel${fee?' · ₹10':''}</button></div>`);
+ $('#cxBtn').onclick=async e=>{busy(e.target,true);try{await rpc('gv_cancel_ride',{p_ride:ACTIVE,p_reason:'Rider cancelled'});ACTIVE=null;ME=await rpc('gv_me');closeSheet();toast('Cancelled');render()}catch(x){busy(e.target,false)}}}
+async function sos(){const pos=await getPos();openSheet(`<h3 style="color:var(--bad)">🚨 Emergency</h3><p class="muted">Alert GrabVehicle safety desk with your live location and trip details, and/or call police.</p><a class="btn red block" href="tel:112" style="margin-bottom:8px">Call 112 (Police)</a><button class="btn ghost block" id="sosBtn">Alert safety desk</button>`);
+ $('#sosBtn').onclick=async e=>{busy(e.target,true);try{await rpc('gv_sos',{p_ride:ACTIVE,p_lat:pos?.lat??null,p_lng:pos?.lng??null});closeSheet();toast('Safety desk alerted — we are calling you')}catch(x){busy(e.target,false)}}}
+function rateSheet(id,s){let st=5,tip=0;openSheet(`<div style="text-align:center"><div style="font-size:44px">🎉</div><h3>${s.service==='parcel'?'Parcel delivered!':"You've arrived!"}</h3><p class="muted">${esc(s.pickup.name)} → ${esc(s.drop.name)}</p><div class="num" style="font-size:30px;margin:6px 0">${inr0(s.fare.total)}</div><div class="muted">${s.pay_mode==='Wallet'?'Paid from wallet':'Pay captain by '+s.pay_mode}</div></div>
+ ${s.captain?.upi_id?`<a class="btn green block" style="margin-top:10px" href="${upiLink(s.captain.upi_id,s.captain.name,s.fare.total,'GrabVehicle ride #'+s.id)}">Pay ${inr0(s.fare.total)} with UPI app</a><p class="muted" style="text-align:center">Opens GPay / PhonePe / Paytm with the captain's UPI ID: ${esc(s.captain.upi_id)}</p>`:''}<div class="card" style="margin-top:12px">${bdHTML(s.fare,+s.fare.credit_applied,'Total')}</div><p style="text-align:center;margin:12px 0 0"><b>Rate ${esc(s.captain?.name)}</b></p><div class="stars" id="stars">${[1,2,3,4,5].map(i=>`<span data-s="${i}" class="on">★</span>`).join('')}</div>
+ <div class="chips" style="justify-content:center;flex-wrap:wrap">${[0,10,20,30].map(x=>`<button class="chip ${x===0?'on':''}" data-tip="${x}">${x?'Tip ₹'+x:'No tip'}</button>`).join('')}</div><p class="muted" style="text-align:center">100% of tips go to the captain${s.pay_mode!=='Wallet'?' (pay the tip in cash/UPI)':''}.</p><button class="btn block" id="rateBtn">Submit</button>`);
+ document.querySelectorAll('#stars span').forEach(x=>x.onclick=()=>{st=+x.dataset.s;document.querySelectorAll('#stars span').forEach(y=>y.classList.toggle('on',+y.dataset.s<=st))});
+ document.querySelectorAll('[data-tip]').forEach(b=>b.onclick=()=>{tip=+b.dataset.tip;document.querySelectorAll('[data-tip]').forEach(y=>y.classList.toggle('on',y===b))});
+ $('#rateBtn').onclick=async e=>{busy(e.target,true);try{await rpc('gv_rate_ride',{p_ride:id,p_rating:st,p_tip:tip});ME=await rpc('gv_me');closeSheet();toast('Thanks for riding with GrabVehicle')}catch(x){busy(e.target,false)}}}
+
+/* ================= TRIPS ================= */
+async function trips(v){const list=await rpc('gv_my_rides');const cap=ME.role==='captain';
+ v.innerHTML=list.map(t=>`<div class="list-i" onclick="tripDetail(${t.id})"><div class="cap-av" style="background:${col(t.drop_name)};width:42px;height:42px;font-size:20px">${vtIcon(t.vehicle_type)}</div><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.drop_name)}</b><div class="muted">${esc(t.pickup_name)} · ${fdt(t.created_at)}</div><div class="muted">${esc(cap?t.rider_name:t.captain_name||'')}${t.service==='parcel'?' · 📦 parcel':''}</div></div><div style="text-align:right"><div class="num">${inr0(cap?t.captain_net:t.total)}</div>${t.status!=='completed'?pill(t.status):`<span class="muted">${'★'.repeat(t.rating||0)}</span>`}</div></div>`).join('')||'<div class="empty">No trips yet</div>'}
+async function tripDetail(id){const s=await rpc('gv_ride_status',{p_ride:id});const f=s.fare;const cap=ME.role==='captain';
+ openSheet(`<div class="row"><h3>${s.service==='parcel'?'Parcel':'Trip'} #${s.id}</h3>${pill(s.status)}</div><p class="muted">${fdt(s.created_at)} · ${esc(s.city)} · ${s.distance_km} km · ${vtName(s.vehicle_type)}</p>
+ <div class="card"><div class="muted">From</div><b>${esc(s.pickup.name)}</b><div class="muted" style="margin-top:6px">To</div><b>${esc(s.drop.name)}</b></div>
+ ${s.captain&&!cap?`<div class="card row"><div><b>${esc(s.captain.name)}</b><div class="muted">${esc(s.captain.vehicle_model)} · ${esc(s.captain.vehicle_no)}</div></div>${s.captain.rating?`<span class="star">★ ${s.captain.rating}</span>`:''}</div>`:''}
+ ${s.parcel?`<div class="card"><b>📦 ${esc(s.parcel.item)}</b> <span class="muted">· ${s.parcel.weight_kg} kg</span><div class="muted">To ${esc(s.parcel.receiver_name)} · ${esc(s.parcel.receiver_phone)}</div>${s.parcel.delivered_at?`<div class="muted">Delivered ${fdt(s.parcel.delivered_at)}</div>`:''}</div>`:''}
+ ${s.status==='completed'?`<div class="card bd">${cap?`<div class="row"><span>Ride fare (₹${s.rate}/km)</span><span>${inr(f.captain_fare)}</span></div><div class="row"><span>GST u/s 9(5) paid by platform</span><span>−${inr(f.ride_gst)}</span></div><div class="row"><span>Commission</span><span>−${inr(f.captain_comm)}</span></div><div class="row"><span>GST on commission</span><span>−${inr(f.captain_gst)}</span></div><div class="row"><span>TDS (194-O)</span><span>−${inr(f.tds)}</span></div>${+f.tip?`<div class="row"><span>Tip</span><span>+${inr0(f.tip)}</span></div>`:''}<div class="row tot"><b>You earned</b><b style="color:var(--ok)">${inr(+f.captain_net+ +f.tip)}</b></div>`
+  :`<div class="row"><span>Ride fare (incl. GST)</span><span>${inr(f.captain_fare)}</span></div><div class="row"><span>Convenience fee (incl. GST)</span><span>${inr(+f.rider_fee+ +f.rider_gst)}</span></div>${+f.credit_applied?`<div class="row"><span>${+f.credit_applied>0?'Credit':'Cancellation fee'}</span><span>${+f.credit_applied>0?'−':'+'}${inr0(Math.abs(f.credit_applied))}</span></div>`:''}${+f.tip?`<div class="row"><span>Tip (to captain)</span><span>${inr0(f.tip)}</span></div>`:''}<div class="row tot"><b>Total · ${s.pay_mode}</b><b>${inr0(+f.total+ +f.tip)}</b></div>`}</div>${f.invoice_id?`<button class="btn block ghost" onclick="showInvoice(${f.invoice_id})">🧾 View tax invoice</button>`:''}`:''}
+ ${s.status!=='completed'&&s.cancelled_by?`<div class="card">Cancelled by ${esc(s.cancelled_by)}${s.cancel_reason?' · '+esc(s.cancel_reason):''}${+s.cancel_fee?` · fee ${inr0(s.cancel_fee)}`:''}</div>`:''}`)}
+
+/* ================= WALLET ================= */
+async function wallet(v){const w=await rpc('gv_wallet');const cap=ME.role==='captain';const low=cap&&+w.balance<+w.floor;
+ const [pays,pos,home]=await Promise.all([rpc('gv_my_payments'),cap?rpc('gv_my_payouts'):Promise.resolve([]),cap?rpc('gv_captain_home'):Promise.resolve(null)]);
+ v.innerHTML=`<div class="card ${cap?'grad2':'grad'}" style="color:#fff;border:0"><small style="opacity:.85">${cap?'Captain wallet':'GrabVehicle wallet'}</small><div class="num" style="font-size:32px;margin:4px 0">${inr(w.balance)}</div><small style="opacity:.9">${cap?`Platform fees on cash/UPI rides are adjusted here. Below ${inr0(w.floor)} you can't go online.`:'Pay rides instantly from your wallet'}</small></div>
+ ${low?`<div class="card" style="background:var(--bad-soft);border-color:#f5b5b5"><b>Recharge needed</b><div class="muted">Your wallet is below ${inr0(w.floor)}. Add money to go online again.</div></div>`:''}
+ ${!cap&&+w.credit?`<div class="card"><b>${+w.credit>0?'Cancel-protection credit':'Pending cancellation fee'}: ${inr0(Math.abs(w.credit))}</b><div class="muted">Applied automatically on your next ride</div></div>`:''}
+ <div class="section-h"><h3>${cap?'Recharge':'Add money'}</h3></div>
+ <div class="chips">${[100,200,500,1000].map(a=>`<button class="chip" onclick="addMoney(${a},this)">+ ₹${a}</button>`).join('')}</div>
+ <div class="row" style="margin-bottom:6px"><input id="amtX" type="number" inputmode="numeric" placeholder="Other amount" style="flex:1;min-width:0;padding:11px;border:1px solid var(--line);border-radius:11px;font-size:16px"><button class="btn" onclick="addMoney($('#amtX').value,this)">Add</button></div>
+ <p class="muted">${PAY.razorpay?'Pay with any UPI app (GPay, PhonePe, Paytm), card or net banking — secured by Razorpay.':PAY.demo?'Demo mode — no real money is charged.':'Online payments are not set up yet.'}</p>
+ ${cap?`<div class="card"><div class="row"><div><b>Withdraw earnings</b><div class="muted">To UPI ${esc(home.upi_id||'— not set')}</div></div><div style="display:flex;gap:6px"><button class="btn sm ghost" onclick="upiSheet('${esc(home.upi_id||'')}')">UPI ID</button><button class="btn sm green" onclick="payoutSheet({balance:${+w.balance},upi:'${esc(home.upi_id||'')}'})" ${home.upi_id?'':'disabled'}>Withdraw</button></div></div>
+   ${pos.slice(0,5).map(p=>`<div class="row" style="padding:7px 0;border-top:1px solid var(--line);margin-top:6px"><div><b>${inr0(p.amount)}</b> <span class="muted">· ${fdt(p.created_at)}</span>${p.utr?`<div class="muted">UTR ${esc(p.utr)}</div>`:''}${p.note&&p.status==='rejected'?`<div class="muted">${esc(p.note)}</div>`:''}</div>${pill(p.status==='requested'?'pending':p.status==='paid'?'completed':'rejected')}</div>`).join('')}</div>`:''}
+ ${pays.length?`<div class="section-h"><h3>Online payments</h3></div>${pays.slice(0,5).map(p=>`<div class="list-i"><div style="flex:1"><b>${inr0(p.amount)}</b> <span class="muted">· ${esc(p.method||'')}</span><div class="muted">${fdt(p.created_at)}${p.payment_id?' · '+esc(p.payment_id):''}</div></div>${pill(p.status==='paid'?'completed':p.status==='failed'?'cancelled':'pending')}</div>`).join('')}`:''}
+ <div class="section-h"><h3>Transactions</h3></div>${w.txns.map(t=>`<div class="list-i"><div style="flex:1;min-width:0"><b style="text-transform:capitalize">${esc(t.kind.replace(/_/g,' '))}</b><div class="muted">${esc(t.note||'')}</div><div class="muted">${fdt(t.created_at)}</div></div><div class="num" style="color:${+t.amount>=0?'var(--ok)':'var(--bad)'}">${+t.amount>=0?'+':''}${inr(t.amount)}</div></div>`).join('')||'<div class="empty">No transactions</div>'}`}
+
+/* ================= ACCOUNT ================= */
+async function account(v){let app=null;if(ME.role==='rider')app=await rpc('gv_my_application');
+ v.innerHTML=`<div class="card row" style="justify-content:flex-start"><div class="av" style="width:52px;height:52px;background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;font-size:18px">${ini(ME.full_name)}</div><div><b>${esc(ME.full_name)}</b><div class="muted">${esc(ME.phone||'')}</div><div class="muted">${esc(ME.city)}${ME.captain?' · '+vtName(ME.captain.vehicle_type)+' · '+esc(ME.captain.vehicle_no):''}</div></div><span style="margin-left:auto">${pill(ME.role)}</span></div>
+ ${ME.role!=='admin'?`<div class="menu-i" onclick="profileForm()"><span>✏️ Profile & emergency contact</span><span class="muted">${ME.emergency_contact?'set':'not set'} ›</span></div>`:''}
+ ${ME.role==='captain'?`<div class="menu-i" onclick="go('trips')"><span>🧾 Trip history</span><span class="muted">›</span></div><div class="menu-i" onclick="go('docs')"><span>📄 My documents</span><span class="muted">›</span></div><div class="menu-i" onclick="go('wallet')"><span>💸 UPI ID & withdrawals</span><span class="muted">›</span></div>`:''}
+ ${ME.role==='rider'?(app?`<div class="card"><b>Captain application</b><div class="muted">${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · ${esc(app.city)}</div><div style="margin-top:6px">${pill(app.status)} ${app.status==='pending'?'<span class="muted">Upload documents so we can verify you</span>':''}</div><button class="btn sm" style="margin-top:10px" onclick="go('docs')">📄 Upload / view documents</button></div>`:`<div class="menu-i" onclick="go('drive')"><span>🏍️ Drive with GrabVehicle — set your own price</span><span class="muted">Apply ›</span></div>`):''}
+ ${ME.role!=='admin'?`<div class="menu-i" onclick="go('invoices')"><span>🧾 Tax invoices</span><span class="muted">›</span></div>`:''}
+ <div class="menu-i" onclick="go('why')"><span>⭐ Why GrabVehicle</span><span class="muted">›</span></div>
+ <a class="menu-i" style="text-decoration:none;color:inherit" href="tel:${esc(CONF.support_phone||'')}"><span>💬 Help & support</span><span class="muted">${esc(CONF.support_phone||'')} ›</span></a>
+ <a class="menu-i" style="text-decoration:none;color:inherit" href="${esc(legalUrl('privacy'))}" target="_blank" rel="noopener"><span>🔒 Privacy policy</span><span class="muted">›</span></a>
+ <a class="menu-i" style="text-decoration:none;color:inherit" href="${esc(legalUrl('terms'))}" target="_blank" rel="noopener"><span>📜 Terms of use</span><span class="muted">›</span></a>
+ <div class="menu-i" onclick="logout()"><span>Sign out</span><span>⎋</span></div>
+ ${ME.role!=='admin'?`<div class="menu-i" onclick="deleteAccount()" style="color:var(--bad)"><span>🗑️ Delete my account</span><span>›</span></div>`:''}
+ <p class="muted" style="text-align:center">GrabVehicle v${esc(APP_VERSION)}</p>`}
+/* public pages (privacy policy, terms, account deletion) — URLs can be changed in Supabase gv_app_config */
+const APP_VERSION='1.2';
+function legalUrl(k){const v=CONF[k+'_url'];return /^https:\/\//.test(v||'')?v:`${LEGAL_BASE}/${k==='delete'?'delete-account':k}.html`}
+/* Google Play: users must be able to delete their account from inside the app */
+async function deleteAccount(){let c;try{c=await rpc('gv_delete_account_check')}catch(e){return}
+ const bal=(+c.wallet||0)+(+c.captain_wallet||0);
+ openSheet(`<h3 style="color:var(--bad)">Delete account</h3>
+ ${c.blocked?`<div class="card" style="background:var(--warn-soft);border-color:#f3d39a">${esc(c.blocked)}</div><button class="btn block" onclick="closeSheet()">OK</button>`:`
+ <p class="muted" style="margin:6px 0 10px">This permanently deletes your GrabVehicle account. It can't be undone.</p>
+ <div class="card"><b>Deleted now</b><div class="muted">Name, mobile number, gender, emergency contact, UPI ID${c.is_captain?', vehicle & licence details and uploaded documents':''}, and your login.</div>
+ <b style="display:block;margin-top:8px">Kept without your name</b><div class="muted">Trip and payment records, as required for tax and dispute handling.</div></div>
+ ${bal>0?`<div class="card" style="background:var(--warn-soft);border-color:#f3d39a">Your wallet balance of <b>${inr(bal)}</b> will be lost. ${c.is_captain?'Withdraw it to your UPI first.':'Use it on a ride first.'}</div>`:''}
+ <div class="field"><label>Type DELETE to confirm</label><input id="delC" autocomplete="off" autocapitalize="characters"></div>
+ <div class="err" id="delE"></div><button class="btn block red" id="delB">Delete my account</button>
+ <button class="btn block ghost" style="margin-top:8px" onclick="closeSheet()">Cancel</button>`}`);
+ if(c.blocked)return;
+ $('#delB').onclick=async e=>{const b=e.target;$('#delE').textContent='';if($('#delC').value.trim().toUpperCase()!=='DELETE'){$('#delE').textContent='Type DELETE to confirm';return}
+  busy(b,true);try{
+   try{const {data:files}=await sb.storage.from('gv-captain-docs').list(ME.id,{limit:100});if(files&&files.length)await sb.storage.from('gv-captain-docs').remove(files.map(f=>ME.id+'/'+f.name))}catch(x){}
+   await rpc('gv_delete_my_account',{p_confirm:'DELETE'});
+   try{const {data:{session}}=await sb.auth.getSession();await fetch(`${CFG.url}/functions/v1/phone-login`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey,Authorization:'Bearer '+(session?.access_token||'')},body:JSON.stringify({action:'delete_account'})})}catch(x){}
+   closeSheet();await logout(true);toast('Your account has been deleted')}catch(x){busy(b,false)}}}
+/* ---------- first run: ride or drive ---------- */
+function onboardChoose(){let pre=null;try{pre=localStorage.getItem('gv_signup_as')}catch(e){}
+ const needName=!ME.full_name||/^\d+$/.test(ME.full_name)||/@/.test(ME.full_name);
+ if(pre&&!needName){try{localStorage.removeItem('gv_signup_as')}catch(e){}return onboardSet(pre)}
+ openSheet(`<h3>Welcome to GrabVehicle 👋</h3><p class="muted" style="margin:4px 0 0">How do you want to use the app? You can change this later.</p>
+ ${needName?`<div class="field" style="margin-top:12px"><label>Your full name</label><input id="obN" autocomplete="name" value="${esc(needName?'':ME.full_name)}"></div>`:''}
+ <div class="choose"><button id="obR"><span class="ic">🚕</span><span><b>I want to ride</b><span class="muted">Book bikes, autos, cabs and send parcels. Choose your captain, no surge.</span></span></button>
+ <button id="obC"><span class="ic">🏍️</span><span><b>I want to drive & earn</b><span class="muted">Become a captain: set your own per-km price, get paid by UPI.</span></span></button></div>
+ <div class="err" id="obE"></div>`,{lock:true});
+ const go2=async(as,b)=>{if(needName){const n=$('#obN').value.trim();if(n.length<2){$('#obE').textContent='Enter your name';return}
+   try{await rpc('gv_update_profile',{p_name:n,p_phone:ME.phone||'',p_gender:ME.gender||'',p_city:ME.city,p_emergency:ME.emergency_contact||''});ME.full_name=n;$('#avBtn').textContent=ini(n)}catch(x){return}}
+  busy(b,true);await onboardSet(as)};
+ $('#obR').onclick=e=>go2('rider',e.currentTarget);$('#obC').onclick=e=>go2('captain',e.currentTarget)}
+async function onboardSet(as){try{await rpc('gv_set_onboarding',{p_as:as})}catch(e){return}ME.onboarded=true;closeSheet(true);
+ if(as==='captain'){try{localStorage.setItem('gv_wants','captain')}catch(e){}go('drive')}else{toast('All set — where are you going?');render()}}
+/* captain sign-up as clear steps: vehicle → documents → verification */
+async function driveOnboard(v){const [app,docs]=await Promise.all([rpc('gv_my_application'),rpc('gv_my_docs').catch(()=>[])]);
+ const need=['dl','rc','id_proof','vehicle_photo'];const up=new Set((docs||[]).filter(d=>d.status!=='rejected').map(d=>d.doc_type));const nUp=need.filter(k=>up.has(k)).length;
+ const s1=!!app,s2=s1&&nUp===need.length,s3=app&&app.status==='approved';
+ v.innerHTML=`<div class="card grad" style="color:#fff;border:0"><h3 style="font-size:19px">Become a GrabVehicle captain</h3><p style="margin:6px 0 0;color:#D6E6FB">Set your own price · keep ${100-(+SET.captain_comm_pct||0)}%+ of each fare after GST · instant UPI payouts</p></div>
+ <div class="card steps">
+  <div class="step ${s1?'done':'now'}"><i>${s1?'✓':1}</i><div style="flex:1"><b>Vehicle & licence details</b><div class="muted">${s1?`${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · ${esc(app.city)}`:'Vehicle type, number, licence number, UPI ID'}</div>${s1?'':`<button class="btn sm" style="margin-top:8px" onclick="applyForm()">Add details</button>`}</div></div>
+  <div class="step ${s2?'done':s1?'now':''}"><i>${s2?'✓':2}</i><div style="flex:1"><b>Upload documents</b><div class="muted">${nUp}/${need.length} required uploaded — licence, RC, ID proof, vehicle photo</div>${s1&&!s2?`<button class="btn sm" style="margin-top:8px" onclick="go('docs')">Upload documents</button>`:''}</div></div>
+  <div class="step ${s3?'done':s2?'now':''}"><i>${s3?'✓':3}</i><div style="flex:1"><b>Verification</b><div class="muted">${s3?'Approved — sign out and in again to start driving':app&&app.status==='rejected'?'Application rejected — contact support':s2?'We are checking your documents (usually within 24 hours)':'Starts after you upload documents'}</div></div></div>
+ </div>
+ ${app&&app.status==='pending'&&s2?`<div class="card">🔔 We'll approve you after checking your documents. Keep the app installed.</div>`:''}
+ <button class="btn ghost block" onclick="try{localStorage.removeItem('gv_wants')}catch(e){};go('home')">Book a ride instead</button>`}
+function profileForm(){const cities=[...new Set(PLACES.map(p=>p.city))];openSheet(`<h3>Profile</h3><div class="field"><label>Full name</label><input id="pfN" value="${esc(ME.full_name)}"></div><div class="field"><label>Mobile</label><input id="pfP" type="tel" value="${esc(ME.phone||'')}"></div>
+ <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Gender</label><select id="pfG"><option value="">—</option>${[['M','Male'],['F','Female'],['O','Other']].map(([k,l])=>`<option value="${k}" ${ME.gender===k?'selected':''}>${l}</option>`).join('')}</select></div><div class="field"><label>City</label><select id="pfC">${cities.map(c=>`<option ${c===ME.city?'selected':''}>${c}</option>`).join('')}</select></div></div>
+ <div class="field"><label>Emergency contact (WhatsApp)</label><input id="pfE" type="tel" value="${esc(ME.emergency_contact||'')}" placeholder="+91"></div><button class="btn block" id="pfB">Save</button>`);
+ $('#pfB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_update_profile',{p_name:$('#pfN').value,p_phone:$('#pfP').value,p_gender:$('#pfG').value,p_city:$('#pfC').value,p_emergency:$('#pfE').value});ME=await rpc('gv_me');BOOK.city=ME.city;$('#avBtn').textContent=ini(ME.full_name);closeSheet();toast('Saved');render()}catch(x){busy(e.target,false)}}}
+function applyForm(){const cities=[...new Set(PLACES.map(p=>p.city))];openSheet(`<h3>Become a captain</h3><p class="muted" style="margin:4px 0 12px">Set your own per-km price · ${+SET.captain_comm_pct||0}% commission or an optional day pass · 100% of tips.</p>
+ <div class="field"><label>Vehicle</label><select id="aV">${VT.filter(x=>x.code!=='parcel').map(x=>`<option value="${x.code}">${x.icon} ${x.name}</option>`).join('')}</select></div>
+ <div class="field"><label>Vehicle number</label><input id="aN" placeholder="TS02EK4421" style="text-transform:uppercase"></div><div class="field"><label>Make & model</label><input id="aM" placeholder="Honda Shine"></div>
+ <div class="field"><label>Driving licence number</label><input id="aD" style="text-transform:uppercase"></div><div class="field"><label>Your UPI ID (riders pay you here; payouts go here)</label><input id="aU" placeholder="9876543210@ybl" autocapitalize="off"></div><div class="field"><label>City</label><select id="aC">${cities.map(c=>`<option ${c===ME.city?'selected':''}>${c}</option>`).join('')}</select></div>
+ <button class="btn block" id="aB">Submit application</button>`);
+ $('#aB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_apply_captain',{p_vtype:$('#aV').value,p_vehicle_no:$('#aN').value,p_model:$('#aM').value,p_dl:$('#aD').value,p_city:$('#aC').value,p_upi:$('#aU').value.trim()});closeSheet();toast('Details saved — now upload your documents');go('docs')}catch(x){busy(e.target,false)}}}
+function why(v){v.innerHTML=`<div class="card grad" style="color:#fff;border:0"><h3 style="font-size:19px">Why GrabVehicle?</h3><p style="margin:6px 0 0;color:#D6E6FB">Fair for riders. Fair for captains.</p></div>
+ ${[['🔒','Locked fare, zero surge','The price you see when you book is the price you pay — rain, peak hour or festival.'],['💸','Captains set their own price','Captains compete on rate and rating. You see every offer and choose.'],['🧾','Proper tax invoices','Every ride comes with a numbered GST invoice you can download as PDF.'],['👩','Women-captain mode','One tap to see only women captains.'],['🎁','Cancel protection','If a captain cancels after accepting, you get ₹20 credit automatically.'],['🙏','Fair to captains',`${+SET.captain_comm_pct||0}% commission or a cheap day pass, no penalty for skipping, 100% of tips.`],['📦','Rides + parcels','Send parcels with OTP-verified delivery.'],['🛡️','Safety','OTP to start every trip, live trip sharing, SOS to safety desk and 112.']].map(([e,h,p])=>`<div class="card row" style="justify-content:flex-start;align-items:flex-start"><div style="font-size:26px">${e}</div><div><b>${h}</b><div class="muted">${p}</div></div></div>`).join('')}`}
+
+/* ================= CAPTAIN ================= */
+async function capHome(v,update){const h=await rpc('gv_captain_home',{},update);const aid=await rpc('gv_active_ride',{},update);let s=null;if(aid)s=await rpc('gv_ride_status',{p_ride:aid},update);
+ if(update&&!$('#cBox'))return;
+ if(h.online&&!LOCW){LOCW=setInterval(async()=>{const p=await getPos();if(p)try{await rpc('gv_update_location',{p_lat:p.lat,p_lng:p.lng},true)}catch(e){}},20000)}
+ if(!h.online&&LOCW){clearInterval(LOCW);LOCW=null}
+ let box='';
+ if(s&&s.status==='requested'){const f=s.fare;box=`<div class="card req"><div class="row"><b>🔔 New ${s.service==='parcel'?'parcel':'ride'} request</b><span class="pill p-warn">${s.expires_in}s</span></div>
+  <div style="margin:8px 0"><div><span style="color:#10b981">●</span> ${esc(s.pickup.name)}</div><div><span style="color:#e11d48">●</span> ${esc(s.drop.name)}</div></div>
+  <div class="row"><div class="muted">${s.distance_km} km · ${esc(s.rider?.name||'')} · ${s.pay_mode}${s.parcel?` · 📦 ${esc(s.parcel.item)} ${s.parcel.weight_kg}kg`:''}</div><div style="text-align:right"><div class="num" style="font-size:20px;color:var(--ok)">${inr(f.captain_net)}</div><div class="muted" style="font-size:11px">you keep${+f.captain_comm===0?' · 0% comm.':''}</div></div></div>${s.fixed_fare?'<div class="muted" style="margin-top:4px">📌 Fixed-fare route</div>':''}
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:10px"><button class="btn ghost" onclick="capRespond(${s.id},false,this)">Skip</button><button class="btn green" onclick="capRespond(${s.id},true,this)">Accept</button></div><p class="muted" style="margin:8px 0 0;font-size:12px">Skipping has no penalty — you're your own boss.</p></div>`}
+ else if(s){const nav=s.status==='started'?s.drop:s.pickup;box=`<div class="card" style="border:2px solid var(--p1)"><div class="row"><b>${{accepted:'Go to pickup',arrived:'Waiting for '+(s.service==='parcel'?'sender':'rider'),started:s.service==='parcel'?'Deliver parcel':'Drop rider'}[s.status]}</b>${pill(s.status)}</div>
+  <div style="margin:8px 0"><div><span style="color:#10b981">●</span> ${esc(s.pickup.name)}</div><div><span style="color:#e11d48">●</span> ${esc(s.drop.name)}</div></div>
+  <div class="row"><div><b>${esc(s.rider?.name||'')}</b><div class="muted">${s.pay_mode} · collect ${s.pay_mode==='Wallet'?'nothing (wallet)':inr0(s.fare.total)}</div>${s.parcel?`<div class="muted">📦 ${esc(s.parcel.item)} → ${esc(s.parcel.receiver_name)} ${esc(s.parcel.receiver_phone)}</div>`:''}</div>${s.rider?.phone?`<a class="btn ghost sm" href="tel:${esc(s.rider.phone)}">📞</a>`:''}</div>
+  <a class="btn ghost block" style="margin-top:10px" href="https://www.google.com/maps/dir/?api=1&destination=${nav.lat},${nav.lng}">🧭 Navigate to ${esc(nav.name)}</a>
+  ${s.status==='accepted'?`<button class="btn block" style="margin-top:8px" onclick="capArrived(${s.id},this)">I've arrived</button>`:''}
+  ${['accepted','arrived'].includes(s.status)?`<div class="row" style="margin-top:8px"><input id="cOtp" inputmode="numeric" maxlength="4" placeholder="${s.service==='parcel'?'Pickup':'Rider'} OTP" style="flex:1;min-width:0;padding:12px;font-size:18px;letter-spacing:4px;text-align:center;border:1px solid var(--line);border-radius:11px"><button class="btn green" onclick="capStart(${s.id},this)">Start</button></div>`:''}
+  ${s.status==='started'?(s.service==='parcel'?`<div class="row" style="margin-top:8px"><input id="cDotp" inputmode="numeric" maxlength="4" placeholder="Receiver OTP" style="flex:1;min-width:0;padding:12px;font-size:18px;letter-spacing:4px;text-align:center;border:1px solid var(--line);border-radius:11px"><button class="btn green" onclick="capComplete(${s.id},this)">Delivered</button></div>`:`<button class="btn green block" style="margin-top:8px" onclick="capComplete(${s.id},this)">Complete trip</button>`):''}
+  ${s.status!=='started'?`<button class="btn ghost block" style="margin-top:8px;color:var(--bad)" onclick="capCancel(${s.id},this)">Cancel ride</button>`:''}</div>`}
+ const html=`<div class="card row"><div><b style="font-size:17px">${h.blocked?'Blocked':h.online?'You are online':'You are offline'}</b><div class="muted">${h.status!=='approved'?'Account '+h.status:h.blocked?`Wallet below ${inr0(h.floor)} — recharge to drive`:h.online?'Ride requests will appear here':'Go online to receive requests'}</div></div><button class="switch ${h.online?'on':''}" id="onSw" aria-label="Online"></button></div>
+  <div id="cBox">${box}</div>
+  ${h.blocked&&h.status==='approved'?`<button class="btn block" style="margin-bottom:10px" onclick="go('wallet')">Recharge wallet</button>`:''}
+  ${h.needs_pass&&!h.blocked?`<div class="card" style="background:var(--warn-soft);border-color:#f3d39a"><b>Day pass needed</b><div class="muted">You're on the Day pass plan. Buy today's pass (${inr0(h.pass_fee)}, 0% commission) or switch to pay-per-ride.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn ghost sm" onclick="setPlan('per_ride',this)">Pay per ride</button><button class="btn green sm" onclick="buyPass(this)">Buy pass ${inr0(h.pass_fee)}</button></div></div>`:''}
+  ${h.plan==='day_pass'&&h.pass_active?`<div class="card" style="background:#ecfdf5;border-color:#a7f3d0;padding:10px 12px">🎟️ <b>Day pass active</b> — 0% commission until midnight</div>`:''}
+  <div class="map" id="cMap"><div class="tag">${esc(h.city)} · ₹${h.rate}/km</div></div>
+  <div class="kpis"><div class="kpi dark"><small>Today's earnings</small><b>${inr0(h.today_earned)}</b></div><div class="kpi"><small>Trips today</small><b>${h.today_trips}</b></div><div class="kpi" onclick="go('wallet')"><small>Wallet</small><b style="color:${+h.wallet<0?'var(--bad)':'inherit'}">${inr0(h.wallet)}</b></div><div class="kpi"><small>Rating</small><b>${h.rating?'★ '+h.rating:'—'}</b></div></div>`;
+ const sig=JSON.stringify([s&&s.status,s&&s.id,h.online,h.blocked,s&&s.expires_in]);
+ if(update&&v._sig===sig)return;v._sig=sig;
+ const keepOtp=$('#cOtp')?.value,keepD=$('#cDotp')?.value;
+ v.innerHTML=html;if(keepOtp&&$('#cOtp'))$('#cOtp').value=keepOtp;if(keepD&&$('#cDotp'))$('#cDotp').value=keepD;
+ const cc=CITIES.find(x=>x.name===h.city)||{lat:18.43,lng:79.13};const c=[+(h.lat||cc.lat),+(h.lng||cc.lng)];await mapMount('cMap',c);mapCap(c[0],c[1],vtIcon(h.vehicle_type));
+ if(s){mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');mapFit([c,[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]])}else mapFit([c])
+ $('#onSw').onclick=async e=>{const b=e.target;b.disabled=true;const p=h.online?null:await getPos();try{await rpc('gv_set_online',{p_online:!h.online,p_lat:p?.lat??null,p_lng:p?.lng??null});toast(h.online?'You are offline':'You are online')}catch(x){}b.disabled=false;v._sig=null;capHome(v)}}
+async function capRespond(id,ok,b){busy(b,true);try{await rpc('gv_captain_respond',{p_ride:id,p_accept:ok});toast(ok?'Accepted — head to pickup':'Skipped')}catch(e){}$('#view')._sig=null;capHome($('#view'))}
+async function capArrived(id,b){busy(b,true);try{await rpc('gv_captain_arrived',{p_ride:id});toast('Rider notified')}catch(e){}$('#view')._sig=null;capHome($('#view'))}
+async function capStart(id,b){const o=($('#cOtp')?.value||'').trim();if(!/^\d{4}$/.test(o)){toast('Enter the 4-digit OTP',true);return}busy(b,true);try{await rpc('gv_captain_start',{p_ride:id,p_otp:o});toast('Trip started')}catch(e){busy(b,false);return}$('#view')._sig=null;capHome($('#view'))}
+async function capComplete(id,b){const d=$('#cDotp')?$('#cDotp').value.trim():null;if($('#cDotp')&&!/^\d{4}$/.test(d)){toast('Enter receiver OTP',true);return}busy(b,true);try{const r=await rpc('gv_captain_complete',{p_ride:id,p_delivery_otp:d});
+ openSheet(`<div style="text-align:center"><div style="font-size:40px">🏁</div><h3>${d?'Parcel delivered':'Trip completed'}</h3><p class="muted">${r.collect?'Collect from rider by '+r.pay_mode:'Paid from rider wallet'}</p><div class="num" style="font-size:30px">${inr0(r.collect)}</div></div><div class="card bd" style="margin-top:12px"><div class="row"><span>You earned</span><b style="color:var(--ok)">${inr(r.captain_net)}</b></div><div class="row"><span>Wallet balance</span><b>${inr(r.wallet)}</b></div><div class="muted">${r.collect?'Platform fee, commission and GST on this cash ride are adjusted from your wallet.':'Your earning has been added to your wallet.'}</div></div><button class="btn block" onclick="closeSheet();$('#view')._sig=null;capHome($('#view'))">Done</button>`)}catch(e){busy(b,false)}}
+function capCancel(id){openSheet(`<h3>Cancel this ride?</h3><p class="muted">The rider gets ₹20 credit and it counts on your cancellation record.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" onclick="closeSheet()">Keep</button><button class="btn red" id="ccB">Cancel ride</button></div>`);
+ $('#ccB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_cancel_ride',{p_ride:id,p_reason:'Captain cancelled'});closeSheet();toast('Ride cancelled');$('#view')._sig=null;capHome($('#view'))}catch(x){busy(e.target,false)}}}
+function planCard(h,passWeek,commWeek){const pass=h.plan==='day_pass';
+ return`<div class="card"><b>My plan</b><div class="muted" style="margin:2px 0 10px">Choose what suits you — switch any time when you're not on a ride.</div>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+  <div class="card" style="margin:0;${!pass?'border:2px solid var(--p1);background:#E8F1FD':''}"><b>Pay per ride</b><div class="muted">${h.comm_pct}% + GST per ride. No ride, no cost.</div>${!pass?'<div class="pill p-info" style="margin-top:6px">Current</div>':`<button class="btn ghost sm" style="margin-top:8px" onclick="setPlan('per_ride',this)">Switch</button>`}</div>
+  <div class="card" style="margin:0;${pass?'border:2px solid var(--s1);background:#ecfdf5':''}"><b>Day pass</b><div class="muted">${inr0(h.pass_fee)}/day incl. GST. Keep 100% of fares.</div>${pass?(h.pass_active?'<div class="pill p-ok" style="margin-top:6px">Active today</div>':`<button class="btn green sm" style="margin-top:8px" onclick="buyPass(this)">Buy today ${inr0(h.pass_fee)}</button>`):`<button class="btn ghost sm" style="margin-top:8px" onclick="setPlan('day_pass',this)">Switch</button>`}</div></div>
+ <div class="muted" style="margin-top:10px">Last 7 days you paid <b>${inr0(commWeek)}</b> in commission. A day pass for 7 days costs <b>${inr0(passWeek)}</b>. ${commWeek>passWeek?'👉 The day pass would save you money.':'👉 Pay per ride is cheaper for you right now.'}</div></div>`}
+async function setPlan(p,b){busy(b,true);try{await rpc('gv_set_plan',{p_plan:p});toast(p==='day_pass'?"Switched to Day pass — buy today's pass to go online":'Switched to pay per ride')}catch(e){}$('#view')._sig=null;render()}
+async function buyPass(b){busy(b,true);try{await rpc('gv_buy_day_pass');toast('Day pass active until midnight — 0% commission')}catch(e){}$('#view')._sig=null;render()}
+async function capEarn(v){const h=await rpc('gv_captain_home');const list=(await rpc('gv_my_rides')).filter(t=>t.status==='completed');const tot=h.week.reduce((a,d)=>a+ +d.earned,0),mx=Math.max(1,...h.week.map(d=>+d.earned));
+ v.innerHTML=`<div class="kpis"><div class="kpi dark"><small>Last 7 days (you keep)</small><b>${inr0(tot)}</b></div><div class="kpi"><small>Lifetime trips</small><b>${(+h.total_trips).toLocaleString('en-IN')}</b></div></div>
+ <div class="card">${h.week.map(d=>`<div style="margin-bottom:10px"><div class="row" style="font-size:13px"><span>${fday(d.day)} · ${d.trips} trips</span><b>${inr0(d.earned)}</b></div><div class="bar"><i style="width:${d.earned/mx*100}%"></i></div></div>`).join('')||'<div class="muted">No trips in the last 7 days</div>'}</div>
+ <div class="card"><b>Your deal</b><div class="muted" style="margin-top:4px">You set your own per-km rate · ${h.comm_pct}% commission + ${h.gst_pct}% GST on it · no subscription · 100% of tips · no penalty for skipping</div></div>
+ <div class="section-h"><h3>Recent trips</h3></div>${list.slice(0,20).map(t=>`<div class="list-i" onclick="tripDetail(${t.id})"><div style="font-size:22px">${vtIcon(t.vehicle_type)}</div><div style="flex:1;min-width:0"><b>${esc(t.pickup_name)} → ${esc(t.drop_name)}</b><div class="muted">${fdt(t.created_at)} · ${t.distance_km} km · ${t.pay_mode}</div></div><div class="num" style="color:var(--ok)">+${inr(+t.captain_net+ +t.tip)}</div></div>`).join('')||'<div class="empty">No trips yet</div>'}`}
+async function capRates(v){const h=await rpc('gv_captain_home');let rate=+h.rate;const ex=4.8;
+ const draw=()=>{const cf=Math.round(+h.base_fare+rate*ex);const pass=h.plan==='day_pass';const k=fareCalc(cf,pass);const comm=k.cc,gst=k.cg,rf=k.fee,rg=0;const passWeek=+h.pass_fee*7,commWeek=+h.comm_paid_7d;
+  v.innerHTML=`${planCard(h,passWeek,commWeek)}<div class="card"><b>Your per-km rate</b><div class="muted">Riders see all nearby captains' prices and choose. Lower price = more rides; a higher rating lets you charge more.</div>
+  <div class="row" style="margin:16px 0 6px"><button class="btn ghost sm" id="rm">−</button><div class="num" style="font-size:34px">₹${rate}<span class="muted" style="font-size:15px">/km</span></div><button class="btn ghost sm" id="rp">+</button></div>
+  <input type="range" min="${h.min_rate}" max="${h.max_rate}" step="0.5" value="${rate}" id="rr"><div class="row muted"><span>₹${h.min_rate}</span><span>${h.peers?`Area ₹${h.peers.min}–₹${h.peers.max} · avg ₹${h.peers.avg}`:''}</span><span>₹${h.max_rate}</span></div>
+  <button class="btn block" style="margin-top:12px" id="rs" ${rate===+h.rate?'disabled':''}>Save rate</button></div>
+  <div class="card"><b>Example: ${ex} km ${vtName(h.vehicle_type)} trip</b><div class="bd" style="margin-top:8px"><div class="row"><span>Base fare</span><span>${inr0(h.base_fare)}</span></div><div class="row"><span>Rider pays</span><b>${inr0(cf+rf+rg)}</b></div><div class="row"><span>GST u/s 9(5) + commission + GST + TDS</span><span>−${inr(cf-k.net)}</span></div><div class="row"><span>You keep</span><b style="color:var(--ok)">${inr(k.net)}</b></div></div></div>`;
+  const set=x=>{rate=Math.min(+h.max_rate,Math.max(+h.min_rate,Math.round(x*2)/2));draw()};$('#rm').onclick=()=>set(rate-.5);$('#rp').onclick=()=>set(rate+.5);$('#rr').oninput=e=>set(+e.target.value);
+  $('#rs').onclick=async e=>{busy(e.target,true);try{await rpc('gv_set_rate',{p_rate:rate});h.rate=rate;toast('Rate updated — riders see it now');draw()}catch(x){busy(e.target,false)}}};draw()}
+
+/* ================= ADMIN ================= */
+async function aHome(v){const d=await rpc('gv_admin_dashboard');const mx=Math.max(1,...d.by_day.map(x=>+x.gmv));
+ v.innerHTML=`<div class="kpis"><div class="kpi dark"><small>Gross bookings (7d)</small><b>${inr0(d.gmv_7d)}</b></div><div class="kpi"><small>Platform revenue (7d)</small><b>${inr0(d.revenue_7d)}</b></div>
+ <div class="kpi"><small>Rides today</small><b>${d.rides_today}</b></div><div class="kpi"><small>Active right now</small><b>${d.active_now}</b></div>
+ <div class="kpi" onclick="go('caps')"><small>Captains online</small><b>${d.captains_online}/${d.captains_total}</b></div><div class="kpi" onclick="FIL='pending';go('caps')" style="${d.pending_captains?'border-color:#f59e0b':''}"><small>To verify</small><b>${d.pending_captains}</b></div>
+ <div class="kpi"><small>Wallet-blocked captains</small><b>${d.blocked_wallet}</b></div><div class="kpi"><small>Cancel rate (7d)</small><b>${d.cancel_rate}%</b></div>
+ <div class="kpi"><small>Riders</small><b>${d.riders}</b></div><div class="kpi" onclick="go('sos')" style="${d.sos_open?'border-color:var(--bad)':''}"><small>Open SOS</small><b style="color:${d.sos_open?'var(--bad)':'inherit'}">${d.sos_open}</b></div></div>
+ <div class="card"><div class="row"><b>Day-pass revenue (7d)</b><b>${inr0(d.passes_7d)}</b></div><div class="muted">${d.pass_captains} captains on Day pass plan</div></div>
+ <div class="card"><div class="row"><b>GST collected (7d)</b><b>${inr0(d.gst_7d)}</b></div><div class="muted">18% on platform fee + commission (Sec 9(5))</div></div>
+ <div class="section-h"><h3>Last 7 days</h3></div><div class="card">${d.by_day.map(x=>`<div style="margin-bottom:9px"><div class="row" style="font-size:13px"><span>${fday(x.day)} · ${x.rides} rides</span><b>${inr0(x.gmv)}</b></div><div class="bar"><i style="width:${x.gmv/mx*100}%"></i></div></div>`).join('')||'<div class="muted">No completed rides yet</div>'}</div>
+ <div class="section-h"><h3>Completed by vehicle</h3></div><div class="card">${Object.entries(d.by_type).map(([k,n])=>`<div class="row" style="padding:4px 0"><span>${vtIcon(k)} ${vtName(k)}</span><b>${n}</b></div>`).join('')||'<div class="muted">—</div>'}</div>`}
+async function aCaps(v){const f=FIL||'all';const list=await rpc('gv_admin_captains',{p_status:f==='all'?null:f});window._caps=list;
+ v.innerHTML=`<div class="chips">${[['all','All'],['pending','To verify'],['approved','Approved'],['blocked','Blocked']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l}</button>`).join('')}</div>`+
+ (list.map(c=>`<div class="card" style="cursor:pointer" onclick="capDetail('${c.id}')"><div class="row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(c.name)};width:42px;height:42px">${ini(c.name)}</div><div><b>${esc(c.name)} ${c.gender==='F'?'👩':''}</b><div class="muted">${vtIcon(c.vehicle_type)} ${esc(c.vehicle_no)} · ${esc(c.vehicle_model)}</div><div class="muted">${esc(c.city)}${c.plan==='day_pass'?' · 🎟️ day pass':''}</div></div></div><div style="text-align:right">${pill(c.status)}${c.online?'<div class="muted">🟢 online</div>':''}</div></div>
+ <div class="row muted" style="margin-top:8px"><span>₹${c.rate_per_km}/km</span><span>${c.rating?'★ '+c.rating:'—'}</span><span>${c.total_trips} trips</span><span style="color:${+c.wallet<0?'var(--bad)':'inherit'}">Wallet ${inr0(c.wallet)}</span></div>
+ ${c.docs_pending?`<div class="pill p-warn" style="margin-top:8px">📄 ${c.docs_pending} document${c.docs_pending>1?'s':''} to review</div>`:''}</div>`).join('')||'<div class="empty">None</div>')}
+async function setCap(id,st,b){busy(b,true);try{await rpc('gv_admin_set_captain',{p_id:id,p_status:st});toast('Captain '+st);closeSheet();render()}catch(e){busy(b,false)}}
+async function aRides(v){const f=FIL||'all';const list=await rpc('gv_admin_rides',{p_status:f==='all'?null:f});
+ v.innerHTML=`<div class="chips">${[['all','All'],['active','Active'],['completed','Completed'],['cancelled','Cancelled']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l}</button>`).join('')}</div>`+
+ (list.map(t=>`<div class="list-i" onclick="tripDetail(${t.id})"><div style="font-size:24px">${vtIcon(t.vehicle_type)}</div><div style="flex:1;min-width:0"><b>#${t.id} · ${esc(t.rider||'')}</b><div class="muted">${esc(t.pickup_name)} → ${esc(t.drop_name)}</div><div class="muted">${esc(t.captain||'—')} · ${fdt(t.created_at)} · ${t.pay_mode}</div></div><div style="text-align:right"><div class="num">${inr0(t.total)}</div>${pill(t.status)}</div></div>`).join('')||'<div class="empty">No rides</div>')}
+async function aSos(v){const list=await rpc('gv_admin_sos');v.innerHTML=list.map(s=>`<div class="card" style="${s.status==='open'?'border:2px solid var(--bad)':''}"><div class="row"><b>🚨 ${esc(s.raised_by)} <span class="muted">(${s.role})</span></b>${pill(s.status)}</div><div class="muted">${s.ride_id?'Ride #'+s.ride_id+' · ':''}${fdt(s.created_at)}</div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${s.phone?`<a class="btn sm red" href="tel:${esc(s.phone)}">📞 Call ${esc(s.raised_by.split(' ')[0])}</a>`:''}${s.emergency_contact?`<a class="btn sm ghost" href="tel:${esc(s.emergency_contact)}">Emergency contact</a>`:''}${s.lat?`<a class="btn sm ghost" href="https://maps.google.com/?q=${s.lat},${s.lng}">📍 Location</a>`:''}${s.status==='open'?`<button class="btn sm green" onclick="resolveSos(${s.id},this)">Resolve</button>`:''}</div></div>`).join('')||'<div class="empty">No alerts</div>'}
+async function resolveSos(id,b){busy(b,true);try{await rpc('gv_admin_resolve_sos',{p_id:id});toast('Resolved');render()}catch(e){busy(b,false)}}
+async function aSettings(v){const {data:s}=await sb.from('gv_settings').select('*').single();
+ v.innerHTML=`<div class="card"><b>Pricing & policy</b><p class="muted">Changes apply to new bookings immediately.</p>
+ <div class="field"><label>Convenience fee to rider (% of ride fare, incl. GST)</label><input id="sRf" type="number" step="0.5" value="${s.rider_fee_pct}"></div><div class="field"><label>Platform commission (% of net ride value)</label><input id="sCm" type="number" step="0.5" value="${s.captain_comm_pct}"></div>
+ <div class="field"><label>GST on ride fare u/s 9(5) (%)</label><input id="sRg" type="number" step="0.5" value="${s.ride_gst_pct}"></div><div class="field"><label>GST on fee & commission (%)</label><input id="sGs" type="number" step="1" value="${s.gst_pct}"></div><div class="field"><label>TDS on captain (% of net ride value, 194-O)</label><input id="sTd" type="number" step="0.1" value="${s.tds_pct}"></div>
+ <div class="field"><label>Captain wallet floor (₹, hard block below)</label><input id="sFl" type="number" step="50" value="${s.captain_floor}"></div>
+ <div class="field"><label>Rider cancel fee after arrival (₹)</label><input id="sCf" type="number" value="${s.cancel_fee}"></div><div class="field"><label>Cancel-protection credit (₹)</label><input id="sCc" type="number" value="${s.cancel_credit}"></div>
+ <button class="btn block" id="sSave">Save</button></div><div class="card"><b>How a fare splits</b><div class="muted">Example ₹200 ride: rider pays ₹${fareCalc(200).gross} · GST u/s 9(5) ₹${fareCalc(200).rg} · commission ₹${fareCalc(200).cc} + GST ₹${fareCalc(200).cg} · TDS ₹${fareCalc(200).td} · captain gets ₹${fareCalc(200).net}</div></div>
+  <div class="card"><b>Google Maps check</b><div class="muted" id="gmRes">Tests the address lookup that sets exact pickup addresses.</div><button class="btn sm ghost" style="margin-top:8px" onclick="mapsCheck(this)">Run check</button></div>
+  <div class="card"><b>Captain day pass (₹/day incl. GST)</b><div class="muted">0 = not offered for that vehicle</div>${VT.filter(x=>x.code!=='parcel').map(x=>`<div class="row" style="margin-top:8px"><span>${x.icon} ${x.name}</span><input id="pf_${x.code}" type="number" value="${x.day_pass_fee}" style="width:90px;padding:8px;border:1px solid var(--line);border-radius:9px;font-size:16px"><button class="btn sm ghost" onclick="savePassFee('${x.code}',this)">Save</button></div>`).join('')}</div>
+  <div class="card"><div class="row"><b>Fixed-fare routes</b><button class="btn sm" onclick="routeForm()">+ Add</button></div><div id="frList" class="muted" style="margin-top:8px">Loading…</div></div>
+  <div class="card"><b>App configuration</b><div class="muted">Also editable in Supabase → Table Editor → <b>gv_app_config</b>. Secret keys never go here — use Edge Function secrets.</div>
+   ${Object.entries(CONF).map(([k,val])=>`<div class="field" style="margin-top:10px"><label>${esc(k)}</label><div class="row"><input id="cf_${k}" value="${esc(val)}" style="flex:1;min-width:0"><button class="btn sm ghost" onclick="saveConf('${k}',this)">Save</button></div></div>`).join('')}
+   <div class="muted">Google Maps: ${GOOGLE?'✅ key set — Google map + address search':'⚪ no key yet — free OpenStreetMap map + popular places'}</div></div>
+  <div class="menu-i" onclick="go('account')"><span>Account</span><span class="muted">›</span></div><div class="menu-i" onclick="logout()" style="color:var(--bad)"><span>Sign out</span><span>⎋</span></div>`;
+ loadRoutes();
+ $('#sSave').onclick=async e=>{busy(e.target,true);try{await rpc('gv_admin_update_settings',{p_rider_fee:+$('#sRf').value,p_comm:+$('#sCm').value,p_floor:+$('#sFl').value,p_cancel_fee:+$('#sCf').value,p_cancel_credit:+$('#sCc').value,p_ride_gst:+$('#sRg').value,p_tds:+$('#sTd').value,p_gst:+$('#sGs').value});
+   const {data:st}=await sb.from('gv_settings').select('*').maybeSingle();SET=st||SET;toast('Settings saved')}catch(x){}busy(e.target,false)}}
+
+async function mapsCheck(b){const out=$('#gmRes');busy(b,true);const c=CITIES[0]||{lat:18.4386,lng:79.1288};
+ if(!GOOGLE){out.innerHTML='⚪ No Google key set (google_maps_api_key). Addresses come from OpenStreetMap and are approximate.';busy(b,false);return}
+ try{await loadGoogle();const {Geocoder}=await google.maps.importLibrary('geocoding');const {results}=await new Geocoder().geocode({location:{lat:+c.lat,lng:+c.lng}});
+  out.innerHTML='✅ Google address lookup works: <b>'+esc(shortAddr((results[0]||{}).formatted_address||''))+'</b>'}
+ catch(e){const m=String(e&&e.message||e);out.innerHTML='❌ <b>'+esc(m)+'</b><br>'+(/billing/i.test(m)?'Turn on billing for the Google Cloud project that owns this key.':/not authorized|REQUEST_DENIED|ApiNotActivated/i.test(m)?'Enable the <b>Geocoding API</b> for this key (Google Cloud → APIs & Services → Library) and allow it in the key\'s API restrictions.':'Check the key in Google Cloud → Credentials.')}
+ busy(b,false)}
+async function savePassFee(code,b){busy(b,true);try{await rpc('gv_admin_set_pass_fee',{p_vtype:code,p_fee:+$('#pf_'+code).value});const {data}=await sb.from('gv_vehicle_types').select('*').order('sort');VT=data||VT;toast('Day pass fee saved')}catch(e){}busy(b,false)}
+async function saveConf(k,b){busy(b,true);try{await rpc('gv_admin_set_config',{p_key:k,p_value:$('#cf_'+k).value});CONF[k]=$('#cf_'+k).value.trim();toast('Saved — reopen the app to apply map changes')}catch(e){}busy(b,false)}
+async function loadRoutes(){const list=await rpc('gv_admin_fixed_routes');window._routes=list;const el=$('#frList');if(!el)return;
+ el.innerHTML=list.map(r=>`<div class="list-i" style="margin:6px 0;cursor:pointer" onclick="routeForm(${r.id})"><div style="font-size:20px">${vtIcon(r.vehicle_type)}</div><div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(r.from_name)} ⇄ ${esc(r.to_name)}</b><div class="muted">${esc(r.city)} · ${r.km} km</div></div><div style="text-align:right"><b>${inr0(r.fare)}</b>${r.active?'':'<div class="muted">off</div>'}</div></div>`).join('')||'No fixed routes yet'}
+function routeForm(id){const r=id?window._routes.find(x=>x.id===id):{vehicle_type:'bike',fare:'',active:true,city:CITIES[0]?.name};window._rc=r.city;const P=PLACES.filter(p=>p.city===r.city);
+ const opt=sel=>P.map(p=>`<option value="${p.id}" ${p.id===sel?'selected':''}>${esc(p.name)}</option>`).join('');
+ openSheet(`<h3>${id?'Edit':'Add'} fixed-fare route</h3>${id?'':`<div class="chips" style="margin-top:8px">${CITIES.map(c=>`<button class="chip ${c.name===r.city?'on':''}" onclick="window._rc='${c.name}';routeFormCity()">${c.name}</button>`).join('')}</div>`}
+ <div class="field"><label>From</label><select id="rF">${opt(r.from_place)}</select></div><div class="field"><label>To</label><select id="rT">${opt(r.to_place||P[1]?.id)}</select></div>
+ <div class="field"><label>Vehicle</label><select id="rV">${VT.map(x=>`<option value="${x.code}" ${x.code===r.vehicle_type?'selected':''}>${x.icon} ${x.name}</option>`).join('')}</select></div>
+ <div class="field"><label>Captain fare (₹) — rider pays this + platform fee + GST</label><input id="rA" type="number" value="${r.fare}"></div>
+ <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><input type="checkbox" id="rOn" ${r.active?'checked':''}> Active (applies both ways)</label><button class="btn block" id="rS">Save route</button>`);
+ $('#rS').onclick=async e=>{busy(e.target,true);try{await rpc('gv_admin_save_fixed_route',{p_id:id||null,p_from:+$('#rF').value,p_to:+$('#rT').value,p_vtype:$('#rV').value,p_fare:+$('#rA').value,p_active:$('#rOn').checked});closeSheet();toast('Route saved');loadRoutes()}catch(x){busy(e.target,false)}}}
+function routeFormCity(){const c=window._rc;const P=PLACES.filter(p=>p.city===c);const o=P.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');$('#rF').innerHTML=o;$('#rT').innerHTML=o;if(P[1])$('#rT').value=P[1].id;document.querySelectorAll('.sheet .chip').forEach(x=>x.classList.toggle('on',x.textContent===c))}
+
+
+/* ================= TAX INVOICES ================= */
+function words(n){n=Math.round(+n||0);if(!n)return 'Zero';const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+ const two=x=>x<20?a[x]:b[Math.floor(x/10)]+(x%10?' '+a[x%10]:''),three=x=>(x>=100?a[Math.floor(x/100)]+' Hundred'+(x%100?' ':''):'')+(x%100?two(x%100):'');
+ let o=[];const cr=Math.floor(n/1e7),lk=Math.floor(n/1e5)%100,th=Math.floor(n/1e3)%100,rest=n%1000;
+ if(cr)o.push(three(cr)+' Crore');if(lk)o.push(two(lk)+' Lakh');if(th)o.push(two(th)+' Thousand');if(rest)o.push(three(rest));return o.join(' ')}
+const money=x=>(+x||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+function invHTML(i){const d=i.data,c=d.company||{},t=d.trip||{},bt=d.bill_to||{};const gst=c.company_gstin&&!/^PASTE_/.test(c.company_gstin)?c.company_gstin:'(GSTIN not set)';
+ const rows=(arr)=>arr.filter(l=>+l.amount!==0||!/credit/i.test(l.label)).map(l=>`<tr><td>${esc(l.label)}${l.sac?`<div style="color:#778;font-size:11px">SAC ${esc(l.sac)}</div>`:''}${l.note?`<div style="color:#778;font-size:11px">${esc(l.note)}</div>`:''}</td><td class="r">${+l.amount<0?'−':''}${money(Math.abs(l.amount))}</td></tr>`).join('');
+ return `<div class="inv"><div class="row" style="align-items:flex-start"><div><div class="co">${esc(c.company_name||'')}</div><div>${esc(c.company_address||'')}</div><div>GSTIN: ${esc(gst)}${c.company_pan?' · PAN: '+esc(c.company_pan):''}</div></div><h4>${esc(d.title||'TAX INVOICE')}</h4></div>
+ <div class="meta"><div><b>Invoice no.</b>${esc(i.number)}</div><div><b>Date</b>${fdt(i.issued_at)}</div><div><b>Billed to</b>${esc(bt.name||'')}${bt.phone?'<br>'+esc(bt.phone):''}${bt.vehicle_no?'<br>'+esc(bt.vehicle_no):''}</div><div><b>Place of supply</b>${esc(c.company_state||'')} (${esc(c.company_state_code||'')})</div>
+ ${t.ride_id?`<div style="grid-column:1/-1"><b>Trip #${t.ride_id} · ${esc(vtName(t.vehicle_type))} · ${t.distance_km} km · ${esc(t.pay_mode||'')}</b>${esc(t.pickup||'')} → ${esc(t.drop||'')}<br>Captain: ${esc(t.captain||'')} ${t.vehicle_no?'('+esc(t.vehicle_no)+')':''}</div>`:''}</div>
+ <table><tr><th>Particulars</th><th class="r">Amount (₹)</th></tr>${rows(d.lines||[])}<tr class="t"><td>Total</td><td class="r">${money(d.invoice_total)}</td></tr></table>
+ <div class="words">Amount in words: Rupees ${words(d.invoice_total)} only</div>
+ ${(d.other||[]).length?`<b>Other information</b><table>${rows(d.other)}<tr class="t"><td>${esc(d.grand_label||'Total paid')}</td><td class="r">${money(d.grand_total)}</td></tr></table>`:''}
+ ${+d.tip?`<div class="muted">Tip of ₹${money(d.tip)} paid directly to the captain (not part of this invoice).</div>`:''}
+ <div class="foot">${esc(c.invoice_footer||'')}<br>For ${esc(c.company_name||'')} — Authorised signatory</div></div>`}
+async function showInvoice(id){const i=await rpc('gv_invoice',{p_id:id});window._inv=i;
+ openSheet(`${invHTML(i)}<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="btn" id="invPdf">${isNative()?'Share PDF':'Download PDF'}</button><button class="btn ghost" onclick="closeSheet()">Close</button></div>`)
+ ;$('#invPdf').onclick=e=>invoicePdf(i,e.currentTarget)}
+const isNative=()=>!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[data-src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.dataset.src=src;s.onload=()=>res();s.onerror=()=>rej(new Error('Could not load '+src));document.head.appendChild(s)})}
+async function invoicePdf(i,b){busy(b,true);try{await loadScript('jspdf.umd.min.js');const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});
+ const d=i.data,c=d.company||{},t=d.trip||{},bt=d.bill_to||{};const W=595,M=40;let y=48;const R=(x)=>'Rs. '+money(x);
+ const txt=(s,x,yy,o)=>doc.text(String(s==null?'':s).replace(/₹/g,'Rs.').replace(/[^\x20-\x7E]/g,''),x,yy,o);
+ doc.setFont('helvetica','bold');doc.setFontSize(16);txt(c.company_name,M,y);doc.setFontSize(14);txt(d.title||'TAX INVOICE',W-M,y,{align:'right'});
+ doc.setFont('helvetica','normal');doc.setFontSize(9.5);y+=16;txt(c.company_address,M,y);y+=13;txt('GSTIN: '+(c.company_gstin&&!/^PASTE_/.test(c.company_gstin)?c.company_gstin:'(not set)')+(c.company_pan?'   PAN: '+c.company_pan:''),M,y);
+ y+=22;doc.setDrawColor(200);doc.line(M,y,W-M,y);y+=16;
+ const kv=(k,v,x)=>{doc.setFont('helvetica','bold');txt(k,x,y);doc.setFont('helvetica','normal');txt(v,x+80,y)};
+ kv('Invoice no.',i.number,M);kv('Date',new Date(i.issued_at).toLocaleString('en-IN'),W/2);y+=14;
+ kv('Billed to',(bt.name||'')+(bt.phone?'  '+bt.phone:''),M);kv('Place of supply',(c.company_state||'')+' ('+(c.company_state_code||'')+')',W/2);y+=14;
+ if(bt.vehicle_no){kv('Vehicle',bt.vehicle_no,M);y+=14}
+ if(t.ride_id){kv('Trip','#'+t.ride_id+'  '+vtName(t.vehicle_type)+'  '+t.distance_km+' km  '+(t.pay_mode||''),M);y+=14;
+  doc.splitTextToSize(String((t.pickup||'')+'  ->  '+(t.drop||'')).replace(/[^\x20-\x7E]/g,''),W-2*M-80).forEach(l=>{txt(l,M+80,y);y+=12});kv('Captain',(t.captain||'')+(t.vehicle_no?' ('+t.vehicle_no+')':''),M);y+=14}
+ const table=(title,arr,totLabel,tot)=>{y+=8;doc.setFillColor(240,244,250);doc.rect(M,y-11,W-2*M,18,'F');doc.setFont('helvetica','bold');txt(title,M+6,y+2);txt('Amount',W-M-6,y+2,{align:'right'});y+=20;doc.setFont('helvetica','normal');
+  arr.filter(l=>+l.amount!==0||!/credit/i.test(l.label)).forEach(l=>{const lines=doc.splitTextToSize(String(l.label).replace(/[^\x20-\x7E]/g,''),W-2*M-120);lines.forEach((ln,ix)=>{txt(ln,M+6,y);if(!ix)txt((+l.amount<0?'- ':'')+R(Math.abs(l.amount)),W-M-6,y,{align:'right'});y+=12});
+   if(l.sac||l.note){doc.setFontSize(8);doc.setTextColor(110);txt([l.sac?'SAC '+l.sac:'',l.note||''].filter(Boolean).join('   '),M+6,y);doc.setTextColor(0);doc.setFontSize(9.5);y+=11}y+=3});
+  doc.setDrawColor(0);doc.line(M,y-6,W-M,y-6);doc.setFont('helvetica','bold');txt(totLabel,M+6,y+6);txt(R(tot),W-M-6,y+6,{align:'right'});doc.setFont('helvetica','normal');y+=22};
+ table('Particulars',d.lines||[],'Total',d.invoice_total);txt('Amount in words: Rupees '+words(d.invoice_total)+' only',M,y);y+=10;
+ if((d.other||[]).length)table('Other information',d.other,d.grand_label||'Total paid',d.grand_total);
+ if(+d.tip){txt('Tip of '+R(d.tip)+' paid directly to the captain (not part of this invoice).',M,y);y+=14}
+ y=Math.max(y+20,720);doc.setFontSize(8.5);doc.setTextColor(100);txt(c.invoice_footer||'',M,y);y+=12;txt('For '+(c.company_name||'')+' - Authorised signatory',M,y);
+ const name=i.number.replace(/\//g,'-')+'.pdf';
+ if(isNative()){const FS=Capacitor.registerPlugin('Filesystem'),SH=Capacitor.registerPlugin('Share');const b64=doc.output('datauristring').split(',')[1];
+  const w=await FS.writeFile({path:name,data:b64,directory:'CACHE'});await SH.share({title:name,text:'GrabVehicle invoice '+i.number,url:w.uri,dialogTitle:'Share invoice'})}
+ else doc.save(name)}catch(e){if(!/cancel/i.test(String(e&&e.message)))toast('Could not create PDF: '+(e.message||e),true)}busy(b,false)}
+async function myInvoices(v){const list=await rpc('gv_my_invoices');const lbl={R:'Ride',C:'Commission',P:'Day pass'};
+ v.innerHTML=`<p class="muted" style="margin:2px 0 10px">GST tax invoices for your ${ME.role==='captain'?'rides, commission and day passes':'rides'}. Tap one to view or download.</p>`+
+ (list.map(x=>`<div class="list-i" onclick="showInvoice(${x.id})"><div style="font-size:22px">🧾</div><div style="flex:1;min-width:0"><b>${esc(x.number)}</b><div class="muted">${lbl[x.series]||''}${x.ride_id?' · Trip #'+x.ride_id:''} · ${fdt(x.issued_at)}</div>${x.pickup?`<div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.pickup)} → ${esc(x.drop)}</div>`:''}</div><div class="num">${inr(x.total)}</div></div>`).join('')||'<div class="empty">No invoices yet. They appear after each completed ride.</div>')}
+/* admin: invoice register + GST summary + CSV */
+let INVF=null;
+async function aInvoices(v){const now=new Date(),ymdL=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+ INVF=INVF||{from:ymdL(new Date(now.getFullYear(),now.getMonth(),1)),to:ymdL(now),series:null};
+ const r=await rpc('gv_admin_invoices',{p_from:INVF.from,p_to:INVF.to,p_series:INVF.series});const s=r.summary;window._invRows=r.rows;const lbl={R:'Rider',C:'Captain',P:'Day pass'};
+ v.innerHTML=`<div class="card"><div class="row" style="flex-wrap:wrap;gap:8px;justify-content:flex-start"><div class="field" style="margin:0"><label>From</label><input type="date" id="ivF" value="${INVF.from}"></div><div class="field" style="margin:0"><label>To</label><input type="date" id="ivT" value="${INVF.to}"></div>
+ <button class="btn sm" id="ivGo" style="align-self:flex-end">Show</button><button class="btn sm ghost" id="ivCsv" style="align-self:flex-end">⬇ Export CSV</button></div>
+ <div class="chips" style="margin-top:10px">${[[null,'All'],['R','Rider'],['C','Captain'],['P','Day pass']].map(([k,l])=>`<button class="chip ${INVF.series===k?'on':''}" data-s="${k||''}">${l}</button>`).join('')}</div></div>
+ <div class="kpis"><div class="kpi dark"><small>Invoices</small><b>${s.invoices}</b></div><div class="kpi"><small>Convenience fee (taxable)</small><b>${inr(s.fee_taxable)}</b></div><div class="kpi"><small>Commission (taxable)</small><b>${inr(s.commission_taxable)}</b></div>
+ <div class="kpi"><small>Day pass (taxable)</small><b>${inr(s.pass_taxable)}</b></div><div class="kpi"><small>CGST</small><b>${inr(s.cgst)}</b></div><div class="kpi"><small>SGST</small><b>${inr(s.sgst)}</b></div>
+ <div class="kpi"><small>GST u/s 9(5) on fares</small><b>${inr(s.gst_9_5)}</b></div><div class="kpi"><small>TDS deducted (194-O)</small><b>${inr(s.tds)}</b></div>
+ <div class="kpi"><small>Total GST payable</small><b>${inr(+s.cgst+ +s.sgst+ +s.gst_9_5)}</b></div></div>
+ <div class="tblwrap"><table class="tbl"><tr><th>Invoice</th><th>Date</th><th>Type</th><th>Party</th><th class="r">Taxable</th><th class="r">CGST</th><th class="r">SGST</th><th class="r">9(5) GST</th><th class="r">TDS</th><th class="r">Total</th></tr>
+ ${r.rows.map(x=>`<tr onclick="showInvoice(${x.id})"><td>${esc(x.number)}</td><td>${fdt(x.issued_at)}</td><td>${lbl[x.series]}</td><td>${esc(x.party||'')}</td><td class="r">${money(x.taxable)}</td><td class="r">${money(x.cgst)}</td><td class="r">${money(x.sgst)}</td><td class="r">${money(x.ride_gst)}</td><td class="r">${money(x.tds)}</td><td class="r">${money(x.total)}</td></tr>`).join('')||'<tr><td colspan="10" class="muted">No invoices in this period</td></tr>'}</table></div>
+ <p class="muted" style="font-size:12px">Rider invoices: convenience fee (GST 18%) + ride fare with GST u/s 9(5). Captain invoices: commission (GST 18%) with 9(5) GST and TDS deductions. Rates and SAC codes are set in Settings and Company & invoices — confirm them with your CA.</p>`;
+ $('#ivGo').onclick=()=>{INVF.from=$('#ivF').value;INVF.to=$('#ivT').value;render()};
+ document.querySelectorAll('.chips .chip[data-s]').forEach(b=>b.onclick=()=>{INVF.series=b.dataset.s||null;render()});
+ $('#ivCsv').onclick=()=>{const head=['Invoice','Date','Type','Party','Phone','Ride','Taxable','CGST','SGST','GST 9(5)','TDS','Total'];
+  const q=x=>`"${String(x==null?'':x).replace(/"/g,'""')}"`;const lines=[head.map(q).join(',')].concat(window._invRows.map(x=>[x.number,new Date(x.issued_at).toLocaleString('en-IN'),lbl[x.series],x.party,x.phone,x.ride_id,x.taxable,x.cgst,x.sgst,x.ride_gst,x.tds,x.total].map(q).join(',')));
+  downloadText(`GrabVehicle-invoices-${INVF.from}-to-${INVF.to}.csv`,lines.join('\r\n'),'text/csv')}}
+async function downloadText(name,text,type){try{if(isNative()){const FS=Capacitor.registerPlugin('Filesystem'),SH=Capacitor.registerPlugin('Share');const w=await FS.writeFile({path:name,data:text,directory:'CACHE',encoding:'utf8'});await SH.share({title:name,url:w.uri,dialogTitle:'Save or share'})}
+ else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}}catch(e){if(!/cancel/i.test(String(e&&e.message)))toast('Could not export: '+(e.message||e),true)}}
+/* admin: company details printed on invoices */
+async function aCompany(v){const F=[['company_name','Legal name','CVV TECHNOLOGIES'],['company_address','Registered address',''],['company_gstin','GSTIN','36ABCDE1234F1Z5'],['company_pan','PAN (optional)',''],['company_state','State','Telangana'],['company_state_code','GST state code','36'],['invoice_prefix','Invoice prefix','GV'],['sac_ride','SAC — ride fare','996412'],['sac_fee','SAC — fee / commission','998599'],['invoice_footer','Invoice footer','']];
+ v.innerHTML=`<div class="card"><b>Company details on tax invoices</b><p class="muted">New invoices use these immediately. Existing invoices never change.</p>
+ ${F.map(([k,l,ph])=>`<div class="field"><label>${l}</label><input id="co_${k}" value="${esc(CONF[k]&&!/^PASTE_/.test(CONF[k])?CONF[k]:'')}" placeholder="${esc(ph)}" ${k==='company_gstin'?'style="text-transform:uppercase" maxlength="15"':''}></div>`).join('')}
+ <div class="err" id="coE"></div><button class="btn block" id="coS">Save company details</button></div>`;
+ $('#coS').onclick=async e=>{const g=$('#co_company_gstin').value.trim().toUpperCase();$('#coE').textContent='';
+  if(g&&!/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(g)){$('#coE').textContent='GSTIN format looks wrong (15 characters, e.g. 36ABCDE1234F1Z5)';return}
+  busy(e.target,true);try{for(const [k] of F){let val=$('#co_'+k).value.trim();if(k==='company_gstin')val=g||'PASTE_GSTIN_HERE';if((CONF[k]||'')!==val){await rpc('gv_admin_set_config',{p_key:k,p_value:val});CONF[k]=val}}toast('Company details saved')}catch(x){}busy(e.target,false)}}
+
+/* ================= PAYMENTS (Razorpay via Supabase Edge Function "razorpay") ================= */
+let PAY={razorpay:false,demo:false};let SET={};
+function loadRazorpay(){if(window.Razorpay)return Promise.resolve();return new Promise((res,rej)=>{const s=document.createElement('script');s.src=CFG.checkoutUrl||'https://checkout.razorpay.com/v1/checkout.js';s.onload=()=>res();s.onerror=()=>rej(new Error('Could not load Razorpay. Check your internet connection.'));document.head.appendChild(s)})}
+async function fnCall(route,body){const {data}=await sb.auth.getSession();const t=data.session?.access_token;
+ const r=await fetch(`${CFG.url}/functions/v1/razorpay/${route}`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey,Authorization:'Bearer '+t},body:JSON.stringify(body)});
+ const j=await r.json().catch(()=>({error:'Payment server not reachable'}));if(!r.ok)throw new Error(j.error||'Payment failed');return j}
+/* opens Razorpay checkout (UPI apps, cards, netbanking, wallets); resolves after the server verified and credited the wallet */
+async function payOnline(amount,purpose){amount=Math.ceil(+amount);
+ if(!PAY.razorpay)throw new Error('Online payments are not set up yet');
+ await loadRazorpay();const o=await fnCall('order',{amount});
+ return new Promise((resolve,reject)=>{let done=false;
+  const rz=new window.Razorpay({key:o.key_id,amount:o.amount,currency:'INR',order_id:o.order_id,name:'GrabVehicle',description:purpose||'Wallet top-up',
+   prefill:{name:o.name||ME.full_name,email:o.email||'',contact:(o.contact||ME.phone||'').replace(/[^\d+]/g,'')},
+   theme:{color:'#1565C0'},retry:{enabled:true,max_count:2},
+   config:{display:{preferences:{show_default_blocks:true}}},
+   handler:async resp=>{done=true;try{toast('Confirming payment…');const v=await fnCall('verify',resp);resolve(v)}catch(e){reject(e)}},
+   modal:{ondismiss:()=>{if(!done)reject(new Error('Payment cancelled'))},confirm_close:true}});
+  rz.on&&rz.on('payment.failed',r=>{toast(r?.error?.description||'Payment failed',true)});rz.open()})}
+async function addMoney(amount,btn){amount=Math.round(+amount);if(!(amount>=1&&amount<=10000)){toast('Enter ₹1 – ₹10,000',true);return}busy(btn,true);
+ try{if(PAY.razorpay){await payOnline(amount,'Wallet top-up');toast(inr0(amount)+' added to wallet')}
+  else if(PAY.demo){await rpc('gv_demo_topup',{p_amount:amount});toast(inr0(amount)+' added (demo)')}
+  else throw new Error('Online payments are not set up yet');
+  ME=await rpc('gv_me');render()}catch(e){toast(cleanErr(e.message),true);busy(btn,false)}}
+function upiLink(vpa,name,amount,note){return `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(name||'GrabVehicle Captain')}&am=${(+amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(note||'GrabVehicle ride')}`}
+
+/* ================= CAPTAIN DOCUMENTS ================= */
+const DOCS=[['dl','Driving licence',true],['rc','Vehicle RC',true],['id_proof','ID proof (Aadhaar masked / PAN / Voter ID)',true],['vehicle_photo','Vehicle photo with number plate',true],['selfie','Your photo',false]];
+async function compressImage(file){if(!file.type.startsWith('image/'))return file;
+ const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)});
+ const max=1600,sc=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+ c.getContext('2d').drawImage(img,0,0,c.width,c.height);return await new Promise(res=>c.toBlob(b=>res(b||file),'image/jpeg',0.82))}
+async function uploadDoc(type,input){const f=input.files&&input.files[0];if(!f)return;
+ if(!/^image\/|application\/pdf/.test(f.type)){toast('Upload a photo or PDF',true);return}
+ const lbl=input.closest('.list-i')?.querySelector('.st');if(lbl)lbl.innerHTML='<span class="pill p-warn">uploading…</span>';
+ try{const blob=await compressImage(f);if(blob.size>5*1024*1024)throw new Error('File is larger than 5 MB');
+  const ext=blob.type==='application/pdf'?'pdf':'jpg';const path=`${ME.id}/${type}-${Date.now()}.${ext}`;
+  const {error}=await sb.storage.from('gv-captain-docs').upload(path,blob,{contentType:blob.type||'image/jpeg',upsert:false});if(error)throw error;
+  await rpc('gv_submit_doc',{p_type:type,p_path:path});toast('Uploaded — under review');docsView($('#view'))}catch(e){toast(cleanErr(e.message||String(e)),true);if(lbl)lbl.innerHTML=pill('rejected')}}
+async function docsView(v){const docs=await rpc('gv_my_docs');const app=ME.role==='rider'?await rpc('gv_my_application'):null;
+ $('#hTitle').textContent='My documents';
+ v.innerHTML=`${app?`<div class="card"><b>Application: ${pill(app.status)}</b><div class="muted">${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · UPI ${esc(app.upi_id||'—')}</div><div class="muted" style="margin-top:4px">Upload all required documents. Our team verifies them, usually within 24 hours.</div></div>`:''}
+ ${DOCS.map(([k,l,req])=>{const d=docs.find(x=>x.doc_type===k);return`<div class="list-i"><div style="flex:1;min-width:0"><b>${l}${req?'':' <span class="muted">(optional)</span>'}</b>${d?.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}${d?`<div class="muted">Uploaded ${fdt(d.uploaded_at)}</div>`:''}</div>
+  <div style="text-align:right"><div class="st">${d?pill(d.status):'<span class="pill p-mute">missing</span>'}</div>${!d||d.status!=='approved'?`<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end"><label class="btn sm ghost" style="cursor:pointer">📷 Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadDoc('${k}',this)"></label><label class="btn sm ghost" style="cursor:pointer">📎 File<input type="file" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${k}',this)"></label></div>`:''}</div></div>`}).join('')}
+ <button class="btn ghost block" onclick="go('account')">Back</button>`}
+
+/* ================= CAPTAIN PAYOUTS ================= */
+async function payoutSheet(h){const max=Math.max(0,Math.floor(+h.balance));
+ openSheet(`<h3>Withdraw earnings</h3><p class="muted">Paid to your UPI ID <b>${esc(h.upi||'—')}</b> by the GrabVehicle team, usually within 24 hours.</p>
+ <div class="field"><label>Amount (₹100 – ₹${max})</label><input id="poA" type="number" inputmode="numeric" value="${max}"></div><button class="btn block green" id="poB" ${max<100?'disabled':''}>Request payout</button>${max<100?'<p class="muted">You need at least ₹100 in your wallet.</p>':''}`);
+ $('#poB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_request_payout',{p_amount:+$('#poA').value});closeSheet();toast('Payout requested');render()}catch(x){busy(e.target,false)}}}
+function upiSheet(cur){openSheet(`<h3>Your UPI ID</h3><p class="muted">Riders who choose "UPI" pay you directly here, and payouts are sent here.</p><div class="field"><label>UPI ID</label><input id="uU" value="${esc(cur||'')}" placeholder="9876543210@ybl"></div><button class="btn block" id="uB">Save</button>`);
+ $('#uB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_set_upi',{p_upi:$('#uU').value.trim()});closeSheet();toast('UPI ID saved');render()}catch(x){busy(e.target,false)}}}
+
+async function aMoney(v){const f=FIL||'payments';const m=await rpc('gv_admin_money');
+ let list;if(f==='payments')list=await rpc('gv_admin_payments',{p_status:null});else if(f==='payouts')list=await rpc('gv_admin_payouts',{p_status:null});else list=await rpc('gv_admin_ledger',{p_kind:null});
+ v.innerHTML=`<div class="kpis"><div class="kpi dark"><small>Online top-ups (7d)</small><b>${inr0(m.topups_7d)}</b><small style="color:#D6E6FB">${m.topups_count_7d} payments · ${m.failed_7d} failed</small></div><div class="kpi"><small>Platform income (7d)</small><b>${inr0(m.platform_7d)}</b></div>
+ <div class="kpi"><small>Rider wallets (owed)</small><b>${inr0(m.rider_wallets)}</b></div><div class="kpi"><small>Captain wallets</small><b>${inr0(m.captain_wallets)}</b><small>${inr0(m.captain_dues)} due from captains</small></div>
+ <div class="kpi" onclick="FIL='payouts';render()" style="${m.payouts_pending?'border-color:#f59e0b':''}"><small>Payouts to pay</small><b>${m.payouts_pending}</b><small>${inr0(m.payouts_pending_amt)}</small></div></div>
+ <div class="chips">${[['payments','Razorpay payments'],['payouts','Captain payouts'],['ledger','Wallet ledger']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l}</button>`).join('')}</div>
+ ${f==='payments'?list.map(p=>`<div class="list-i"><div style="flex:1;min-width:0"><b>${esc(p.name)} <span class="muted">${p.is_captain?'· captain':''}</span></b><div class="muted">${fdt(p.created_at)} · ${esc(p.method||'—')}</div><div class="muted" style="word-break:break-all">${esc(p.payment_id||p.order_id)}</div>${p.error?`<div class="muted" style="color:var(--bad)">${esc(p.error)}</div>`:''}</div><div style="text-align:right"><div class="num">${inr0(p.amount)}</div>${pill(p.status==='paid'?'completed':p.status==='failed'?'cancelled':'pending')}</div></div>`).join('')||'<div class="empty">No online payments yet</div>':''}
+ ${f==='payouts'?list.map(p=>`<div class="card"><div class="row"><div><b>${esc(p.name)}</b><div class="muted">${esc(p.upi_id)} · ${esc(p.phone||'')}</div><div class="muted">${fdt(p.created_at)}${p.utr?' · UTR '+esc(p.utr):''}</div>${p.note?`<div class="muted">${esc(p.note)}</div>`:''}</div><div style="text-align:right"><div class="num" style="font-size:18px">${inr0(p.amount)}</div>${pill(p.status==='requested'?'pending':p.status==='paid'?'completed':'rejected')}</div></div>
+   ${p.status==='requested'?`<a class="btn ghost block" style="margin-top:10px" href="${upiLink(p.upi_id,p.name,p.amount,'GrabVehicle payout')}">Pay ${inr0(p.amount)} with UPI app</a><div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:8px"><button class="btn ghost sm" onclick="decidePayout(${p.id},false)">Reject</button><button class="btn green sm" onclick="decidePayout(${p.id},true)">Mark paid (enter UTR)</button></div>`:''}</div>`).join('')||'<div class="empty">No payout requests</div>':''}
+ ${f==='ledger'?list.map(t=>`<div class="list-i"><div style="flex:1;min-width:0"><b>${esc(t.name)} <span class="muted">· ${t.role}</span></b><div class="muted" style="text-transform:capitalize">${esc(t.kind.replace(/_/g,' '))}${t.ride_id?' · ride #'+t.ride_id:''}</div><div class="muted">${esc(t.note||'')}</div><div class="muted">${fdt(t.created_at)}</div></div><div class="num" style="color:${+t.amount>=0?'var(--ok)':'var(--bad)'}">${+t.amount>=0?'+':''}${inr(t.amount)}</div></div>`).join(''):''}`}
+function decidePayout(id,paid){openSheet(`<h3>${paid?'Mark payout as paid':'Reject payout'}</h3>${paid?`<div class="field"><label>UTR / transaction reference</label><input id="pdU" placeholder="e.g. 431256789012"></div>`:''}<div class="field"><label>Note ${paid?'(optional)':'(reason, shown to captain)'}</label><input id="pdN"></div><button class="btn block ${paid?'green':'red'}" id="pdB">${paid?'Confirm paid':'Reject and refund wallet'}</button>`);
+ $('#pdB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_admin_decide_payout',{p_id:id,p_paid:paid,p_utr:paid?$('#pdU').value:null,p_note:$('#pdN').value});closeSheet();toast(paid?'Payout marked paid':'Payout rejected — wallet refunded');render()}catch(x){busy(e.target,false)}}}
+async function aMore(v){const d=await rpc('gv_admin_dashboard');
+ v.innerHTML=`<div class="menu-i" onclick="go('sos')"><span>🚨 Safety alerts (SOS)</span><span>${d.sos_open?`<span class="pill p-bad">${d.sos_open} open</span>`:'<span class="muted">›</span>'}</span></div>
+ <div class="menu-i" onclick="go('invoices')"><span>🧾 Invoices & GST report</span><span class="muted">›</span></div>
+ <div class="menu-i" onclick="go('company')"><span>🏢 Company & invoice details (GSTIN)</span><span class="muted">${CONF.company_gstin&&!/^PASTE_/.test(CONF.company_gstin)?esc(CONF.company_gstin):'<span class="pill p-warn">GSTIN not set</span>'} ›</span></div>
+ <div class="menu-i" onclick="go('caps')"><span>🪪 Approve captains</span><span class="muted">›</span></div>
+ <div class="menu-i" onclick="go('settings')"><span>⚙️ Settings, pricing, fixed routes, keys</span><span class="muted">›</span></div>
+ <div class="menu-i" onclick="go('account')"><span>👤 Account</span><span class="muted">›</span></div>
+ <div class="menu-i" onclick="logout()" style="color:var(--bad)"><span>Sign out</span><span>⎋</span></div>`}
+async function capDetail(id){const c=(window._caps||[]).find(x=>x.id===id);if(!c)return;const docs=await rpc('gv_admin_captain_docs',{p_captain:id});
+ const urls={};await Promise.all(docs.map(async d=>{const {data}=await sb.storage.from('gv-captain-docs').createSignedUrl(d.path,600);urls[d.id]=data?.signedUrl||null}));
+ const label=k=>(DOCS.find(x=>x[0]===k)||[k,k])[1];
+ openSheet(`<div class="row"><h3>${esc(c.name)} ${c.gender==='F'?'👩':''}</h3>${pill(c.status)}</div>
+ <div class="card" style="margin-top:10px"><div class="muted">${vtIcon(c.vehicle_type)} ${esc(c.vehicle_model)} · <b>${esc(c.vehicle_no)}</b></div><div class="muted">DL ${esc(c.dl_no)} · ${esc(c.city)} · ${esc(c.phone||'')}</div><div class="muted">UPI ${esc(c.upi_id||'—')} · plan ${c.plan==='day_pass'?'Day pass':'Per ride'}</div></div>
+ <div class="section-h"><h3>Documents</h3></div>
+ ${docs.map(d=>`<div class="card"><div class="row"><b>${esc(label(d.doc_type))}</b>${pill(d.status)}</div>
+  ${urls[d.id]?(/\.pdf$/i.test(d.path)?`<a class="btn ghost sm" style="margin-top:8px" href="${urls[d.id]}" target="_blank">Open PDF</a>`:`<img src="${urls[d.id]}" alt="${esc(label(d.doc_type))}" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:8px;background:#f1f1f6" onerror="this.outerHTML='<div class=&quot;muted&quot; style=&quot;margin-top:6px&quot;>File not found in storage</div>'">`):'<div class="muted" style="margin-top:6px">File not found in storage</div>'}
+  ${d.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}
+  ${d.status!=='approved'?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn ghost sm" onclick="reviewDoc(${d.id},false,'${id}')">Reject</button><button class="btn green sm" onclick="reviewDoc(${d.id},true,'${id}')">Approve</button></div>`:''}</div>`).join('')||'<div class="empty">No documents uploaded yet</div>'}
+ <div style="display:flex;gap:8px;margin-top:6px">${c.status==='pending'||c.status==='rejected'?`<button class="btn ghost" style="flex:1" onclick="setCap('${c.id}','rejected',this)">Reject captain</button><button class="btn green" style="flex:1" onclick="setCap('${c.id}','approved',this)">Approve captain</button>`:c.status==='approved'?`<button class="btn ghost" style="flex:1;color:var(--bad)" onclick="setCap('${c.id}','blocked',this)">Block</button>`:`<button class="btn" style="flex:1" onclick="setCap('${c.id}','approved',this)">Unblock</button>`}${c.phone?`<a class="btn ghost" href="tel:${esc(c.phone)}">📞</a>`:''}</div>`)}
+function reviewDoc(docId,ok,capId){
+ const go2=async note=>{try{await rpc('gv_admin_review_doc',{p_id:docId,p_ok:ok,p_note:note});toast(ok?'Document approved':'Document rejected');capDetail(capId)}catch(e){}};
+ if(ok)return go2(null);
+ openSheet(`<h3>Reject document</h3><div class="field"><label>Reason (shown to the captain)</label><input id="rjN" placeholder="e.g. Photo is blurred, licence expired"></div><button class="btn red block" id="rjB">Reject</button><button class="btn ghost block" style="margin-top:8px" onclick="capDetail('${capId}')">Back</button>`);
+ $('#rjB').onclick=()=>{const n=$('#rjN').value.trim();if(n.length<3){toast('Enter a reason',true);return}go2(n)}}
+
+/* ================= SHEET / BOOT ================= */
+function openSheet(h,o){$('#sheetRoot').innerHTML=`<div class="sheet-bg" id="sbg"><div class="sheet"><div class="grab"></div>${h}</div></div>`;$('#sbg').onclick=e=>{if(e.target.id==='sbg'&&!(o&&o.lock))closeSheet()}}
+function closeSheet(){$('#sheetRoot').innerHTML=''}
+document.addEventListener('backbutton',()=>{if($('#sbg'))closeSheet()});
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&ME){ME=null;stopLoop();showLogin()}});
+(async()=>{const {data}=await sb.auth.getSession();if(data.session)await enter();else showLogin()})();
+</script>
+</body>
+</html>
