@@ -205,6 +205,9 @@ svg.chart{width:100%;height:260px;display:block}svg.chart text{font-size:10.5px;
 .sr .sd{font-size:12px;color:var(--muted);white-space:nowrap}.sr .fav{border:0;background:none;font-size:20px;color:#c8d0dc;cursor:pointer;padding:4px}.sr .fav.on{color:#e11d48}
 .lg-legal{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0}.lg-legal a{color:inherit;text-decoration:underline}
 .map .tag{position:absolute;left:10px;top:10px;z-index:500;background:#fff;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.veh{position:relative;width:40px;height:40px;display:grid;place-items:center}.veh span{position:relative;z-index:2;width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:20px;box-shadow:0 3px 10px rgba(13,71,161,.35);border:2px solid #1565C0}
+.veh .hd{position:absolute;inset:0;transition:transform .6s}.veh .hd:before{content:'';position:absolute;left:50%;top:-5px;margin-left:-6px;border:6px solid transparent;border-bottom:9px solid #1565C0}
+.eta{display:flex;align-items:center;gap:10px;background:#EEF4FF;border-radius:14px;padding:10px 12px;margin:0 0 10px;font-size:14px}.eta b{font-size:17px;color:var(--p1)}
 .cap-ic{font-size:22px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
 .loc{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px 12px;margin-bottom:8px}
 .loc i{width:10px;height:10px;border-radius:50%;flex:none}.loc select{flex:1;border:0;background:none;padding:10px 0;outline:none;font-weight:600;font-size:16px;min-width:0}
@@ -257,7 +260,10 @@ input[type=range]{width:100%;accent-color:var(--p1)}
   <div class="lcard hidden" id="phoneCard">
     <h2>Welcome</h2><p class="sub">Log in or sign up with your mobile number.</p>
     <div id="phStep1"><div class="field"><label>Mobile number</label><div class="row"><span style="padding:12px;border:1px solid var(--line);border-radius:11px;background:#fafaff;font-weight:650">+91</span><input id="phNum" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile" style="flex:1;min-width:0"></div></div>
-      <div class="err" id="phErr"></div><button class="btn block" id="phSend">Send OTP</button></div>
+      <div class="err" id="phErr"></div><button class="btn block" id="phSend">Continue</button></div>
+    <div id="phStep3" class="hidden"><p class="muted" id="phPwTo"></p><div class="field"><label>Password</label><input id="phPw" type="password" autocomplete="current-password"></div>
+      <div class="err" id="phErr3"></div><button class="btn block" id="phPwGo">Log in</button>
+      <div style="text-align:center"><button class="linkbtn" id="phForgot">Forgot password? Log in with OTP</button> · <button class="linkbtn" id="phChange3">Change number</button></div></div>
     <div id="phStep2" class="hidden"><p class="muted" id="phSentTo"></p><p class="muted" id="phAuto" style="font-size:12.5px;margin-top:-6px"></p><div class="field"><label>6-digit OTP</label><input id="phCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="letter-spacing:8px;text-align:center;font-size:22px"></div>
       <div class="err" id="phErr2"></div><button class="btn block green" id="phVerify">Verify & continue</button>
       <div style="text-align:center"><button class="linkbtn" id="phResend">Resend OTP</button> · <button class="linkbtn" id="phChange">Change number</button></div></div>
@@ -399,6 +405,20 @@ function mapDot(lat,lng,title){if(!MK.map)return;lat=+lat;lng=+lng;if(MK.prov===
  return mapAdd(new google.maps.Marker({map:MK.map,position:{lat,lng},title,icon:{path:google.maps.SymbolPath.CIRCLE,scale:4,fillColor:'#9aa0bf',fillOpacity:.9,strokeWeight:0}}))}
 function mapCap(lat,lng,e){if(!MK.map)return;lat=+lat;lng=+lng;if(MK.prov==='l')return mapAdd(L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<div class="cap-ic">${e}</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).addTo(MK.map));
  return mapAdd(new google.maps.Marker({map:MK.map,position:{lat,lng},label:{text:e,fontSize:'22px'},icon:{path:google.maps.SymbolPath.CIRCLE,scale:0}}))}
+/* live vehicle marker: glides to each new GPS point and turns to face its direction of travel */
+const VEH={};
+function bearing(a,b){const r=Math.PI/180,y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r),x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360}
+function vehMove(key,lat,lng,emoji,follow){if(!MK.map)return;lat=+lat;lng=+lng;let v=VEH[key];
+ if(v&&(v.map!==MK.map||!MK.objs.includes(v.m)))v=VEH[key]=null;
+ if(!v){let m;if(MK.prov==='l'){m=L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<div class="veh"><i class="hd"></i><span>${emoji}</span></div>`,iconSize:[40,40],iconAnchor:[20,20]}),zIndexOffset:1000}).addTo(MK.map)}
+   else m=new google.maps.Marker({map:MK.map,position:{lat,lng},label:{text:emoji,fontSize:'24px'},icon:{path:google.maps.SymbolPath.CIRCLE,scale:16,fillColor:'#fff',fillOpacity:1,strokeColor:'#1565C0',strokeWeight:2},zIndex:999});
+   mapAdd(m);VEH[key]={m,map:MK.map,pos:[lat,lng],hd:0};return}
+ const from=v.pos.slice(),to=[lat,lng];if(distKm(from[0],from[1],to[0],to[1])<0.003)return;
+ if(distKm(from[0],from[1],to[0],to[1])>0.008){v.hd=bearing(from,to);const el=MK.prov==='l'&&v.m.getElement&&v.m.getElement();if(el){const h=el.querySelector('.hd');if(h)h.style.transform=`rotate(${v.hd}deg)`}}
+ cancelAnimationFrame(v.af);const t0=performance.now(),dur=1800;
+ const step=t=>{const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,p=[from[0]+(to[0]-from[0])*e,from[1]+(to[1]-from[1])*e];
+  if(MK.prov==='l')v.m.setLatLng(p);else v.m.setPosition({lat:p[0],lng:p[1]});v.pos=p;if(k<1)v.af=requestAnimationFrame(step);else v.pos=to};v.af=requestAnimationFrame(step);
+ if(follow){try{if(MK.prov==='l'){if(!MK.map.getBounds().pad(-.2).contains(to))MK.map.panTo(to)}else if(!MK.map.getBounds().contains({lat,lng}))MK.map.panTo({lat,lng})}catch(e){}}}
 function mapLine(a,b,dashed){if(!MK.map)return;a=a.map(Number);b=b.map(Number);if(MK.prov==='l')return mapAdd(L.polyline([a,b],{color:'#1565C0',weight:4,opacity:.7,dashArray:dashed?'2 8':null}).addTo(MK.map));
  return mapAdd(new google.maps.Polyline({map:MK.map,path:[{lat:a[0],lng:a[1]},{lat:b[0],lng:b[1]}],strokeColor:'#1565C0',strokeOpacity:dashed?0:.7,strokeWeight:4,icons:dashed?[{icon:{path:'M 0,-1 0,1',strokeOpacity:1,scale:3},offset:'0',repeat:'12px'}]:[]}))}
 function mapFit(pts){if(!MK.map||!pts.length)return;pts=pts.map(p=>p.map(Number));if(MK.prov==='l'){if(pts.length===1)MK.map.setView(pts[0],15);else MK.map.fitBounds(pts,{padding:[30,30],maxZoom:16});return}
@@ -458,7 +478,30 @@ async function initLogin(){let pc=null;try{pc=(await sb.rpc('gv_public_config'))
  PHONE_OK=!!(pc&&pc.phone_login&&FA());$('#toPhone').classList.toggle('hidden',!PHONE_OK);showCard(PHONE_OK?'phoneCard':'signinCard')}
 function showCard(id){['phoneCard','signinCard','signupCard','verifyCard'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id))}
 async function clearPh(){for(const l of PH_L){try{await l.remove()}catch(e){}}PH_L=[]}
-function phStep(n){$('#phStep1').classList.toggle('hidden',n!==1);$('#phStep2').classList.toggle('hidden',n!==2)}
+function phStep(n){$('#phStep1').classList.toggle('hidden',n!==1);$('#phStep2').classList.toggle('hidden',n!==2);$('#phStep3').classList.toggle('hidden',n!==3)}
+let PH_FORGOT=false,PH_HASPW=false;
+async function phContinue(){const d=$('#phNum').value.replace(/\D/g,'').slice(-10);$('#phErr').textContent='';
+ if(!/^[6-9]\d{9}$/.test(d)){$('#phErr').textContent='Enter a valid 10-digit mobile number';return}
+ const b=$('#phSend');busy(b,true);let st=null;
+ try{const r=await fetch(`${CFG.url}/functions/v1/phone-login`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey},body:JSON.stringify({action:'check',phone:d})});if(r.ok)st=await r.json()}catch(e){}
+ busy(b,false);PH_HASPW=!!(st&&st.has_password);PH_FORGOT=false;
+ if(PH_HASPW){$('#phPwTo').textContent='Welcome back! +91 '+d.slice(0,5)+' '+d.slice(5);$('#phErr3').textContent='';$('#phPw').value='';phStep(3);setTimeout(()=>$('#phPw').focus(),100);return}
+ phSend()}
+async function phPwLogin(){const d=$('#phNum').value.replace(/\D/g,'').slice(-10),pw=$('#phPw').value;$('#phErr3').textContent='';if(pw.length<6){$('#phErr3').textContent='Enter your password';return}
+ const b=$('#phPwGo');busy(b,true);
+ try{const r=await fetch(`${CFG.url}/functions/v1/phone-login`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey},body:JSON.stringify({action:'password',phone:d,password:pw})});
+  const j=await r.json().catch(()=>({error:'Login server not reachable'}));if(!r.ok)throw new Error(j.error||'Login failed');
+  const {error}=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(error)throw error;$('#phPw').value='';phStep(1);await enter()}
+ catch(e){$('#phErr3').textContent=e.message||String(e)}finally{busy(b,false)}}
+/* after an OTP login: ask for a password so next time is number + password */
+function pwSheet(forgot,after){openSheet(`<h3>${forgot?'Set a new password':'Create a password'}</h3><p class="muted" style="margin:2px 0 10px">${forgot?'Use it to log in from now on.':'Next time, log in with your mobile number and this password — no OTP needed. Forgot it? Log in with OTP any time.'}</p>
+ <div class="field"><label>Password (min 8 characters)</label><input id="npw1" type="password" autocomplete="new-password"></div><div class="field"><label>Confirm password</label><input id="npw2" type="password" autocomplete="new-password"></div>
+ <div class="err" id="npwE"></div><button class="btn block" id="npwB">Save password</button>${forgot?'':`<button class="btn ghost block" style="margin-top:8px" id="npwL">Later</button>`}`,{lock:true});
+ const fin=()=>{closeSheet(true);after&&after()};if($('#npwL'))$('#npwL').onclick=fin;
+ $('#npwB').onclick=async e=>{const a=$('#npw1').value,b2=$('#npw2').value;$('#npwE').textContent='';
+  if(a.length<8){$('#npwE').textContent='Use at least 8 characters';return}if(a!==b2){$('#npwE').textContent='Passwords do not match';return}
+  busy(e.target,true);const {error}=await sb.auth.updateUser({password:a});if(error){busy(e.target,false);$('#npwE').textContent=error.message;return}
+  try{await rpc('gv_mark_password')}catch(x){}toast('Password saved — use it next time');fin()}}
 async function phSend(){const d=$('#phNum').value.replace(/\D/g,'').slice(-10);$('#phErr').textContent='';$('#phErr2').textContent='';
  if(!/^[6-9]\d{9}$/.test(d)){$('#phErr').textContent='Enter a valid 10-digit mobile number';return}
  const fa=FA();if(!fa){$('#phErr').textContent='Mobile login is not available in this build';return}
@@ -480,9 +523,11 @@ async function phDone(){if(phDoing)return;phDoing=true;const b=$('#phVerify');bu
   const j=await r.json().catch(()=>({error:'Login server not reachable'}));if(!r.ok)throw new Error(j.error||'Login failed');
   const {error}=await sb.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token});if(error)throw error;
   try{await FA().signOut()}catch(e){}await clearPh();clearInterval(PHT);phStep(1);$('#phCode').value='';
-  await enter();if(ME&&ME.onboarded!==false&&(j.new_user||!ME.full_name||/^\d+$/.test(ME.full_name))){toast('Welcome! Tell us your name');profileForm()}}
+  let lg=null;try{lg=(await sb.rpc('gv_my_login')).data}catch(x){}window._needPw=PH_FORGOT?'forgot':(lg&&!lg.has_password?'new':null);
+  await enter();if(!window._needPw&&ME&&ME.onboarded!==false&&(j.new_user||!ME.full_name||/^\d+$/.test(ME.full_name))){toast('Welcome! Tell us your name');profileForm()}}
  catch(e){$('#phErr2').textContent=phMsg(e&&e.message)}finally{phDoing=false;busy(b,false)}}
-$('#phSend').onclick=phSend;$('#phVerify').onclick=phVerify;$('#phResend').onclick=()=>{phStep(1);phSend()};$('#phChange').onclick=()=>{VID=null;phStep(1)};
+$('#phSend').onclick=phContinue;$('#phPwGo').onclick=phPwLogin;$('#phPw').onkeydown=e=>{if(e.key==='Enter')phPwLogin()};
+$('#phForgot').onclick=()=>{PH_FORGOT=true;phStep(1);phSend()};$('#phChange3').onclick=()=>{phStep(1);$('#phNum').focus()};$('#phVerify').onclick=phVerify;$('#phResend').onclick=()=>{phStep(1);phSend()};$('#phNum').onkeydown=e=>{if(e.key==='Enter')phContinue()};$('#phChange').onclick=()=>{VID=null;phStep(1)};
 $('#phCode').oninput=e=>{if(e.target.value.replace(/\D/g,'').length===6)phVerify()};
 document.querySelectorAll('[data-legal]').forEach(a=>{a.href=legalUrl(a.dataset.legal);a.target='_blank';a.rel='noopener'});
 $('#toEmail').onclick=()=>showCard('signinCard');$('#toPhone').onclick=()=>showCard('phoneCard');
@@ -495,7 +540,8 @@ async function enter(){
  GOOGLE=!!(CONF.google_maps_api_key&&!/^PASTE_/.test(CONF.google_maps_api_key)&&CONF.google_maps_api_key.length>=20);
  BOOK.city=ME.city;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');$('#avBtn').textContent=ini(ME.full_name);
  TAB='home';renderTabs();render();startLoop();
- if(ME.role==='rider'&&ME.onboarded===false)setTimeout(onboardChoose,300)}
+ const ob=()=>{if(ME.role==='rider'&&ME.onboarded===false)onboardChoose()};const np=window._needPw;window._needPw=null;
+ setTimeout(()=>np?pwSheet(np==='forgot',ob):ob(),300)}
 function showLogin(){$('#app').classList.add('hidden');$('#login').classList.remove('hidden');initLogin()}
 async function logout(){stopLoop();closeSheet();if(ME?.role==='captain'){try{await rpc('gv_set_online',{p_online:false,p_lat:null,p_lng:null},true)}catch(e){}}await sb.auth.signOut();try{const f=FA();f&&await f.signOut()}catch(e){}ME=null;$('#lPass').value='';showLogin()}
 $('#avBtn').onclick=()=>go('account');
@@ -503,7 +549,7 @@ $('#avBtn').onclick=()=>go('account');
 /* ================= LOOP (live ride / requests) ================= */
 function startLoop(){stopLoop();POLL=setInterval(tick,3000);
  try{CH=sb.channel('rides-'+ME.id).on('postgres_changes',{event:'*',schema:'public',table:'gv_rides'},()=>tick()).subscribe()}catch(e){}}
-function stopLoop(){clearInterval(POLL);POLL=null;if(LOCW){clearInterval(LOCW);LOCW=null}try{CH&&sb.removeChannel(CH)}catch(e){}CH=null}
+function stopLoop(){clearInterval(POLL);POLL=null;if(LOCW){clearInterval(LOCW);LOCW=null;geoStopCap()}try{CH&&sb.removeChannel(CH)}catch(e){}CH=null}
 let ticking=false;
 async function tick(){if(ticking||!ME||document.hidden)return;ticking=true;try{
  if(ME.role==='rider'&&TAB==='home'&&ACTIVE)await riderLive(true);
@@ -681,13 +727,14 @@ function confirmRide(i){const r=window._offers,o=r.offers[i];const credit=+ME.cr
  openSheet(`<h3>Confirm ${parcel?'parcel':'ride'}</h3><div class="card row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(o.name)}">${ini(o.name)}</div><div><b>${esc(o.name)}</b><div class="muted">${esc(o.vehicle_model)} · ${esc(o.vehicle_no)}</div></div></div>${o.rating?`<span class="star">★ ${o.rating}</span>`:''}</div>
  <div class="card">${bdHTML(o.fare,credit)}</div>
  ${parcel?`<div class="card"><b>📦 Parcel details</b><div class="field" style="margin-top:8px"><label>Receiver name</label><input id="pRn"></div><div class="field"><label>Receiver mobile</label><input id="pRp" type="tel" placeholder="+91"></div><div class="field"><label>Item</label><input id="pIt" placeholder="e.g. Documents, keys, lunch box"></div><div class="field"><label>Weight (kg, max 10)</label><input id="pW" type="number" inputmode="decimal" value="1" min="0.1" max="10" step="0.1"></div></div>`:''}
- <div class="field"><label>Pay with</label><select id="payM"><option value="Wallet">Wallet (${inr0(ME.wallet)})${PAY.razorpay?' — top up with UPI/card if needed':''}</option><option value="UPI">UPI to captain (your UPI app)</option><option value="Cash">Cash</option></select></div>
+ <div class="field"><label>Pay with</label><select id="payM"><option value="UPI" selected>UPI — pay captain with your UPI app</option><option value="Wallet">Wallet (${inr0(ME.wallet)})${PAY.razorpay?' — top up with UPI/card if needed':''}</option><option value="Cash">Cash</option></select></div>
  <button class="btn block green" id="bkBtn">Book ${parcel?'parcel pickup':vtName(BOOK.v)}</button>`);
- $('#bkBtn').onclick=async e=>{busy(e.target,true);try{const pay=Math.max(0,Math.round(+o.total-credit));
-  if($('#payM').value==='Wallet'&&+ME.wallet<pay){const need=Math.ceil(pay-+ME.wallet);if(!PAY.razorpay&&!PAY.demo)throw new Error('Not enough wallet balance');
+ $('#bkBtn').onclick=async e=>{busy(e.target,true);try{const pay=Math.max(0,Math.round(+o.total-credit));const pm=$('#payM').value;
+  const pf=parcel?{p_receiver_name:$('#pRn').value,p_receiver_phone:$('#pRp').value,p_item:$('#pIt').value,p_weight:+$('#pW').value}:null;
+  if(pm==='Wallet'&&+ME.wallet<pay){const need=Math.ceil(pay-+ME.wallet);if(!PAY.razorpay&&!PAY.demo)throw new Error('Not enough wallet balance');
    if(PAY.razorpay)await payOnline(need,'Add money for ride');else await rpc('gv_demo_topup',{p_amount:[100,200,500,1000].find(x=>x>=need)||1000});ME=await rpc('gv_me')}
-  const args={p_captain:o.captain_id,p_from:BOOK.from,p_to:BOOK.to,p_vtype:BOOK.v,p_pay:$('#payM').value,p_women:BOOK.women};
-  if(parcel)Object.assign(args,{p_receiver_name:$('#pRn').value,p_receiver_phone:$('#pRp').value,p_item:$('#pIt').value,p_weight:+$('#pW').value});
+  const args={p_captain:o.captain_id,p_from:BOOK.from,p_to:BOOK.to,p_vtype:BOOK.v,p_pay:pm,p_women:BOOK.women};
+  if(pf)Object.assign(args,pf);
   ACTIVE=await rpc('gv_request_ride',args);closeSheet();toast('Request sent to '+o.name);render()}catch(x){if(x&&x.message&&!x.code)toast(cleanErr(x.message),true);busy(e.target,false)}}}
 
 /* ================= RIDER: LIVE ================= */
@@ -708,9 +755,14 @@ async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTI
  <div class="card"><div><span style="color:#10b981">●</span> ${esc(s.pickup.name)}</div><div><span style="color:#e11d48">●</span> ${esc(s.drop.name)}</div><div class="muted" style="margin-top:4px">${s.distance_km} km · ${s.fixed_fare?'📌 fixed-fare route':'₹'+s.rate+'/km captain rate'}</div></div>
  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">${c.phone?`<a class="btn ghost" href="tel:${esc(c.phone)}">📞 Call</a>`:'<button class="btn ghost" disabled>📞 Call</button>'}<button class="btn ghost" onclick="shareTrip()">📡 Share</button><button class="sos" onclick="sos()">SOS</button></div>
  ${stg<3?`<button class="btn ghost block" style="margin-top:10px;color:var(--bad)" onclick="cancelRide('${s.status}')">Cancel ${s.status==='requested'?'request':'ride'}</button>`:''}`;
- if(update&&$('#lMap')&&MK.map){$('#lPanel').innerHTML=panel;mapClear()}else{v.innerHTML=`<div class="map" id="lMap"></div><div id="lRoutes"></div><div id="lPanel">${panel}</div>`;await mapMount('lMap',[s.pickup.lat,s.pickup.lng])}
+ const stage=s.status+(s.captain?.id||'');if(update&&$('#lMap')&&MK.map&&window._lstage===stage){$('#lPanel').innerHTML=etaHTML(s)+panel;window._live=s;if(c.lat)vehMove('cap',c.lat,c.lng,vtIcon(s.vehicle_type==='parcel'?'bike':s.vehicle_type),true);return}
+ window._lstage=stage;if(update&&$('#lMap')&&MK.map){$('#lPanel').innerHTML=etaHTML(s)+panel;mapClear()}else{v.innerHTML=`<div class="map" id="lMap"></div><div id="lRoutes"></div><div id="lPanel">${etaHTML(s)+panel}</div>`;await mapMount('lMap',[s.pickup.lat,s.pickup.lng])}
  window._live=s;mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');showRoutes('lRoutes',s.pickup,s.drop,s.vehicle_type,'ride'+s.id,null,true);
- const pts=[[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]];if(c.lat){mapCap(c.lat,c.lng,vtIcon(s.vehicle_type==='parcel'?'bike':s.vehicle_type));pts.push([c.lat,c.lng])}if(!update)mapFit(pts)}
+ const pts=[[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]];if(c.lat){vehMove('cap',c.lat,c.lng,vtIcon(s.vehicle_type==='parcel'?'bike':s.vehicle_type));pts.push([c.lat,c.lng])}mapFit(pts)}
+/* live ETA under the map */
+function etaHTML(s){const c=s.captain||{};if(!c.lat||!['accepted','arrived','started'].includes(s.status))return '';
+ const to=s.status==='started'?s.drop:s.pickup,km=distKm(+c.lat,+c.lng,+to.lat,+to.lng)*1.3,min=Math.max(1,Math.round(km/(s.vehicle_type==='bike'?22:18)*60));
+ return `<div class="eta"><span style="font-size:24px">${vtIcon(s.vehicle_type==='parcel'?'bike':s.vehicle_type)}</span><div style="flex:1">${s.status==='arrived'?'<b>Captain is at your pickup</b>':s.status==='started'?`<b>${min} min</b> to drop · ${km.toFixed(1)} km`:`<b>${min} min</b> away · ${km.toFixed(1)} km`}<div class="muted" style="font-size:12px">Live location · updates every few seconds</div></div></div>`}
 function shareTrip(){const s=window._live;const t=`I'm on a GrabVehicle ${s.service}: ${s.pickup.name} → ${s.drop.name}. Captain ${s.captain?.name}, ${s.captain?.vehicle_no}. Trip #${s.id}.`;location.href='https://wa.me/'+(ME.emergency_contact||'').replace(/\D/g,'')+'?text='+encodeURIComponent(t)}
 /* cancel with a reason: the fee (if any) depends on the reason and how far the trip has gone */
 async function cancelSheet(id,after){let o;try{o=await rpc('gv_cancel_options',{p_ride:id})}catch(e){return}const cap=o.who==='captain';let pick=null;
@@ -776,6 +828,7 @@ async function account(v){let app=null;if(ME.role==='rider')app=await rpc('gv_my
  ${ME.role!=='admin'?`<div class="menu-i" onclick="profileForm()"><span>✏️ Profile & emergency contact</span><span class="muted">${ME.emergency_contact?'set':'not set'} ›</span></div>`:''}
  ${ME.role==='captain'?`<div class="menu-i" onclick="go('trips')"><span>🧾 Trip history</span><span class="muted">›</span></div><div class="menu-i" onclick="go('docs')"><span>📄 My documents</span><span class="muted">›</span></div><div class="menu-i" onclick="go('wallet')"><span>💸 UPI ID & withdrawals</span><span class="muted">›</span></div>`:''}
  ${ME.role==='rider'?(app?`<div class="card"><b>Captain application</b><div class="muted">${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · ${esc(app.city)}</div><div style="margin-top:6px">${pill(app.status)} ${app.status==='pending'?'<span class="muted">Upload documents so we can verify you</span>':''}</div><button class="btn sm" style="margin-top:10px" onclick="go('docs')">📄 Upload / view documents</button></div>`:`<div class="menu-i" onclick="go('drive')"><span>🏍️ Drive with GrabVehicle — set your own price</span><span class="muted">Apply ›</span></div>`):''}
+ <div class="menu-i" onclick="pwSheet(true)"><span>🔑 Change password</span><span class="muted">›</span></div>
  ${ME.role!=='admin'?`<div class="menu-i" onclick="go('invoices')"><span>🧾 Tax invoices</span><span class="muted">›</span></div>`:''}
  <div class="menu-i" onclick="go('why')"><span>⭐ Why GrabVehicle</span><span class="muted">›</span></div>
  <a class="menu-i" style="text-decoration:none;color:inherit" href="tel:${esc(CONF.support_phone||'')}"><span>💬 Help & support</span><span class="muted">${esc(CONF.support_phone||'')} ›</span></a>
@@ -849,8 +902,7 @@ function why(v){v.innerHTML=`<div class="card grad" style="color:#fff;border:0">
 /* ================= CAPTAIN ================= */
 async function capHome(v,update){const h=await rpc('gv_captain_home',{},update);const aid=await rpc('gv_active_ride',{},update);let s=null;if(aid)s=await rpc('gv_ride_status',{p_ride:aid},update);
  if(update&&!$('#cBox'))return;
- if(h.online&&!LOCW){LOCW=setInterval(async()=>{const p=await getPos();if(p)try{await rpc('gv_update_location',{p_lat:p.lat,p_lng:p.lng},true)}catch(e){}},20000)}
- if(!h.online&&LOCW){clearInterval(LOCW);LOCW=null}
+ if(h.online&&!LOCW)capTrack(true);if(!h.online&&LOCW)capTrack(false);CAPT.busy=!!s&&s.status!=='requested';CAPT.vt=h.vehicle_type;
  let box='';
  if(s&&s.status==='requested'){const f=s.fare;box=`<div class="card req"><div class="row"><b>🔔 New ${s.service==='parcel'?'parcel':'ride'} request</b><span class="pill p-warn">${s.expires_in}s</span></div>
   <div style="margin:8px 0"><div><span style="color:#10b981">●</span> ${esc(s.pickup.name)}</div><div><span style="color:#e11d48">●</span> ${esc(s.drop.name)}</div></div>
@@ -875,10 +927,20 @@ async function capHome(v,update){const h=await rpc('gv_captain_home',{},update);
  if(update&&v._sig===sig)return;v._sig=sig;
  const keepOtp=$('#cOtp')?.value,keepD=$('#cDotp')?.value;
  v.innerHTML=html;if(keepOtp&&$('#cOtp'))$('#cOtp').value=keepOtp;if(keepD&&$('#cDotp'))$('#cDotp').value=keepD;
- const cc=CITIES.find(x=>x.name===h.city)||{lat:18.43,lng:79.13};const c=[+(h.lat||cc.lat),+(h.lng||cc.lng)];await mapMount('cMap',c);mapCap(c[0],c[1],vtIcon(h.vehicle_type));
+ const cc=CITIES.find(x=>x.name===h.city)||{lat:18.43,lng:79.13};const c=[+(h.lat||cc.lat),+(h.lng||cc.lng)];await mapMount('cMap',c);const me0=GEO.pos&&h.online?[GEO.pos.lat,GEO.pos.lng]:c;vehMove('me',me0[0],me0[1],vtIcon(h.vehicle_type));
  if(s){mapPin(s.pickup.lat,s.pickup.lng,'#10b981');mapPin(s.drop.lat,s.drop.lng,'#e11d48');mapFit([c,[s.pickup.lat,s.pickup.lng],[s.drop.lat,s.drop.lng]]);
   if(s.status!=='requested'){const to=s.status==='started'?s.drop:s.pickup,from=s.status==='started'?s.pickup:{lat:c[0],lng:c[1]};showRoutes('cRoutes',from,to,s.vehicle_type,'cap'+s.id+s.status)}}else mapFit([c])
  $('#onSw').onclick=async e=>{const b=e.target;b.disabled=true;const p=h.online?null:await getPos();try{await rpc('gv_set_online',{p_online:!h.online,p_lat:p?.lat??null,p_lng:p?.lng??null});toast(h.online?'You are offline':'You are online')}catch(x){}b.disabled=false;v._sig=null;capHome(v)}}
+/* captain live tracking */
+const CAPT={last:0,busy:false,sent:null,vt:'bike'};
+function capTrack(on){if(!on){clearInterval(LOCW);LOCW=null;geoStopCap();return}
+ geoWatchCap();LOCW=setInterval(async()=>{const p=GEO.pos;if(!p)return;const now=Date.now(),gap=CAPT.busy?4000:15000;
+  if(now-CAPT.last<gap-200)return;if(CAPT.sent&&distKm(CAPT.sent.lat,CAPT.sent.lng,p.lat,p.lng)<0.005&&now-CAPT.last<60000)return;
+  CAPT.last=now;CAPT.sent={lat:p.lat,lng:p.lng};try{await rpc('gv_update_location',{p_lat:p.lat,p_lng:p.lng},true)}catch(e){}},2000)}
+async function geoWatchCap(){geoStopCap();const g=geoPlugin();const on=(lat,lng,acc)=>{GEO.pos={lat,lng,acc:Math.round(acc||0)};if(ME?.role==='captain'&&TAB==='home'&&$('#cMap')&&MK.map)vehMove('me',lat,lng,vtIcon(CAPT.vt),CAPT.busy)};
+ try{if(g)CAPT.wid=await g.watchPosition({enableHighAccuracy:true,timeout:20000,maximumAge:3000},(p)=>{if(p&&p.coords)on(p.coords.latitude,p.coords.longitude,p.coords.accuracy)});
+  else if(navigator.geolocation)CAPT.wid=navigator.geolocation.watchPosition(p=>on(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:20000})}catch(e){}}
+function geoStopCap(){if(CAPT.wid==null)return;const g=geoPlugin();try{g?g.clearWatch({id:CAPT.wid}):navigator.geolocation.clearWatch(CAPT.wid)}catch(e){}CAPT.wid=null}
 async function capRespond(id,ok,b){busy(b,true);try{await rpc('gv_captain_respond',{p_ride:id,p_accept:ok});toast(ok?'Accepted — head to pickup':'Skipped')}catch(e){}$('#view')._sig=null;capHome($('#view'))}
 async function capArrived(id,b){busy(b,true);try{await rpc('gv_captain_arrived',{p_ride:id});toast('Rider notified')}catch(e){}$('#view')._sig=null;capHome($('#view'))}
 async function capStart(id,b){const o=($('#cOtp')?.value||'').trim();if(!/^\d{4}$/.test(o)){toast('Enter the 4-digit OTP',true);return}busy(b,true);try{await rpc('gv_captain_start',{p_ride:id,p_otp:o});toast('Trip started')}catch(e){busy(b,false);return}$('#view')._sig=null;capHome($('#view'))}
@@ -1008,7 +1070,8 @@ async function aSettings(v){const {data:s}=await sb.from('gv_settings').select('
  <div class="field"><label>GST on ride fare u/s 9(5) (%)</label><input id="sRg" type="number" step="0.5" value="${s.ride_gst_pct}"></div><div class="field"><label>GST on fee & commission (%)</label><input id="sGs" type="number" step="1" value="${s.gst_pct}"></div><div class="field"><label>TDS on captain (% of net ride value, 194-O)</label><input id="sTd" type="number" step="0.1" value="${s.tds_pct}"></div>
  <div class="field"><label>Captain wallet floor (₹, hard block below)</label><input id="sFl" type="number" step="50" value="${s.captain_floor}"></div>
  <div class="field"><label>Rider cancel fee after arrival (₹)</label><input id="sCf" type="number" value="${s.cancel_fee}"></div><div class="field"><label>Cancel-protection credit (₹)</label><input id="sCc" type="number" value="${s.cancel_credit}"></div>
- <button class="btn block" id="sSave">Save</button></div><div class="card"><b>Cancellation rules</b><div class="muted" style="margin-bottom:8px">Rider pays the "after arrival" fee above if the captain has arrived. No fee when the reason is the captain's fault.</div>
+ <button class="btn block" id="sSave">Save</button></div><div class="card"><div class="row"><div><b>Demo mode</b><div class="muted">${s.demo_mode?'ON — demo captains accept rides automatically and test top-ups work. Turn OFF for real testing.':'OFF — only real captains get rides.'}</div></div><button class="btn sm ${s.demo_mode?'red':'green'}" onclick="setDemo(${!s.demo_mode},this)">${s.demo_mode?'Turn off':'Turn on'}</button></div></div>
+  <div class="card"><b>Cancellation rules</b><div class="muted" style="margin-bottom:8px">Rider pays the "after arrival" fee above if the captain has arrived. No fee when the reason is the captain's fault.</div>
   <div class="field"><label>Free cancellation after captain accepts (seconds)</label><input id="cGr" type="number" step="30" value="${s.cancel_grace_sec??120}"></div>
   <div class="field"><label>Fee after the free period (₹, captain on the way)</label><input id="cFa" type="number" step="1" value="${s.cancel_fee_accepted??5}"></div>
   <div class="field"><label>Captain can mark rider "no-show" after waiting (minutes)</label><input id="cNs" type="number" step="1" value="${s.noshow_wait_min??5}"></div>
@@ -1025,6 +1088,7 @@ async function aSettings(v){const {data:s}=await sb.from('gv_settings').select('
  $('#sSave').onclick=async e=>{busy(e.target,true);try{await rpc('gv_admin_update_settings',{p_rider_fee:+$('#sRf').value,p_comm:+$('#sCm').value,p_floor:+$('#sFl').value,p_cancel_fee:+$('#sCf').value,p_cancel_credit:+$('#sCc').value,p_ride_gst:+$('#sRg').value,p_tds:+$('#sTd').value,p_gst:+$('#sGs').value});
    const {data:st}=await sb.from('gv_settings').select('*').maybeSingle();SET=st||SET;toast('Settings saved')}catch(x){}busy(e.target,false)}}
 
+async function setDemo(on,b){busy(b,true);try{await rpc('gv_admin_set_demo',{p_on:on});toast(on?'Demo mode ON':'Demo mode OFF — real captains only');render()}catch(e){busy(b,false)}}
 async function saveCancelRules(b){busy(b,true);try{await rpc('gv_admin_cancel_rules',{p_fee_accepted:+$('#cFa').value,p_grace_sec:+$('#cGr').value,p_noshow_min:+$('#cNs').value});toast('Cancellation rules saved')}catch(e){}busy(b,false)}
 async function mapsCheck(b){const out=$('#gmRes');busy(b,true);const c=CITIES[0]||{lat:18.4386,lng:79.1288};
  if(!GOOGLE){out.innerHTML='⚪ No Google key set (google_maps_api_key). Addresses come from OpenStreetMap and are approximate.';busy(b,false);return}
@@ -1086,6 +1150,12 @@ async function showRoutes(slot,a,b,vt,id,onPick,noFit){const box=$('#'+slot);if(
  draw();if(!noFit){const P=rs[sel].pts;mapFit(P.filter((_,i)=>i%Math.max(1,Math.floor(P.length/40))===0).concat([P[P.length-1]]))}return rs}
 function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destination=${+to.lat},${+to.lng}&travelmode=${vt==='bike'?'two-wheeler':'driving'}&dir_action=navigate`}
 
+/* Android back button: close payment → sheet → overlay → go home → leave app */
+(function(){try{const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable('App')))return;const App=C.registerPlugin('App');
+ App.addListener('backButton',()=>{if(RZ){try{RZ.close()}catch(e){}RZ=null;return}
+  const ov=document.querySelector('#srch,#mpick');if(ov){(ov.querySelector('#srB,#mpBack')||{click(){ov.remove();render()}}).click();return}
+  if($('#sbg')){const lk=$('#pmX');if(lk){lk.click();return}closeSheet(true);return}
+  if(ME&&TAB!=='home'){go('home');return}App.minimizeApp()})}catch(e){}})();
 /* ================= TAX INVOICES ================= */
 function words(n){n=Math.round(+n||0);if(!n)return 'Zero';const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
  const two=x=>x<20?a[x]:b[Math.floor(x/10)]+(x%10?' '+a[x%10]:''),three=x=>(x>=100?a[Math.floor(x/100)]+' Hundred'+(x%100?' ':''):'')+(x%100?two(x%100):'');
@@ -1172,17 +1242,30 @@ async function fnCall(route,body){const {data}=await sb.auth.getSession();const 
  const r=await fetch(`${CFG.url}/functions/v1/razorpay/${route}`,{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey,Authorization:'Bearer '+t},body:JSON.stringify(body)});
  const j=await r.json().catch(()=>({error:'Payment server not reachable'}));if(!r.ok)throw new Error(j.error||'Payment failed');return j}
 /* opens Razorpay checkout (UPI apps, cards, netbanking, wallets); resolves after the server verified and credited the wallet */
+let RZ=null;
+/* step 1: our own method chooser (UPI app first). step 2: Razorpay opens straight on that method. Back/close → choose again. */
+function payChoose(amount,purpose){return new Promise(res=>{
+ openSheet(`<h3>Pay ${inr0(amount)}</h3><p class="muted" style="margin:2px 0 10px">${esc(purpose||'')}</p>
+ <div class="reasons"><label class="reason on" data-m="upi"><input type="radio" name="pm" checked><div><b>UPI app</b><small>Google Pay · PhonePe · Paytm · BHIM — opens your UPI app</small></div><span class="fee" style="color:var(--ok)">Recommended</span></label>
+ <label class="reason" data-m="other"><input type="radio" name="pm"><div><b>Card / Netbanking / Wallets</b><small>Debit or credit card, any bank</small></div></label></div>
+ <button class="btn block green" id="pmGo">Continue</button><button class="btn ghost block" style="margin-top:8px" id="pmX">Cancel</button>`,{lock:true});
+ let m='upi';document.querySelectorAll('[data-m]').forEach(l=>l.onclick=()=>{m=l.dataset.m;document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===l));l.querySelector('input').checked=true});
+ $('#pmGo').onclick=()=>{closeSheet(true);res(m)};$('#pmX').onclick=()=>{closeSheet(true);res(null)}})}
 async function payOnline(amount,purpose){amount=Math.ceil(+amount);
  if(!PAY.razorpay)throw new Error('Online payments are not set up yet');
- await loadRazorpay();const o=await fnCall('order',{amount});
- return new Promise((resolve,reject)=>{let done=false;
-  const rz=new window.Razorpay({key:o.key_id,amount:o.amount,currency:'INR',order_id:o.order_id,name:'GrabVehicle',description:purpose||'Wallet top-up',
-   prefill:{name:o.name||ME.full_name,email:o.email||'',contact:(o.contact||ME.phone||'').replace(/[^\d+]/g,'')},
-   theme:{color:'#1565C0'},retry:{enabled:true,max_count:2},
-   config:{display:{preferences:{show_default_blocks:true}}},
-   handler:async resp=>{done=true;try{toast('Confirming payment…');const v=await fnCall('verify',resp);resolve(v)}catch(e){reject(e)}},
-   modal:{ondismiss:()=>{if(!done)reject(new Error('Payment cancelled'))},confirm_close:true}});
-  rz.on&&rz.on('payment.failed',r=>{toast(r?.error?.description||'Payment failed',true)});rz.open()})}
+ await loadRazorpay();let o=null;
+ for(;;){const m=await payChoose(amount,purpose);if(!m)throw new Error('Payment cancelled');
+  if(!o)o=await fnCall('order',{amount});
+  const r=await new Promise((resolve,reject)=>{let done=false;
+   const upi=m==='upi',cfg=upi?{display:{blocks:{upi:{name:'Pay using UPI app',instruments:[{method:'upi',flows:['intent','collect','qr']}]}},sequence:['block.upi'],preferences:{show_default_blocks:false}}}
+     :{display:{blocks:{oth:{name:'Card, netbanking & wallets',instruments:[{method:'card'},{method:'netbanking'},{method:'wallet'}]}},sequence:['block.oth'],preferences:{show_default_blocks:false}}};
+   RZ=new window.Razorpay({key:o.key_id,amount:o.amount,currency:'INR',order_id:o.order_id,name:'GrabVehicle',description:purpose||'Wallet top-up',
+    prefill:{name:o.name||ME.full_name,email:o.email||'',contact:(o.contact||ME.phone||'').replace(/[^\d+]/g,''),...(upi?{method:'upi'}:{})},
+    theme:{color:'#1565C0',backdrop_color:'rgba(11,31,58,.6)'},retry:{enabled:true,max_count:2},webview_intent:true,config:cfg,
+    handler:async resp=>{done=true;RZ=null;try{toast('Confirming payment…');resolve(await fnCall('verify',resp))}catch(e){reject(e)}},
+    modal:{ondismiss:()=>{RZ=null;if(!done)resolve('back')},escape:true,backdropclose:false}});
+   RZ.on&&RZ.on('payment.failed',x=>{toast(x?.error?.description||'Payment failed — try another method',true)});RZ.open()});
+  if(r!=='back')return r}}
 async function addMoney(amount,btn){amount=Math.round(+amount);if(!(amount>=1&&amount<=10000)){toast('Enter ₹1 – ₹10,000',true);return}busy(btn,true);
  try{if(PAY.razorpay){await payOnline(amount,'Wallet top-up');toast(inr0(amount)+' added to wallet')}
   else if(PAY.demo){await rpc('gv_demo_topup',{p_amount:amount});toast(inr0(amount)+' added (demo)')}
