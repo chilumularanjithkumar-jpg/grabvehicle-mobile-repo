@@ -787,7 +787,11 @@ const STAGE={requested:0,accepted:1,arrived:2,started:3,completed:4};
 async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTIVE},true);const v=$('#view');
  if(['completed','cancelled','expired','rejected'].includes(s.status)){const id=ACTIVE;ACTIVE=null;ME=await rpc('gv_me');
   if(s.status==='completed'){render();return rateSheet(id,s)}
-  toast(s.status==='expired'?'Captain did not respond — choose another':s.status==='rejected'?'Captain is unavailable — choose another':s.cancelled_by==='captain'?`Captain cancelled. ₹${ME.credit>0?'20 credit added':''}`:'Ride cancelled',s.status!=='cancelled');render();return}
+  // captain didn't accept / declined / cancelled: keep the trip and offer to retry or pick another captain
+  if(s.status==='expired'||s.status==='rejected'||(s.status==='cancelled'&&s.cancelled_by==='captain')){
+   BOOK.from={name:s.pickup.name,lat:+s.pickup.lat,lng:+s.pickup.lng};BOOK.to={name:s.drop.name,lat:+s.drop.lat,lng:+s.drop.lng};BOOK.fromUser=BOOK.toUser=true;
+   BOOK.v=s.service==='parcel'?'parcel':s.vehicle_type;BOOK.women=!!s.women_only;render();return noAccept(s)}
+  toast('Ride cancelled');render();return}
  const c=s.captain||{};const stg=STAGE[s.status];const parcel=s.service==='parcel';
  const head={requested:`Waiting for ${esc(c.name)} to accept · ${s.expires_in}s`,accepted:`${esc(c.name)} is on the way`,arrived:`${esc(c.name)} has arrived`,started:parcel?'Parcel on the way':'On trip'}[s.status];
  const panel=`<div class="card"><div class="row"><b style="font-size:16px">${head}</b>${pill(s.status)}</div><div class="steps">${[0,1,2,3].map(i=>`<i class="${i<=stg?'on':''}"></i>`).join('')}</div>
@@ -808,6 +812,15 @@ async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTI
 function etaHTML(s){const c=s.captain||{};if(!c.lat||!['accepted','arrived','started'].includes(s.status))return '';
  const to=s.status==='started'?s.drop:s.pickup,km=distKm(+c.lat,+c.lng,+to.lat,+to.lng)*1.3,min=Math.max(1,Math.round(km/(s.vehicle_type==='bike'?22:18)*60));
  return `<div class="eta"><span style="font-size:24px">${vtIcon(s.vehicle_type==='parcel'?'bike':s.vehicle_type)}</span><div style="flex:1">${s.status==='arrived'?'<b>Captain is at your pickup</b>':s.status==='started'?`<b>${min} min</b> to drop · ${km.toFixed(1)} km`:`<b>${min} min</b> away · ${km.toFixed(1)} km`}<div class="muted" style="font-size:12px">Live location · updates every few seconds</div></div></div>`}
+function noAccept(s){const c=s.captain||{};const why=s.status==='expired'?`${esc(c.name||'The captain')} didn't accept in time`:s.status==='rejected'?`${esc(c.name||'The captain')} is busy right now`:`${esc(c.name||'The captain')} cancelled the ride`;
+ const canRetry=s.status==='expired'&&s.service!=='parcel'&&c.id;
+ openSheet(`<div style="text-align:center"><div style="font-size:42px">⏱️</div><h3>${why}</h3><p class="muted">${esc(s.pickup.name)} → ${esc(s.drop.name)}</p>${s.cancelled_by==='captain'&&+ME.credit>0?`<p style="color:var(--ok);font-weight:650">₹${+ME.credit} credit added to your next ride</p>`:''}</div>
+ <button class="btn block green" id="naOther" style="margin-top:12px">See available captains</button>
+ ${canRetry?`<button class="btn block ghost" id="naRetry" style="margin-top:8px">Try ${esc(c.name)} again</button>`:''}
+ <button class="btn block ghost" style="margin-top:8px" onclick="closeSheet()">Not now</button>`,{lock:true});
+ $('#naOther').onclick=e=>{closeSheet(true);offers($('#bGo')||e.target)};
+ if($('#naRetry'))$('#naRetry').onclick=async e=>{busy(e.target,true);try{ACTIVE=await rpc('gv_request_ride',{p_captain:c.id,p_from:BOOK.from,p_to:BOOK.to,p_vtype:BOOK.v,p_pay:s.pay_mode,p_women:BOOK.women});closeSheet(true);toast('Request sent to '+c.name+' again');render()}
+  catch(x){busy(e.target,false);closeSheet(true);offers($('#bGo')||e.target)}}}
 function shareTrip(){const s=window._live;const t=`I'm on a GrabVehicle ${s.service}: ${s.pickup.name} → ${s.drop.name}. Captain ${s.captain?.name}, ${s.captain?.vehicle_no}. Trip #${s.id}.`;location.href='https://wa.me/'+(ME.emergency_contact||'').replace(/\D/g,'')+'?text='+encodeURIComponent(t)}
 /* cancel with a reason: the fee (if any) depends on the reason and how far the trip has gone */
 async function cancelSheet(id,after){let o;try{o=await rpc('gv_cancel_options',{p_ride:id})}catch(e){return}const cap=o.who==='captain';let pick=null;
