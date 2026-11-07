@@ -327,8 +327,9 @@ input[type=range]{width:100%;accent-color:var(--p1)}
 /* ================= SETUP ================= */
 const CFG=window.GV_CONFIG||{};const LEGAL_BASE=CFG.legalBase||'https://chilumularanjithkumar-jpg.github.io/grabvehicle-mobile-repo';const $=s=>document.querySelector(s);
 if(!CFG.url||!CFG.anonKey){$('#setup').classList.remove('hidden');throw new Error('Missing config')}
-const sb=supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'grabvehicle-auth'}});
-let ME=null,TAB='home',FIL=null,VT=[],PLACES=[],CITIES=[],CONF={},GOOGLE=false,BOOK={city:null,from:null,to:null,v:'bike',women:false},ACTIVE=null,POLL=null,LOCW=null,CH=null;
+const fetchT=(u,o={})=>{if(o&&o.signal)return fetch(u,o);const c=new AbortController();const t=setTimeout(()=>c.abort(),20000);return fetch(u,{...o,signal:c.signal}).finally(()=>clearTimeout(t))};
+const sb=supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'grabvehicle-auth'},global:{fetch:fetchT}});
+let ME=null,TAB='home',FIL=null,VT=[],PLACES=[],CITIES=[],CONF={},GOOGLE=false,BOOK={city:null,from:null,to:null,v:'bike',women:false},ACTIVE=null,ACT_AT=0,RTOK=0,LASTR=null,POLL=null,LOCW=null,CH=null;
 
 /* ================= HELPERS ================= */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -341,7 +342,7 @@ const ini=n=>((n||'?').replace(/[^A-Za-z\s]/g,' ').trim().split(/\s+/).map(x=>x[
 const COLORS=['#1565C0','#0d9488','#be185d','#b45309','#9333ea','#0369a1','#1e293b','#15803d'];const col=s=>COLORS[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length];
 function toast(t,err){const e=document.createElement('div');e.className='toast'+(err?' err':'');e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),err?3800:2400)}
 const cleanErr=m=>(m||'Something went wrong').replace(/^.*?exception:\s*/i,'');
-async function rpc(fn,args,quiet){const {data,error}=await sb.rpc(fn,args||{});if(error){if(!quiet)toast(cleanErr(error.message),true);throw error}if(PUSH_FNS.has(fn))pushFlush();return data}
+async function rpc(fn,args,quiet){if(PUSH_FNS.has(fn))ACT_AT=0;const {data,error}=await sb.rpc(fn,args||{});if(error){if(!quiet)toast(cleanErr(error.message),true);throw error}if(PUSH_FNS.has(fn))pushFlush();return data}
 /* ride actions that notify the other person; the push function sends them immediately */
 const PUSH_FNS=new Set(['gv_request_ride','gv_request_rental','gv_captain_respond','gv_captain_arrived','gv_captain_start','gv_captain_complete','gv_cancel_ride','gv_rider_end_rental','gv_admin_decide_payout','gv_admin_refund_ride','gv_request_payout']);
 let _pf=null;function pushFlush(){clearTimeout(_pf);_pf=setTimeout(()=>edgeFn('push',{}).catch(()=>{}),300)}
@@ -378,8 +379,10 @@ async function getPos(quick){const g=geoPlugin();let r=null;
  if(g){try{let pm=await g.checkPermissions();if(pm.location!=='granted')pm=await g.requestPermissions({permissions:['location','coarseLocation']});
    if(pm.location!=='granted'&&pm.coarseLocation!=='granted'){GEO.denied=true;return null}
    if(pm.location!=='granted'&&!GEO.warnedCoarse){GEO.warnedCoarse=true;toast('Turn on "Precise location" for GrabVehicle (phone Settings → Apps → GrabVehicle → Permissions → Location) for an exact pickup',true)}
-   const p=await g.getCurrentPosition({enableHighAccuracy:true,timeout:quick?10000:15000,maximumAge:0});r={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0)}}
+   let p=null;if(quick){try{p=await g.getCurrentPosition({enableHighAccuracy:true,timeout:3000,maximumAge:60000})}catch(e){}}   // a fix from the last minute comes back instantly
+   if(!p)p=await g.getCurrentPosition({enableHighAccuracy:true,timeout:quick?10000:15000,maximumAge:0});r={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0)}}
   catch(e){console.warn('native gps',e);if(/denied|permission/i.test(String(e&&e.message)))GEO.denied=true}}
+ if(!r&&!GEO.denied&&quick&&navigator.geolocation)r=await new Promise(res=>navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy)}),()=>res(null),{enableHighAccuracy:true,maximumAge:60000,timeout:2500}));
  if(!r&&!GEO.denied)r=await webPos(quick?6000:12000);
  if(r)GEO.pos=r;return r}
 const shortAddr=a=>{const x=String(a||'').split(',').map(t=>t.trim()).filter(t=>t&&!/^india$/i.test(t)&&!/\b\d{6}\b/.test(t)&&!/^[A-Z0-9]{4}\+[A-Z0-9]{2,3}/.test(t));return x.slice(0,3).join(', ')};
@@ -535,7 +538,7 @@ $('#vCode').onkeydown=e=>{if(e.key==='Enter')vVerify()};
 /* ---------- mobile OTP login (Firebase verifies the number; server exchanges it for a Supabase session) ---------- */
 let PHONE_OK=false,VID=null,PH_L=[],phDoing=false;
 function FA(){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable&&C.isPluginAvailable('FirebaseAuthentication'))return C.registerPlugin('FirebaseAuthentication')}catch(e){}return null}
-async function initLogin(){let pc=null;try{pc=(await sb.rpc('gv_public_config')).data}catch(e){}
+async function initLogin(){try{fetch(CFG.url+'/functions/v1/phone-login',{method:'OPTIONS'}).catch(()=>{})}catch(e){}let pc=null;try{pc=(await sb.rpc('gv_public_config')).data}catch(e){}
  PHONE_OK=!!(pc&&pc.phone_login&&FA());$('#sEmailL').textContent=PHONE_OK?'Email (optional)':'Email';showCard('signinCard')}
 function showCard(id){['phoneCard','signinCard','signupCard','verifyCard','forgotCard'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id))}
 async function clearPh(){for(const l of PH_L){try{await l.remove()}catch(e){}}PH_L=[]}
@@ -598,31 +601,56 @@ $('#phForgot').onclick=()=>{PH_FORGOT=true;phStep(1);phSend()};$('#phChange3').o
 $('#phCode').oninput=e=>{if(e.target.value.replace(/\D/g,'').length===6)phVerify()};
 document.querySelectorAll('[data-legal]').forEach(a=>{a.href=legalUrl(a.dataset.legal);a.target='_blank';a.rel='noopener'});
 $('#toEmail').onclick=()=>{clearInterval(PHT);phStep(1);showCard('signinCard')};$('#toPhone').onclick=()=>showCard('phoneCard');
-async function enter(){
- let me;try{me=await rpc('gv_me',{},true)}catch(e){}
- if(!me){await sb.auth.signOut();showLogin();$('#lErr').textContent='This account is not a GrabVehicle account.';return}
- ME=me;if(me.lang!==LANG){let has=null;try{has=localStorage.getItem('gvLang')}catch(e){}if(!has&&me.lang){LANG=me.lang;try{localStorage.setItem('gvLang',LANG)}catch(e){}}else rpc('gv_set_lang',{p_lang:LANG},true).catch(()=>{})}
- const [{data:v},{data:p},{data:cf},{data:ct},{data:st}]=await Promise.all([sb.from('gv_vehicle_types').select('*').order('sort'),sb.from('gv_places').select('*').order('city').order('name'),sb.from('gv_app_config').select('key,value'),sb.from('gv_cities').select('*'),sb.from('gv_settings').select('*').maybeSingle()]);SET=st||{};
- document.body.classList.toggle('role-admin',ME.role==='admin');
- VT=v||[];PLACES=p||[];CITIES=ct||[];CONF={};(cf||[]).forEach(x=>CONF[x.key]=x.value);try{PAY=await rpc('gv_payments_enabled',{},true)}catch(e){}
+function applyBoot(b){ME=b.me;VT=b.v||[];PLACES=b.p||[];CITIES=b.ct||[];SET=b.st||{};CONF={};(b.cf||[]).forEach(x=>CONF[x.key]=x.value);if(b.pay)PAY=b.pay;
  GOOGLE=!!(CONF.google_maps_api_key&&!/^PASTE_/.test(CONF.google_maps_api_key)&&CONF.google_maps_api_key.length>=20);
- BOOK.city=ME.city;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');$('#avBtn').textContent=ini(ME.full_name);
- TAB='home';renderTabs();render();startLoop();setTimeout(pushInit,1500);applyLang();
+ if(ME.lang!==LANG){let has=null;try{has=localStorage.getItem('gvLang')}catch(e){}if(!has&&ME.lang){LANG=ME.lang;try{localStorage.setItem('gvLang',LANG)}catch(e){}}}}
+function showApp(){document.body.classList.toggle('role-admin',ME.role==='admin');BOOK.city=BOOK.city||ME.city;
+ $('#login').classList.add('hidden');$('#app').classList.remove('hidden');$('#avBtn').textContent=ini(ME.full_name);
+ if(GOOGLE)loadGoogle().catch(()=>{});                                   // map script loads while the screen is built
+ if(ME.role==='rider'&&!GEO.tried&&!BOOK.fromUser){GEO.tried=true;quickPickup();autoLocate()}   // GPS starts at once
+ TAB='home';renderTabs();render();startLoop()}
+async function enter(){
+ let uid=null;try{uid=(await sb.auth.getSession()).data.session?.user?.id}catch(e){}
+ let c=null;try{c=JSON.parse(localStorage.getItem('gvBoot')||'null')}catch(e){}
+ const cached=!!(c&&uid&&c.uid===uid&&c.me&&Date.now()-c.at<7*864e5);
+ if(cached){applyBoot(c);showApp()}
+ let me=null,failed=false,r=[];
+ try{[me,...r]=await Promise.all([rpc('gv_me',{},true),sb.from('gv_vehicle_types').select('*').order('sort'),sb.from('gv_places').select('*').order('city').order('name'),sb.from('gv_app_config').select('key,value'),sb.from('gv_cities').select('*'),sb.from('gv_settings').select('*').maybeSingle(),rpc('gv_payments_enabled',{},true).catch(()=>null),rpc('gv_active_ride',{},true).catch(()=>undefined)])}catch(e){failed=true}
+ if(failed){if(cached){toast('Weak internet — showing saved data',true);return}showLogin();$('#lErr').textContent='Could not connect. Check your internet and try again.';return}
+ if(!me){try{localStorage.removeItem('gvBoot')}catch(e){}await sb.auth.signOut();showLogin();$('#lErr').textContent='This account is not a GrabVehicle account.';return}
+ const b={uid,at:Date.now(),me,v:r[0].data,p:r[1].data,cf:r[2].data,ct:r[3].data,st:r[4].data,pay:r[5]};try{localStorage.setItem('gvBoot',JSON.stringify(b))}catch(e){}
+ const roleChanged=!cached||c.me.role!==me.role;applyBoot(b);const act=r[6];if(act!==undefined){const had=!!ACTIVE;ACTIVE=act;ACT_AT=Date.now();if(!roleChanged&&had!==!!act&&ME.role==='rider'&&TAB==='home'&&!$('#sbg'))render()}
+ if(me.lang!==LANG)rpc('gv_set_lang',{p_lang:LANG},true).catch(()=>{});
+ if(roleChanged)showApp();else{$('#avBtn').textContent=ini(ME.full_name);if(TAB==='account'||TAB==='wallet')render()}
+ setTimeout(pushInit,1500);applyLang();setTimeout(()=>payRecover().then(x=>{if(x)render()}),2500);
  const ob=()=>{if(ME&&ME.role==='rider'&&ME.onboarded===false)onboardChoose()};const np=window._needPw;window._needPw=null;
  setTimeout(()=>{if(!ME)return;np?pwSheet(np==='forgot',ob):ob()},300)}
 function showLogin(){$('#app').classList.add('hidden');$('#login').classList.remove('hidden');initLogin()}
-async function logout(){stopLoop();closeSheet();if(PUSH_TOKEN){try{await rpc('gv_remove_push_token',{p_token:PUSH_TOKEN},true)}catch(e){}PUSH_TOKEN=null}if(ME?.role==='captain'){try{await rpc('gv_set_online',{p_online:false,p_lat:null,p_lng:null},true)}catch(e){}}await sb.auth.signOut();try{const f=FA();f&&await f.signOut()}catch(e){}ME=null;$('#lPass').value='';showLogin()}
+async function logout(){stopLoop();closeSheet();try{localStorage.removeItem('gvLoc')}catch(e){}ACTIVE=null;ACT_AT=0;LASTR=null;if(PUSH_TOKEN){try{await rpc('gv_remove_push_token',{p_token:PUSH_TOKEN},true)}catch(e){}PUSH_TOKEN=null}if(ME?.role==='captain'){try{await rpc('gv_set_online',{p_online:false,p_lat:null,p_lng:null},true)}catch(e){}}await sb.auth.signOut();try{const f=FA();f&&await f.signOut()}catch(e){}ME=null;$('#lPass').value='';showLogin()}
 $('#avBtn').onclick=()=>go('account');
 
 /* ================= LOOP (live ride / requests) ================= */
 function startLoop(){stopLoop();POLL=setInterval(tick,3000);
  try{CH=sb.channel('rides-'+ME.id).on('postgres_changes',{event:'*',schema:'public',table:'gv_rides'},()=>tick()).subscribe()}catch(e){}}
 function stopLoop(){clearInterval(POLL);POLL=null;if(LOCW){clearInterval(LOCW);LOCW=null;geoStopCap()}try{CH&&sb.removeChannel(CH)}catch(e){}CH=null}
-let ticking=false;
-async function tick(){if(ticking||!ME||document.hidden)return;ticking=true;try{
+let ticking=false,tickAt=0;
+async function tick(){if((ticking&&Date.now()-tickAt<25000)||!ME||document.hidden)return;ticking=true;tickAt=Date.now();try{
  if(ME.role==='rider'&&TAB==='home'&&ACTIVE)await riderLive(true);
  else if(ME.role==='captain'&&TAB==='home'&&!$('#sbg'))await capHome($('#view'),true);
 }catch(e){}finally{ticking=false}}
+
+/* ---------- background / foreground ---------- */
+let _away=0,_fg=true;
+function onPause(){if(!_fg)return;_fg=false;_away=Date.now();
+ const capOnline=ME&&ME.role==='captain'&&LOCW;if(!capOnline){try{sb.auth.stopAutoRefresh()}catch(e){}if(ME&&ME.role!=='captain')geoStop()}}
+async function onResume(){if(_fg)return;_fg=true;if(!ME)return;const gone=Date.now()-_away;
+ try{sb.auth.startAutoRefresh()}catch(e){}
+ try{const {data}=await sb.auth.getSession();if(!data.session){ME=null;showLogin();return}if(((data.session.expires_at||0)*1000)-Date.now()<180000)await sb.auth.refreshSession()}catch(e){}
+ clearInterval(POLL);POLL=setInterval(tick,3000);try{CH&&sb.removeChannel(CH)}catch(e){}try{CH=sb.channel('rides-'+ME.id+'-'+Date.now()).on('postgres_changes',{event:'*',schema:'public',table:'gv_rides'},()=>tick()).subscribe()}catch(e){}
+ ticking=false;payRecover().then(x=>{if(x&&!$('#sbg'))render()});
+ if(gone>60000){if(ME.role==='rider'&&!ACTIVE&&BOOK.from&&BOOK.from.gps&&!BOOK.fromUser){GEO.tried=true;autoLocate()}if(!$('#sbg'))render()}else tick()}
+document.addEventListener('visibilitychange',()=>document.hidden?onPause():onResume());
+(()=>{const A=natPlug('App');if(A)A.addListener('appStateChange',s=>s.isActive?onResume():onPause())})();
 
 /* ================= NAV ================= */
 const TABS={rider:[['home','Ride','home'],['trips','Trips','trips'],['wallet','Wallet','wallet'],['account','Account','user']],
@@ -635,13 +663,14 @@ function go(t){TAB=t;FIL=null;renderTabs();render();scrollTo(0,0)}
 async function render(){
  $('#hTitle').textContent=TAB==='drive'?'Drive with us':TAB==='invoices'?'Invoices':TAB==='company'?'Company & invoices':TAB==='home'?(ME.role==='rider'?'Where to?':ME.role==='captain'?'Drive':'Dashboard'):TITLES[TAB];
  $('#hSub').textContent=`${ME.full_name} · ${ME.role==='captain'?'Captain':ME.role==='admin'?'Admin':ME.city}`;
- const v=$('#view');v.innerHTML='<div class="loading">Loading…</div>';
+ const v=$('#view');const key=ME.role+'/'+TAB;if(LASTR!==key||!v.firstElementChild){v.innerHTML='<div class="loading">Loading…</div>'}LASTR=key;const tok=++RTOK;v._tok=tok;
  const V={rider:{home:riderHome,trips:trips,wallet:wallet,account:account,why:why,docs:docsView,drive:driveOnboard,invoices:myInvoices},captain:{home:capHome,earn:capEarn,rates:capRates,wallet:wallet,account:account,trips:trips,why:why,docs:docsView,invoices:myInvoices},admin:{home:aHome,caps:aCaps,rides:aRides,money:aMoney,more:aMore,sos:aSos,settings:aSettings,account:account,why:why,invoices:aInvoices,company:aCompany}};
- try{await V[ME.role][TAB](v)}catch(e){console.error(e);v.innerHTML=`<div class="empty">Could not load.<br><button class="btn sm ghost" style="margin-top:10px" onclick="render()">Retry</button></div>`}}
+ try{await V[ME.role][TAB](v)}catch(e){console.error(e);if(tok!==RTOK)return;v.innerHTML=`<div class="empty">Could not load.<br><button class="btn sm ghost" style="margin-top:10px" onclick="render()">Retry</button></div>`}}
 
 /* ================= RIDER: BOOK ================= */
 async function riderHome(v){
- ACTIVE=await rpc('gv_active_ride');if(ACTIVE)return riderLive();
+ if(!(ACT_AT&&!ACTIVE&&Date.now()-ACT_AT<20000)){ACTIVE=await rpc('gv_active_ride');ACT_AT=Date.now()}if(ACTIVE)return riderLive();
+ if(v._tok&&v._tok!==RTOK)return;
  let wants=null;try{wants=localStorage.getItem('gv_wants')}catch(e){}if(wants==='captain'){TAB='drive';renderTabs();return driveOnboard(v)}
  if(!CITIES.find(c=>c.name===BOOK.city))BOOK.city=CITIES[0]?.name;
  const P=nearPlaces(GEO.pos||BOOK.from||CITIES.find(x=>x.name===ME.city));const loc=p=>({name:p.name,lat:+p.lat,lng:+p.lng});
@@ -684,10 +713,14 @@ async function geoWatch(){geoStop();const g=geoPlugin();
   const moved=distKm(f.lat,f.lng,lat,lng)*1000,better=acc&&(!f.acc||acc<f.acc*0.7);
   if(!(better||moved>25))return;
   BOOK.from={...f,lat,lng,acc};if(onHome){$('#bAcc')&&($('#bAcc').textContent=`GPS ±${acc} m`);if(BOOK.to&&moved>40)render()}
-  clearTimeout(GEO.gt);GEO.gt=setTimeout(async()=>{const fr=BOOK.from;if(!fr||!fr.gps||BOOK.fromUser)return;const nm=await addrOf(fr.lat,fr.lng);if(BOOK.from===fr||(BOOK.from&&BOOK.from.gps&&!BOOK.fromUser)){BOOK.from.name=nm;$('#bFrom b')&&TAB==='home'&&($('#bFrom b').textContent=nm)}},800)};
+  clearTimeout(GEO.gt);GEO.gt=setTimeout(async()=>{const fr=BOOK.from;if(!fr||!fr.gps||BOOK.fromUser)return;const nm=await addrOf(fr.lat,fr.lng);if(BOOK.from===fr||(BOOK.from&&BOOK.from.gps&&!BOOK.fromUser)){BOOK.from.name=nm;saveLoc(BOOK.from);$('#bFrom b')&&TAB==='home'&&($('#bFrom b').textContent=nm)}},800)};
  try{if(g){GEO.wid=await g.watchPosition({enableHighAccuracy:true,timeout:20000,maximumAge:0},(p,err)=>{if(p&&p.coords)onFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy)})}
   else if(navigator.geolocation){GEO.wid=navigator.geolocation.watchPosition(p=>onFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}}catch(e){console.warn('watch',e)}
  GEO.wt=setTimeout(geoStop,45000)}
+/* last pickup spot: shown instantly on the next open, then confirmed by GPS */
+function saveLoc(f){try{localStorage.setItem('gvLoc',JSON.stringify({lat:f.lat,lng:f.lng,acc:f.acc,name:f.name,at:Date.now()}))}catch(e){}}
+function quickPickup(){if(BOOK.from||BOOK.fromUser)return;let l=null;try{l=JSON.parse(localStorage.getItem('gvLoc')||'null')}catch(e){}
+ if(!l||Date.now()-l.at>30*60000||!cityOf(l.lat,l.lng))return;BOOK.from={name:l.name,lat:l.lat,lng:l.lng,acc:l.acc,gps:true,cached:true};GEO.pos={lat:l.lat,lng:l.lng,acc:l.acc};BOOK.city=cityOf(l.lat,l.lng)}
 /* set pickup to the phone's GPS position (on first open, or when the locate button is tapped) */
 async function autoLocate(manual){if(GEO.pending)return;GEO.pending=true;if(manual)toast('Finding your location…');else if(TAB==='home'&&!ACTIVE&&$('#bFrom'))$('#bFrom b').textContent='📍 Locating you…';
  const pos=await getPos(!manual);
@@ -696,8 +729,10 @@ async function autoLocate(manual){if(GEO.pending)return;GEO.pending=true;if(manu
  if(!c){GEO.pending=false;toast('GrabVehicle works only in India',true);if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render();return}
  GEO.pending=false;
  BOOK.city=c;
- const fr={name:'📍 Your current location',lat:pos.lat,lng:pos.lng,acc:pos.acc,gps:true};BOOK.from=fr;BOOK.fromUser=false;geoWatch();
- addrOf(pos.lat,pos.lng).then(n=>{if(BOOK.from===fr){fr.name=n;if(TAB==='home'&&!ACTIVE&&$('#bFrom'))render()}});
+ const prev=BOOK.from&&BOOK.from.gps&&!BOOK.fromUser&&BOOK.from.cached?BOOK.from:null,same=prev&&distKm(prev.lat,prev.lng,pos.lat,pos.lng)<0.04;
+ const fr={name:same?prev.name:'📍 Your current location',lat:pos.lat,lng:pos.lng,acc:pos.acc,gps:true};BOOK.from=fr;BOOK.fromUser=false;geoWatch();
+ if(same){if(TAB==='home'&&!ACTIVE&&$('#bAcc'))$('#bAcc').textContent=`GPS ±${pos.acc} m`}
+ else addrOf(pos.lat,pos.lng).then(n=>{if(BOOK.from===fr){fr.name=n;saveLoc(fr);if(TAB==='home'&&!ACTIVE&&$('#bFrom'))render()}});
  if(BOOK.to&&!BOOK.toUser)BOOK.to=null;
  if(manual&&pos.acc>100)toast(`GPS accuracy is low (±${pos.acc} m). Drag the map to set the exact pickup point.`);
  if(TAB==='home'&&!ACTIVE&&ME?.role==='rider')render()}
@@ -1579,7 +1614,13 @@ async function payOnline(amount,purpose){amount=Math.ceil(+amount);
     handler:async resp=>{done=true;RZ=null;try{toast('Confirming payment…');resolve(await fnCall('verify',resp))}catch(e){reject(e)}},
     modal:{ondismiss:()=>{RZ=null;if(!done)resolve('back')},escape:true,backdropclose:false}});
    RZ.on&&RZ.on('payment.failed',x=>{toast(x?.error?.description||'Payment failed — try another method',true)});RZ.open()});
-  if(r!=='back')return r}}
+  if(r!=='back')return r
+  // the window closed without a result: the UPI app may still have taken the money — ask Razorpay before offering to pay again
+  if(await payRecover(true))return {ok:true,recovered:true}}}
+/* recover UPI payments the app was not told about (Razorpay closed before confirming): asks Razorpay directly */
+let _prAt=0;async function payRecover(wait){if(!PAY.razorpay||!ME||ME.role==='admin')return false;if(!wait&&Date.now()-_prAt<30000)return false;_prAt=Date.now();
+ for(let i=0;i<(wait?3:1);i++){try{const r=await fnCall('sync',{});if(r&&r.recovered){ME=await rpc('gv_me');toast('Payment received — thank you');return true}}catch(e){}
+  if(wait&&i<2)await new Promise(z=>setTimeout(z,2500))}return false}
 async function addMoney(amount,btn){amount=Math.round(+amount);if(!(amount>=1&&amount<=10000)){toast('Enter ₹1 – ₹10,000',true);return}busy(btn,true);
  try{if(PAY.razorpay){await payOnline(amount,'Wallet top-up');toast(inr0(amount)+' added to wallet')}
   else if(PAY.demo){await rpc('gv_demo_topup',{p_amount:amount});toast(inr0(amount)+' added (demo)')}
