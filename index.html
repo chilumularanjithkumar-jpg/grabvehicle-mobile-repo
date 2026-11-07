@@ -1692,7 +1692,10 @@ async function payoutSheet(h){const max=Math.max(0,Math.floor(+h.balance));
  <div class="field"><label>Amount (₹100 – ₹${max})</label><input id="poA" type="number" inputmode="numeric" value="${max}"></div><button class="btn block green" id="poB" ${max<100?'disabled':''}>Request payout</button>${max<100?'<p class="muted">You need at least ₹100 in your wallet.</p>':''}`);
  $('#poB').onclick=async e=>{busy(e.target,true);try{const id=await rpc('gv_request_payout',{p_amount:+$('#poA').value});await sendPayout(id);closeSheet();render()}catch(x){busy(e.target,false)}}}
 /* send through RazorpayX when it is set up; otherwise the GrabVehicle team pays it */
-async function sendPayout(id){try{const r=await edgeFn('payouts',{id},'process');toast(r.mode==='razorpayx'?'Sending to your UPI — usually within minutes':'Withdrawal requested — paid to your UPI within 24 hours')}catch(e){toast(cleanErr(e.message),true)}}
+async function sendPayout(id){const manual=()=>toast('Withdrawal requested — the GrabVehicle team pays it to your UPI within 24 hours. Track it in Wallet.');
+ if(CONF.auto_payouts!=='on')return manual();   // manual payouts: the request is saved; admin pays it
+ try{const r=await edgeFn('payouts',{id},'process');r.mode==='razorpayx'?toast('Sending to your UPI — usually within minutes'):manual()}
+ catch(e){/* automatic payout could not start: the request stays with the team */if(/404|not found|fetch|network|Error 5\d\d/i.test(e.message||''))manual();else toast(cleanErr(e.message),true)}}
 function riderWithdraw(bal){const max=Math.floor(bal);openSheet(`<h3>Withdraw to bank</h3><p class="muted">Money in your GrabVehicle wallet goes to your UPI ID.</p>
  <div class="field"><label>UPI ID</label><input id="rwU" value="${esc(ME.upi_id||'')}" placeholder="9876543210@ybl"></div>
  <div class="field"><label>Amount (₹50 – ₹${max})</label><input id="rwA" type="number" inputmode="numeric" value="${max}"></div>
