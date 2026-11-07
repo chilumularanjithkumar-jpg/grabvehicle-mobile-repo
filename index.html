@@ -648,7 +648,7 @@ async function onResume(){if(_fg)return;_fg=true;if(!ME)return;const gone=Date.n
  try{const {data}=await sb.auth.getSession();if(!data.session){ME=null;showLogin();return}if(((data.session.expires_at||0)*1000)-Date.now()<180000)await sb.auth.refreshSession()}catch(e){}
  clearInterval(POLL);POLL=setInterval(tick,3000);try{CH&&sb.removeChannel(CH)}catch(e){}try{CH=sb.channel('rides-'+ME.id+'-'+Date.now()).on('postgres_changes',{event:'*',schema:'public',table:'gv_rides'},()=>tick()).subscribe()}catch(e){}
  ticking=false;payRecover().then(x=>{if(x&&!$('#sbg'))render()});
- if(gone>60000){if(ME.role==='rider'&&!ACTIVE&&BOOK.from&&BOOK.from.gps&&!BOOK.fromUser){GEO.tried=true;autoLocate()}if(!$('#sbg'))render()}else tick()}
+ if(gone>30000){if(ME.role==='rider'&&!ACTIVE&&!$('#sbg')){if(TAB!=='home'){TAB='home';renderTabs()}freshBook()}if(!$('#sbg'))render()}else tick()}
 document.addEventListener('visibilitychange',()=>document.hidden?onPause():onResume());
 (()=>{const A=natPlug('App');if(A)A.addListener('appStateChange',s=>s.isActive?onResume():onPause())})();
 
@@ -679,7 +679,7 @@ async function riderHome(v){
  if(BOOK.to&&BOOK.to.name===BOOK.from?.name)BOOK.to=null;
  const RENT=BOOK.mode==='rental';if(RENT&&BOOK.v==='parcel')BOOK.v='bike';BOOK.unit=BOOK.unit||'hour';BOOK.qty=BOOK.qty||(BOOK.unit==='hour'?2:1);
  v.innerHTML=`<div class="modes"><button class="${RENT?'':'on'}" data-mode="ride">🛵 Ride & parcel</button><button class="${RENT?'on':''}" data-mode="rental">⏱ Rent by hour / day</button></div><div class="map big" id="bMap"><button class="locbtn" id="bLoc" title="My location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg></button></div><div id="bRoutes"></div>
- <div class="loc" id="bFrom" onclick="pickLoc('from')" style="cursor:pointer"><i style="background:#10b981"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">PICKUP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${GEO.pending&&!BOOK.fromUser?'📍 Locating you…':esc(BOOK.from?.name||'Choose pickup')}</b>${BOOK.from?.gps&&BOOK.from.acc?`<div class="muted" id="bAcc" style="font-size:11px">GPS ±${BOOK.from.acc} m</div>`:''}${BOOK.from?.gps&&GEO.src&&GEO.src!=='google'?`<div class="addr-hint">Approximate address — tap to fine-tune the pin${GEO.err?` · Google: ${esc(String(GEO.err).slice(0,60))}`:''}</div>`:''}</div><span class="muted">✎</span></div>
+ <div class="loc" id="bFrom" onclick="pickLoc('from')" style="cursor:pointer"><i style="background:#10b981"></i><div style="flex:1;min-width:0;padding:9px 0"><div class="muted" style="font-size:11px">PICKUP</div><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${GEO.pending&&!BOOK.fromUser?'📍 Locating you…':esc(BOOK.from?.name||'Choose pickup')}</b>${BOOK.from?.gps&&BOOK.from.cached?`<div class="muted" id="bAcc" style="font-size:11px">${GEO.pending?'Last location · updating…':'Last known location · tap to change'}</div>`:BOOK.from?.gps&&BOOK.from.acc?`<div class="muted" id="bAcc" style="font-size:11px">GPS ±${BOOK.from.acc} m</div>`:''}${BOOK.from?.gps&&GEO.src&&GEO.src!=='google'?`<div class="addr-hint">Approximate address — tap to fine-tune the pin${GEO.err?` · Google: ${esc(String(GEO.err).slice(0,60))}`:''}</div>`:''}</div><span class="muted">✎</span></div>
  ${RENT?`<div class="card" style="margin:10px 0"><b>Captain + vehicle, for as long as you need</b><div class="muted" style="font-size:13px">Shopping, office hopping, a day out — keep the captain with you and stop anywhere. Each captain sets their own hourly and daily price.</div>
   <div class="chips" style="margin-top:10px">${['hour','day'].map(u=>`<button class="chip ${BOOK.unit===u?'on':''}" data-unit="${u}">${u==='hour'?'By the hour':'By the day (12 h)'}</button>`).join('')}</div>
   <div class="chips" style="margin-top:6px;flex-wrap:wrap">${(BOOK.unit==='hour'?[1,2,3,4,6,8,12]:[1,2,3,5,7]).map(q=>`<button class="chip ${BOOK.qty===q?'on':''}" data-qty="${q}">${q} ${BOOK.unit==='hour'?'hr':'day'}${q>1?'s':''}</button>`).join('')}</div></div>`:''}
@@ -718,6 +718,7 @@ async function geoWatch(){geoStop();const g=geoPlugin();
   else if(navigator.geolocation){GEO.wid=navigator.geolocation.watchPosition(p=>onFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy),()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}}catch(e){console.warn('watch',e)}
  GEO.wt=setTimeout(geoStop,45000)}
 /* last pickup spot: shown instantly on the next open, then confirmed by GPS */
+function freshBook(){BOOK.to=null;BOOK.toUser=false;BOOK.fromUser=false;BOOK.from=null;BOOK.later=false;BOOK.at=null;GEO.pending=false;quickPickup();GEO.tried=true;autoLocate()}
 function saveLoc(f){try{localStorage.setItem('gvLoc',JSON.stringify({lat:f.lat,lng:f.lng,acc:f.acc,name:f.name,at:Date.now()}))}catch(e){}}
 function quickPickup(){if(BOOK.from||BOOK.fromUser)return;let l=null;try{l=JSON.parse(localStorage.getItem('gvLoc')||'null')}catch(e){}
  if(!l||Date.now()-l.at>30*60000||!cityOf(l.lat,l.lng))return;BOOK.from={name:l.name,lat:l.lat,lng:l.lng,acc:l.acc,gps:true,cached:true};GEO.pos={lat:l.lat,lng:l.lng,acc:l.acc};BOOK.city=cityOf(l.lat,l.lng)}
@@ -892,12 +893,12 @@ function confirmRide(i){const r=window._offers,o=r.offers[i];const credit=+ME.cr
 const STAGE={requested:0,accepted:1,arrived:2,started:3,completed:4};
 async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTIVE},true);const v=$('#view');
  if(['completed','cancelled','expired','rejected'].includes(s.status)){const id=ACTIVE;ACTIVE=null;ME=await rpc('gv_me');
-  if(s.status==='completed'){render();return rateSheet(id,s)}
+  if(s.status==='completed'){freshBook();render();return rateSheet(id,s)}
   // captain didn't accept / declined / cancelled: keep the trip and offer to retry or pick another captain
   if(s.status==='expired'||s.status==='rejected'||(s.status==='cancelled'&&s.cancelled_by==='captain')){
    BOOK.from={name:s.pickup.name,lat:+s.pickup.lat,lng:+s.pickup.lng};BOOK.to={name:s.drop.name,lat:+s.drop.lat,lng:+s.drop.lng};BOOK.fromUser=BOOK.toUser=true;
    BOOK.v=s.service==='parcel'?'parcel':s.vehicle_type;BOOK.women=!!s.women_only;render();return noAccept(s)}
-  toast('Ride cancelled');render();return}
+  toast('Ride cancelled');freshBook();render();return}
  const c=s.captain||{};const stg=STAGE[s.status];const parcel=s.service==='parcel';
  const head={requested:`Waiting for ${esc(c.name)} to accept · ${s.expires_in}s`,accepted:`${esc(c.name)} is on the way`,arrived:`${esc(c.name)} has arrived`,started:parcel?'Parcel on the way':'On trip'}[s.status];
  const panel=`<div class="card"><div class="row"><b style="font-size:16px">${head}</b>${pill(s.status)}</div><div class="steps">${[0,1,2,3].map(i=>`<i class="${i<=stg?'on':''}"></i>`).join('')}</div>
@@ -962,7 +963,7 @@ async function cancelSheet(id,after){let o;try{o=await rpc('gv_cancel_options',{
   $('#cxBtn').disabled=false;$('#cxBtn').textContent=+pick.fee&&!cap?`Cancel · ₹${+pick.fee} fee`:'Cancel ride'});
  $('#cxBtn').onclick=async e=>{if(!pick)return;busy(e.target,true);try{const r=await rpc('gv_cancel_ride',{p_ride:id,p_reason:pick.code});closeSheet();
   if(cap){toast(+r.fee?`Cancelled — ₹${+r.fee} added to your wallet`:'Ride cancelled');after&&after();return}
-  ACTIVE=null;ME=await rpc('gv_me');render();if(+r.dues>0)setTimeout(()=>duesSheet(r.fee),250);else toast('Ride cancelled')}catch(x){busy(e.target,false)}}}
+  ACTIVE=null;ME=await rpc('gv_me');freshBook();render();if(+r.dues>0)setTimeout(()=>duesSheet(r.fee),250);else toast('Ride cancelled')}catch(x){busy(e.target,false)}}}
 function cancelRide(){cancelSheet(ACTIVE)}
 /* pending cancellation fee: pay now from wallet or UPI, or add it to the next ride */
 function sendDeliveryOtp(){const s=window._live;if(!s||!s.parcel)return;const ph=String(s.parcel.receiver_phone||'').replace(/\D/g,'');
