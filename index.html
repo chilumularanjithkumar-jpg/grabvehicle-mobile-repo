@@ -86,7 +86,7 @@ header.top{position:sticky;top:0;z-index:1000;color:#fff;padding:calc(12px + var
 header.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:repeating-linear-gradient(90deg,var(--y) 0 18px,transparent 18px 32px);opacity:.9}
 .hl{display:flex;align-items:center;gap:10px;min-width:0}.hback{width:38px;height:38px;border-radius:12px;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:30px;line-height:1;display:grid;place-items:center;flex:none;cursor:pointer;padding:0 0 4px}.sheet{position:relative}.sheet>.grab+.sheet-x+h3,.sheet>.grab+.sheet-x+div h3:first-child{padding-right:40px}.paybtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.paybtns button{border:1.5px solid var(--line,#e3e8f0);background:#fff;border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;cursor:pointer;color:inherit}.paybtns button span{font-size:22px;line-height:1}.paybtns button b{font-size:14px}.paybtns button small{font-size:11px;color:var(--muted,#64748b)}.paybtns button.on{border-color:var(--brand,#1565C0);background:#eef5ff;box-shadow:0 0 0 2px rgba(21,101,192,.15)}.paybtns button:disabled{opacity:.45}.payhint{font-size:12px;margin:6px 2px 0}
 .chips.one{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.chips.one::-webkit-scrollbar{display:none}.chips.one .chip{white-space:nowrap;flex:none}
-.promo-wrap{margin:12px 0 6px}.promo-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.promo-row::-webkit-scrollbar{display:none}
+.promo-wrap{margin:12px 0 6px}.promo-sw{display:flex;align-items:center;gap:6px}.promo-sw .switch{width:44px;height:26px}.promo-sw .switch:after{width:20px;height:20px}.promo-sw .switch.on:after{left:21px}.promo-offrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 6px;padding:10px 12px;background:#fff;border:1px solid var(--line,#e3e8f0);border-radius:14px;font-size:13px}.promo-offrow .switch{width:44px;height:26px}.promo-offrow .switch:after{width:20px;height:20px}.promo-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.promo-row::-webkit-scrollbar{display:none}
 .promo{position:relative;flex:none;width:210px;background:#fff;border:1px solid var(--line,#e3e8f0);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.05)}
 .promo-img{height:92px;background:#eef3fb center/cover no-repeat}.promo-img.ic{display:grid;place-items:center;font-size:40px;background:linear-gradient(135deg,#e8f1ff,#eaf7ea)}
 .promo-b{padding:8px 10px 10px;display:flex;flex-direction:column;gap:2px}.promo-b b{font-size:14px;line-height:1.25}.promo-b small{font-size:11px}
@@ -622,7 +622,7 @@ function showApp(){document.body.classList.toggle('role-admin',ME.role==='admin'
  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');$('#avBtn').textContent=ini(ME.full_name);
  if(GOOGLE)loadGoogle().catch(()=>{});                                   // map script loads while the screen is built
  if(ME.role==='rider'&&!GEO.tried&&!BOOK.fromUser){GEO.tried=true;quickPickup();autoLocate()}   // GPS starts at once
- TAB='home';NAV=[];renderTabs();render();startLoop()}
+ TAB='home';NAV=[];renderTabs();render();startLoop();setTimeout(()=>promoAsk(0),3000)}
 async function enter(){
  let uid=null;try{uid=(await sb.auth.getSession()).data.session?.user?.id}catch(e){}
  let c=null;try{c=JSON.parse(localStorage.getItem('gvBoot')||'null')}catch(e){}
@@ -1559,17 +1559,30 @@ function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destinatio
 const PROMO={items:[],at:0,seen:new Set(),busy:false};
 const PROMO_IC={'Food and Restaurants':'🍽️','Shopping':'🛍️','Grocery':'🛒','Fuel':'⛽','Bike Services':'🔧','Entertainment':'🎬','Events':'🎉','General Offers':'🏷️'};
 const promoImg=p=>p&&p.image_path?`${CFG.url}/storage/v1/object/public/gv-promos/${p.image_path.split('/').map(encodeURIComponent).join('/')}`:'';
+/* asked once after login: does the rider want offers while waiting? */
+let PROMO_ASKED=false;
+async function promoAsk(n){if(PROMO_ASKED||!ME||ME.role!=='rider')return;if($('#sbg')||$('#srch')||$('#mpick')){if(n<20)setTimeout(()=>promoAsk(n+1),4000);return}
+ let r;try{r=await rpc('gv_promo_pref',{},true)}catch(e){return}if(!r||!r.enabled||r.asked)return;PROMO_ASKED=true;if($('#sbg'))return;
+ openSheet(`<div style="text-align:center"><div style="font-size:42px">🏷️</div><h3>Offers while you wait?</h3>
+  <p class="muted">While your captain is on the way, we can show deals from shops near your pickup — food, groceries, fuel and more. Never during your trip.</p></div>
+  <button class="btn block green" id="paYes">Yes, show offers</button><button class="btn block ghost" style="margin-top:8px" id="paNo">No thanks</button>
+  <p class="muted" style="font-size:12px;text-align:center;margin-top:8px">You can change this any time in Account → Local offers.</p>`);
+ const save=async off=>{try{await rpc('gv_set_promo_pref',{p_off:off});PROMO.at=0;PROMO.off=off;closeSheet();toast(off?'Offers turned off':'You\'ll see nearby offers while you wait')}catch(e){}};
+ $('#paYes').onclick=()=>save(false);$('#paNo').onclick=()=>save(true)}
+async function promoOn(){await rpc('gv_set_promo_pref',{p_off:false});PROMO.at=0;PROMO.off=false;toast('Offers turned on');['lPromos'].forEach(h=>{const el=$('#'+h);if(el){el.dataset.sig='';el.innerHTML=''}});promoSync('lPromos',true)}
 function promoClear(id){const el=$('#'+id);if(el)el.innerHTML='';PROMO.items=[];PROMO.at=0}
 /* allowed = this screen's ride state permits offers; the server checks everything again (ride state, place, dates, switches) */
 async function promoSync(id,allowed){if(!allowed){promoClear(id);return}
- if(PROMO.busy)return;if(Date.now()-PROMO.at>60000){PROMO.busy=true;try{const r=await rpc('gv_promos_nearby',{},true);PROMO.items=r&&r.show?r.items:[];PROMO.at=Date.now()}catch(e){PROMO.items=[]}finally{PROMO.busy=false}}
- const el=$('#'+id);if(!el)return;if(!PROMO.items.length){el.innerHTML='';return}
+ if(PROMO.busy)return;if(Date.now()-PROMO.at>60000){PROMO.busy=true;try{const r=await rpc('gv_promos_nearby',{},true);PROMO.items=r&&r.show?r.items:[];PROMO.off=!!(r&&r.off&&await rpc('gv_promos_waiting_off',{},true).catch(()=>false));PROMO.at=Date.now()}catch(e){PROMO.items=[]}finally{PROMO.busy=false}}
+ const el=$('#'+id);if(!el)return;
+ if(PROMO.off){if(el.dataset.sig!=='off'){el.dataset.sig='off';el.innerHTML=`<div class="promo-offrow"><span>🏷️ Offers from nearby shops are off</span><button class="switch" aria-label="Show offers" onclick="promoOn()"></button></div>`}return}
+ if(!PROMO.items.length){el.innerHTML='';el.dataset.sig='';return}
  const sig=PROMO.items.map(p=>p.id).join(',');if(el.dataset.sig===sig&&el.firstChild)return;el.dataset.sig=sig;
- el.innerHTML=`<div class="promo-wrap"><div class="row" style="margin-bottom:8px"><b>🏷️ Offers near you while you wait</b><span class="muted" style="font-size:11px">Ad</span></div>
+ el.innerHTML=`<div class="promo-wrap"><div class="row" style="margin-bottom:8px"><b>🏷️ Offers near you <span class="muted" style="font-size:11px;font-weight:500">· Ad</span></b><span class="promo-sw"><small class="muted">Show</small><button class="switch on" aria-label="Hide offers" onclick="promoOff()"></button></span></div>
   <div class="promo-row">${PROMO.items.map(p=>`<div class="promo" onclick="promoSheet(${p.id})">${promoImg(p)?`<div class="promo-img" style="background-image:url('${promoImg(p)}')"></div>`:`<div class="promo-img ic">${PROMO_IC[p.category]||'🏷️'}</div>`}
    <button class="promo-x" aria-label="Hide this offer" onclick="event.stopPropagation();promoDismiss(${p.id})">✕</button>
    <div class="promo-b"><small>${esc(p.business)} · ${(+p.km).toFixed(1)} km</small><b>${esc(p.offer)}</b><small class="muted">${esc(p.title)}</small></div></div>`).join('')}</div>
-  <button class="linkbtn" onclick="promoOff()">Don't show offers</button></div>`;
+</div>`;
  PROMO.items.forEach(p=>{const k=p.id+':'+(ACTIVE||'c');if(!PROMO.seen.has(k)){PROMO.seen.add(k);rpc('gv_promo_event',{p_id:p.id,p_kind:'view'},true).catch(()=>{})}})}
 function promoEv(id,k){rpc('gv_promo_event',{p_id:id,p_kind:k},true).catch(()=>{})}
 function promoSheet(id){const p=PROMO.items.find(x=>x.id===id);if(!p)return;promoEv(id,'open');
@@ -1583,13 +1596,12 @@ function promoSheet(id){const p=PROMO.items.find(x=>x.id===id);if(!p)return;prom
   <div style="display:grid;grid-template-columns:${p.phone?'1fr 1fr':'1fr'};gap:8px;margin-top:10px">${p.phone?`<a class="btn ghost" href="tel:${esc(p.phone)}" onclick="promoEv(${p.id},'call')">📞 Call</a>`:''}<a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${+p.lat},${+p.lng}" target="_blank" rel="noopener" onclick="promoEv(${p.id},'navigate')">🧭 Directions</a></div>
   <p class="muted" style="font-size:11px;text-align:center;margin-top:10px">Offer by ${esc(p.business)}. GrabVehicle does not sell these products.</p>`)}
 function promoDismiss(id){promoEv(id,'dismiss');PROMO.items=PROMO.items.filter(x=>x.id!==id);['lPromos','cPromos'].forEach(h=>{const el=$('#'+h);if(el){el.dataset.sig='';if(PROMO.items.length)promoSync(h,true);else el.innerHTML=''}});toast('Offer hidden for 24 hours')}
-async function promoOff(){await rpc('gv_set_promo_pref',{p_off:true});promoClear('lPromos');promoClear('cPromos');toast('Offers turned off — turn them on in Account → Local offers')}
+async function promoOff(){await rpc('gv_set_promo_pref',{p_off:true});PROMO.items=[];PROMO.off=true;PROMO.at=Date.now();const el=$('#lPromos');if(el){el.dataset.sig='';promoSync('lPromos',true)}toast('Offers turned off')}
 async function promoPrefSheet(){const r=await rpc('gv_promo_pref');
  openSheet(`<h3>Local offers</h3><p class="muted">Offers from shops near your pickup, shown only while you wait for your captain. Never during your trip.</p>
   ${r.enabled?'':'<p class="muted" style="font-size:12px">Offers are not running right now.</p>'}
-  <label class="menu-i" style="cursor:pointer"><span>Show local offers</span><input type="checkbox" id="ppOn" ${r.off?'':'checked'} style="width:22px;height:22px"></label>
-  <button class="btn block" id="ppB" style="margin-top:10px">Save</button>`);
- $('#ppB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_set_promo_pref',{p_off:!$('#ppOn').checked});PROMO.at=0;closeSheet();toast('Saved')}catch(x){busy(e.target,false)}}}
+  <div class="menu-i"><span>Show local offers</span><button class="switch ${r.off?'':'on'}" id="ppSw" aria-label="Show local offers"></button></div>`);
+ $('#ppSw').onclick=async e=>{const on=!e.target.classList.contains('on');e.target.classList.toggle('on',on);try{await rpc('gv_set_promo_pref',{p_off:!on});PROMO.at=0;PROMO.off=!on;toast(on?'Offers on':'Offers off')}catch(x){e.target.classList.toggle('on',!on)}}}
 
 /* ---- admin ---- */
 const PROMO_CATS=Object.keys(PROMO_IC);
