@@ -84,7 +84,9 @@ h1,h2,h3{margin:0;letter-spacing:-.015em;font-family:Outfit,-apple-system,sans-s
 #app{min-height:100%;padding-bottom:calc(74px + var(--safe-b))}
 header.top{position:sticky;top:0;z-index:1000;color:#fff;padding:calc(12px + var(--safe-t)) 16px 15px;display:flex;justify-content:space-between;align-items:center;background:var(--brand)}
 header.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:repeating-linear-gradient(90deg,var(--y) 0 18px,transparent 18px 32px);opacity:.9}
-.hl{display:flex;align-items:center;gap:10px;min-width:0}.hlogo{width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.15)}.hlogo .gvlogo{width:24px;height:27px}
+.hl{display:flex;align-items:center;gap:10px;min-width:0}.hback{width:38px;height:38px;border-radius:12px;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:30px;line-height:1;display:grid;place-items:center;flex:none;cursor:pointer;padding:0 0 4px}.sheet{position:relative}.sheet>.grab+.sheet-x+h3,.sheet>.grab+.sheet-x+div h3:first-child{padding-right:40px}.paybtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.paybtns button{border:1.5px solid var(--line,#e3e8f0);background:#fff;border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;cursor:pointer;color:inherit}.paybtns button span{font-size:22px;line-height:1}.paybtns button b{font-size:14px}.paybtns button small{font-size:11px;color:var(--muted,#64748b)}.paybtns button.on{border-color:var(--brand,#1565C0);background:#eef5ff;box-shadow:0 0 0 2px rgba(21,101,192,.15)}.paybtns button:disabled{opacity:.45}.payhint{font-size:12px;margin:6px 2px 0}
+.chips.one{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.chips.one::-webkit-scrollbar{display:none}.chips.one .chip{white-space:nowrap;flex:none}
+.sheet-x{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:0;background:var(--line,#eef1f6);color:#334;font-size:16px;cursor:pointer;z-index:2}.hlogo{width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.15)}.hlogo .gvlogo{width:24px;height:27px}
 header.top small{display:block;color:#D6E6FB;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header.top h2{font-size:20px}
 .av{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--p1);display:grid;place-items:center;font-weight:800;border:0;cursor:pointer}
 main{padding:14px;max-width:720px;margin:0 auto}
@@ -313,7 +315,7 @@ input[type=range]{width:100%;accent-color:var(--p1)}
 </section>
 
 <section id="app" class="hidden">
-  <header class="top"><div class="hl"><span class="hlogo"><svg class="gvlogo" viewBox="0 0 64 72" aria-hidden="true"><defs><linearGradient id="gvPin2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2196F3"/><stop offset=".55" stop-color="#0D47A1"/><stop offset="1" stop-color="#43A047"/></linearGradient><linearGradient id="gvRoad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1565C0"/><stop offset="1" stop-color="#7CB342"/></linearGradient></defs><path d="M32 2C17.6 2 6 13.4 6 27.6 6 46 32 70 32 70S58 46 58 27.6C58 13.4 46.4 2 32 2z" fill="url(#gvPin2)"/><circle cx="32" cy="27.5" r="19" fill="#fff"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="url(#gvRoad2)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="#fff" stroke-width="1.3" stroke-dasharray="2.6 2.6"/><path d="M21.3 34.4A12.6 12.6 0 0 0 31 40" fill="none" stroke="#FDD835" stroke-width="1.6" stroke-linecap="round"/></svg></span><div style="min-width:0"><small id="hSub"></small><h2 id="hTitle"></h2></div></div><button class="av" id="avBtn"></button></header>
+  <header class="top"><div class="hl"><button class="hback" id="hBack" aria-label="Back" onclick="goBack()" style="display:none">‹</button><span class="hlogo"><svg class="gvlogo" viewBox="0 0 64 72" aria-hidden="true"><defs><linearGradient id="gvPin2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2196F3"/><stop offset=".55" stop-color="#0D47A1"/><stop offset="1" stop-color="#43A047"/></linearGradient><linearGradient id="gvRoad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1565C0"/><stop offset="1" stop-color="#7CB342"/></linearGradient></defs><path d="M32 2C17.6 2 6 13.4 6 27.6 6 46 32 70 32 70S58 46 58 27.6C58 13.4 46.4 2 32 2z" fill="url(#gvPin2)"/><circle cx="32" cy="27.5" r="19" fill="#fff"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="url(#gvRoad2)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M41.2 18.3A13 13 0 1 0 45 27.5H33.5" fill="none" stroke="#fff" stroke-width="1.3" stroke-dasharray="2.6 2.6"/><path d="M21.3 34.4A12.6 12.6 0 0 0 31 40" fill="none" stroke="#FDD835" stroke-width="1.6" stroke-linecap="round"/></svg></span><div style="min-width:0"><small id="hSub"></small><h2 id="hTitle"></h2></div></div><button class="av" id="avBtn"></button></header>
   <main id="view"></main>
   <nav class="tabs" id="tabs"></nav>
 </section>
@@ -565,8 +567,8 @@ async function phPwLogin(){const d=$('#phNum').value.replace(/\D/g,'').slice(-10
 /* after an OTP login: ask for a password so next time is number + password */
 function pwSheet(forgot,after){openSheet(`<h3>${forgot?'Set a new password':'Create a password'}</h3><p class="muted" style="margin:2px 0 10px">${forgot?'Use it to log in from now on.':'Next time, log in with your mobile number and this password — no OTP needed. Forgot it? Log in with OTP any time.'}</p>
  <div class="field"><label>Password (min 8 characters)</label><input id="npw1" type="password" autocomplete="new-password"></div><div class="field"><label>Confirm password</label><input id="npw2" type="password" autocomplete="new-password"></div>
- <div class="err" id="npwE"></div><button class="btn block" id="npwB">Save password</button>${forgot?'':`<button class="btn ghost block" style="margin-top:8px" id="npwL">Later</button>`}`,{lock:true});
- const fin=()=>{closeSheet(true);after&&after()};if($('#npwL'))$('#npwL').onclick=fin;
+ <div class="err" id="npwE"></div><button class="btn block" id="npwB">Save password</button>${forgot?'':`<button class="btn ghost block" style="margin-top:8px" id="npwL">Later</button>`}`,{lock:true,onClose:()=>fin()});
+ function fin(){closeSheet(true);after&&after()};if($('#npwL'))$('#npwL').onclick=fin;
  $('#npwB').onclick=async e=>{const a=$('#npw1').value,b2=$('#npw2').value;$('#npwE').textContent='';
   if(a.length<8){$('#npwE').textContent='Use at least 8 characters';return}if(a!==b2){$('#npwE').textContent='Passwords do not match';return}
   busy(e.target,true);const {error}=await sb.auth.updateUser({password:a});if(error){busy(e.target,false);$('#npwE').textContent=error.message;return}
@@ -613,7 +615,7 @@ function showApp(){document.body.classList.toggle('role-admin',ME.role==='admin'
  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');$('#avBtn').textContent=ini(ME.full_name);
  if(GOOGLE)loadGoogle().catch(()=>{});                                   // map script loads while the screen is built
  if(ME.role==='rider'&&!GEO.tried&&!BOOK.fromUser){GEO.tried=true;quickPickup();autoLocate()}   // GPS starts at once
- TAB='home';renderTabs();render();startLoop()}
+ TAB='home';NAV=[];renderTabs();render();startLoop()}
 async function enter(){
  let uid=null;try{uid=(await sb.auth.getSession()).data.session?.user?.id}catch(e){}
  let c=null;try{c=JSON.parse(localStorage.getItem('gvBoot')||'null')}catch(e){}
@@ -653,7 +655,7 @@ async function onResume(){if(_fg)return;_fg=true;if(!ME)return;const gone=Date.n
  try{const {data}=await sb.auth.getSession();if(!data.session){ME=null;showLogin();return}if(((data.session.expires_at||0)*1000)-Date.now()<180000)await sb.auth.refreshSession()}catch(e){}
  clearInterval(POLL);POLL=setInterval(tick,3000);try{CH&&sb.removeChannel(CH)}catch(e){}try{CH=sb.channel('rides-'+ME.id+'-'+Date.now()).on('postgres_changes',{event:'*',schema:'public',table:'gv_rides'},()=>tick()).subscribe()}catch(e){}
  ticking=false;payRecover().then(x=>{if(x&&!$('#sbg'))render()});
- if(gone>5000){if(ME.role==='rider'&&!ACTIVE&&!$('#sbg')&&!$('#srch')&&!$('#mpick')){if(TAB!=='home'){TAB='home';renderTabs()}freshBook()}if(!$('#sbg'))render()}else tick()}
+ if(gone>5000){if(ME.role==='rider'&&!ACTIVE&&!$('#sbg')&&!$('#srch')&&!$('#mpick')){freshBook()}if(!$('#sbg'))render()}else tick()}
 document.addEventListener('visibilitychange',()=>document.hidden?onPause():onResume());
 (()=>{const A=natPlug('App');if(A)A.addListener('appStateChange',s=>s.isActive?onResume():onPause())})();
 
@@ -664,13 +666,19 @@ const TABS={rider:[['home','Ride','home'],['trips','Trips','trips'],['wallet','W
 const TITLES={home:'',trips:'My Trips',wallet:'Wallet',account:'Account',earn:'Earnings',rates:'My Rate',caps:'Captains',rides:'Rides',sos:'Safety Alerts',settings:'Settings',why:'Why GrabVehicle',money:'Money',more:'More',docs:'My documents'};
 function renderTabs(){$('#tabs').innerHTML=TABS[ME.role].map(([k,l,i])=>`<button data-k="${k}" class="${TAB===k?'on':''}">${icon(i)}<span>${l}</span></button>`).join('')}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='home'&&TAB==='home'&&ME?.role==='rider'&&!ACTIVE){freshBook();render();scrollTo(0,0);return}go(b.dataset.k)};
-function go(t){TAB=t;FIL=null;renderTabs();render();scrollTo(0,0)}
+let NAV=[];const isRoot=t=>!!(ME&&TABS[ME.role].some(x=>x[0]===t));
+function go(t){if(t===TAB&&!isRoot(t)){render();return}if(isRoot(t))NAV=[];else if(TAB&&t!==TAB)NAV.push(TAB);TAB=t;FIL=null;renderTabs();render();scrollTo(0,0)}
+function goBack(){if(TAB==='drive'){try{localStorage.removeItem('gv_wants')}catch(e){}}let t=NAV.pop();while(t&&t===TAB)t=NAV.pop();TAB=t||'home';FIL=null;renderTabs();render();scrollTo(0,0)}
 async function render(){
+ const sub=!isRoot(TAB);$('#hBack').style.display=sub?'grid':'none';$('.hlogo').style.display=sub?'none':'grid';
  $('#hTitle').textContent=TAB==='drive'?'Drive with us':TAB==='invoices'?'Invoices':TAB==='company'?'Company & invoices':TAB==='home'?(ME.role==='rider'?'Where to?':ME.role==='captain'?'Drive':'Dashboard'):TITLES[TAB];
  $('#hSub').textContent=`${ME.full_name} · ${ME.role==='captain'?'Captain':ME.role==='admin'?'Admin':ME.city}`;
  const v=$('#view');const key=ME.role+'/'+TAB;if(LASTR!==key||!v.firstElementChild){v.innerHTML='<div class="loading">Loading…</div>'}LASTR=key;const tok=++RTOK;v._tok=tok;
  const V={rider:{home:riderHome,trips:trips,wallet:wallet,account:account,why:why,docs:docsView,drive:driveOnboard,invoices:myInvoices},captain:{home:capHome,earn:capEarn,rates:capRates,wallet:wallet,account:account,trips:trips,why:why,docs:docsView,invoices:myInvoices},admin:{home:aHome,caps:aCaps,rides:aRides,money:aMoney,more:aMore,sos:aSos,settings:aSettings,account:account,why:why,invoices:aInvoices,company:aCompany}};
- try{await V[ME.role][TAB](v)}catch(e){console.error(e);if(tok!==RTOK)return;v.innerHTML=`<div class="empty">Could not load.<br><button class="btn sm ghost" style="margin-top:10px" onclick="render()">Retry</button></div>`}}
+ // a screen that finished loading after you moved on must not draw over the newer screen
+ const live=()=>tok===RTOK;const vp=new Proxy(v,{set(t,k,val){if(k==='innerHTML'&&!live())return true;t[k]=val;return true},
+  get(t,k){if(k==='_tok')return tok;const x=t[k];if(typeof x!=='function')return x;if(['appendChild','insertAdjacentHTML','replaceChildren','append','prepend'].includes(k))return (...a)=>live()?x.apply(t,a):undefined;return x.bind(t)}});
+ try{await V[ME.role][TAB](vp)}catch(e){console.error(e);if(tok!==RTOK)return;v.innerHTML=`<div class="empty">Could not load.<br><button class="btn sm ghost" style="margin-top:10px" onclick="render()">Retry</button></div>`}}
 
 /* ================= RIDER: BOOK ================= */
 async function riderHome(v){
@@ -1023,7 +1031,7 @@ async function trips(v){const cap=ME.role==='captain';const f=TRIP_F[FIL]?FIL:'a
  const rows=f==='upcoming'?[]:list.filter(TRIP_F[f][1]);
  v.innerHTML=(dues&&+dues.due>=1?`<div class="card" style="background:var(--warn-soft);border-color:#f3d39a;cursor:pointer" onclick="pendingSheet()"><div class="row"><div><b>${inr0(Math.ceil(dues.due))} pending</b><div class="muted">${dues.open.length} item${dues.open.length>1?'s':''} · tap to see why</div></div><button class="btn sm" onclick="event.stopPropagation();duesSheet()">Pay</button></div></div>`
    :dues&&+dues.credit>0?`<div class="card" style="background:#ecfdf5;border-color:#a7f3d0;cursor:pointer" onclick="pendingSheet()"><b>🎁 ${inr0(dues.credit)} ride credit</b><div class="muted">Used on your next ride · tap for history</div></div>`:'')
- +`<div class="chips" style="flex-wrap:wrap">${keys.map(k=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${TRIP_F[k][0]}${cnt(k)?` · ${cnt(k)}`:''}</button>`).join('')}</div>`
+ +`<div class="chips one">${keys.map(k=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${TRIP_F[k][0]}${cnt(k)?` · ${cnt(k)}`:''}</button>`).join('')}</div>`
  +((f==='all'||f==='upcoming')&&upc.length?`<div class="section-h"><h3>Upcoming</h3></div>`+upc.map(x=>`<div class="card"><div class="row"><b>🕒 ${new Date(x.scheduled_at).toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</b>${x.status==='no_captain'?'<span class="pill p-bad">no captain</span>':`<button class="btn sm ghost" onclick="cancelScheduled(${x.id},this)">Cancel</button>`}</div><div class="muted">${vtIcon(x.vehicle_type)} ${esc(x.pickup)} → ${esc(x.drop_name)} · ${esc(x.pay_mode)}</div></div>`).join('')+(f==='all'&&rows.length?`<div class="section-h"><h3>Trips</h3></div>`:''):'')
  +rows.map(t=>{const live=['accepted','arrived','started'].includes(t.status);return `<div class="list-i" onclick="${live?"go('home')":`tripDetail(${t.id})`}"><div class="cap-av" style="background:${col(t.drop_name)};width:42px;height:42px;font-size:20px">${vtIcon(t.vehicle_type)}</div><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.drop_name)}</b><div class="muted">${esc(t.pickup_name)} · ${fdt(t.created_at)}</div><div class="muted">#${t.id} · ${esc(cap?t.rider_name:t.captain_name||'')}${t.service==='parcel'?' · 📦 parcel':t.service==='rental'?' · ⏱ rental':''}${live?' · <b style="color:var(--brand)">tap to track</b>':''}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="num">${t.status==='completed'?inr0(cap?t.captain_net:+t.total+ +(t.tip||0)):t.status==='cancelled'&&+t.cancel_fee&&!cap?inr0(t.cancel_fee):'—'}</div>${pill(t.status)}${tripPay(t,cap)}</div></div>`}).join('')
  +(!rows.length&&!(f==='upcoming'||f==='all')?`<div class="empty">No ${TRIP_F[f][0].toLowerCase()} trips</div>`:'')+(f==='upcoming'&&!upc.length?'<div class="empty">No upcoming rides</div>':'')+(f==='all'&&!rows.length&&!upc.length?'<div class="empty">No trips yet</div>':'')}
@@ -1197,7 +1205,7 @@ function onboardChoose(){let pre=null;try{pre=localStorage.getItem('gv_signup_as
  ${needName?`<div class="field" style="margin-top:12px"><label>Your full name</label><input id="obN" autocomplete="name" value="${esc(needName?'':ME.full_name)}"></div>`:''}
  <div class="choose"><button id="obR"><span class="ic">🚕</span><span><b>I want to ride</b><span class="muted">Book bikes, autos, cabs and send parcels. Choose your captain, no surge.</span></span></button>
  <button id="obC"><span class="ic">🏍️</span><span><b>I want to drive & earn</b><span class="muted">Become a captain: set your own per-km price, get paid by UPI.</span></span></button></div>
- <div class="err" id="obE"></div>`,{lock:true});
+ <div class="err" id="obE"></div>`,{noClose:true});
  const go2=async(as,b)=>{if(needName){const n=$('#obN').value.trim();if(n.length<2){$('#obE').textContent='Enter your name';return}
    try{await rpc('gv_update_profile',{p_name:n,p_phone:ME.phone||'',p_gender:ME.gender||'',p_city:ME.city,p_emergency:ME.emergency_contact||''});ME.full_name=n;$('#avBtn').textContent=ini(n)}catch(x){return}}
   busy(b,true);await onboardSet(as)};
@@ -1538,10 +1546,13 @@ function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destinatio
 
 /* Android back button: close payment → sheet → overlay → go home → leave app */
 (function(){try{const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable('App')))return;const App=C.registerPlugin('App');
- App.addListener('backButton',()=>{if(RZ){try{RZ.close()}catch(e){}RZ=null;return}
-  const ov=document.querySelector('#srch,#mpick');if(ov){(ov.querySelector('#srB,#mpBack')||{click(){ov.remove();render()}}).click();return}
-  if($('#sbg')){const lk=$('#pmX');if(lk){lk.click();return}closeSheet(true);return}
-  if(ME&&TAB!=='home'){go('home');return}App.minimizeApp()})}catch(e){}})();
+ App.addListener('backButton',()=>{if(hwBack()==='leave')App.minimizeApp()})}catch(e){}})();
+/* one place decides what "back" means: payment → search/map → sheet → previous screen → home → leave */
+function hwBack(){if(RZ){try{RZ.close()}catch(e){}RZ=null;return 'pay'}
+ const ov=document.querySelector('#srch,#mpick');if(ov){(ov.querySelector('#srB,#mpBack')||{click(){ov.remove();render()}}).click();return 'overlay'}
+ if($('#sbg')){sheetX();return 'sheet'}
+ if(ME&&!isRoot(TAB)){goBack();return 'back'}
+ if(ME&&TAB!=='home'){go('home');return 'home'}return 'leave'}
 /* ================= TAX INVOICES ================= */
 function words(n){n=Math.round(+n||0);if(!n)return 'Zero';const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
  const two=x=>x<20?a[x]:b[Math.floor(x/10)]+(x%10?' '+a[x%10]:''),three=x=>(x>=100?a[Math.floor(x/100)]+' Hundred'+(x%100?' ':''):'')+(x%100?two(x%100):'');
@@ -1630,13 +1641,13 @@ async function fnCall(route,body){const {data}=await sb.auth.getSession();const 
 /* opens Razorpay checkout (UPI apps, cards, netbanking, wallets); resolves after the server verified and credited the wallet */
 let RZ=null;
 /* step 1: our own method chooser (UPI app first). step 2: Razorpay opens straight on that method. Back/close → choose again. */
-function payAgain(amount){return new Promise(res=>{openSheet(`<div style="text-align:center"><div style="font-size:36px">💳</div><h3>Payment not completed</h3><p class="muted">${inr0(amount)} was not paid.</p></div><button class="btn block green" id="paY">Try again</button><button class="btn ghost block" style="margin-top:8px" id="paN">Cancel</button>`,{lock:true});
+function payAgain(amount){return new Promise(res=>{openSheet(`<div style="text-align:center"><div style="font-size:36px">💳</div><h3>Payment not completed</h3><p class="muted">${inr0(amount)} was not paid.</p></div><button class="btn block green" id="paY">Try again</button><button class="btn ghost block" style="margin-top:8px" id="paN">Cancel</button>`,{lock:true,onClose:()=>{closeSheet(true);res(false)}});
  $('#paY').onclick=()=>{closeSheet(true);res(true)};$('#paN').onclick=()=>{closeSheet(true);res(false)}})}
 function payChoose(amount,purpose){return new Promise(res=>{
  openSheet(`<h3>Pay ${inr0(amount)}</h3><p class="muted" style="margin:2px 0 10px">${esc(purpose||'')}</p>
  <div class="reasons"><label class="reason on" data-m="upi"><input type="radio" name="pm" checked><div><b>UPI app</b><small>Google Pay · PhonePe · Paytm · BHIM — opens your UPI app</small></div><span class="fee" style="color:var(--ok)">Recommended</span></label>
  <label class="reason" data-m="other"><input type="radio" name="pm"><div><b>Card / Netbanking / Wallets</b><small>Debit or credit card, any bank</small></div></label></div>
- <button class="btn block green" id="pmGo">Continue</button><button class="btn ghost block" style="margin-top:8px" id="pmX">Cancel</button>`,{lock:true});
+ <button class="btn block green" id="pmGo">Continue</button><button class="btn ghost block" style="margin-top:8px" id="pmX">Cancel</button>`,{lock:true,onClose:()=>$('#pmX')&&$('#pmX').click()});
  let m='upi';document.querySelectorAll('[data-m]').forEach(l=>l.onclick=()=>{m=l.dataset.m;document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===l));l.querySelector('input').checked=true});
  $('#pmGo').onclick=()=>{closeSheet(true);res(m)};$('#pmX').onclick=()=>{closeSheet(true);res(null)}})}
 async function payOnline(amount,purpose){amount=Math.ceil(+amount);
@@ -1776,10 +1787,17 @@ function reviewDoc(docId,ok,capId){
  $('#rjB').onclick=()=>{const n=$('#rjN').value.trim();if(n.length<3){toast('Enter a reason',true);return}go2(n)}}
 
 /* ================= SHEET / BOOT ================= */
-function openSheet(h,o){$('#sheetRoot').innerHTML=`<div class="sheet-bg" id="sbg"><div class="sheet"><div class="grab"></div>${h}</div></div>`;
- const pm=$('#payM');if(pm){try{const lp=localStorage.getItem('gvPay');if(lp&&pm.querySelector('option[value="'+lp+'"]'))pm.value=lp}catch(x){}pm.addEventListener('change',()=>{try{localStorage.setItem('gvPay',pm.value)}catch(x){}})}$('#sbg').onclick=e=>{if(e.target.id==='sbg'&&!(o&&o.lock))closeSheet()}}
-function closeSheet(){$('#sheetRoot').innerHTML=''}
-document.addEventListener('backbutton',()=>{if($('#sbg'))closeSheet()});
+let SHEET_O=null;
+function sheetX(){const o=SHEET_O;if(o&&o.noClose)return false;if(o&&o.onClose){SHEET_O=null;o.onClose();if($('#sbg')&&!SHEET_O)closeSheet();return true}closeSheet();return true}
+function openSheet(h,o){SHEET_O=o||null;$('#sheetRoot').innerHTML=`<div class="sheet-bg" id="sbg"><div class="sheet"><div class="grab"></div>${o&&o.noClose?'':'<button class="sheet-x" id="sheetX" aria-label="Close">✕</button>'}${h}</div></div>`;if($('#sheetX'))$('#sheetX').onclick=e=>{e.stopPropagation();sheetX()};
+ const pm=$('#payM');if(pm){try{const lp=localStorage.getItem('gvPay');if(lp&&pm.querySelector('option[value="'+lp+'"]'))pm.value=lp}catch(x){}pm.addEventListener('change',()=>{try{localStorage.setItem('gvPay',pm.value)}catch(x){}});payButtons(pm)}$('#sbg').onclick=e=>{if(e.target.id==='sbg'&&!(o&&(o.lock||o.noClose)))sheetX()}}
+const PAY_INFO={UPI:['📲','UPI','Pay GPay / PhonePe in the app after the trip'],Wallet:['👛','Wallet','Paid from your GrabVehicle wallet'],Cash:['💵','Cash','Pay the captain in cash']};
+function payButtons(sel){const opts=[...sel.options];sel.style.display='none';const w=document.createElement('div');w.className='paybtns';sel.after(w);const hint=document.createElement('div');hint.className='muted payhint';w.after(hint);
+ const draw=()=>{w.innerHTML=opts.map(o=>{const i=PAY_INFO[o.value]||['',o.textContent,''];const sub=o.value==='Wallet'?(o.textContent.match(/\(([^)]*)\)/)||[])[1]||'':'';return `<button type="button" data-v="${o.value}" class="${sel.value===o.value?'on':''}" ${o.disabled?'disabled':''}><span>${i[0]}</span><b>${i[1]}</b>${sub?`<small>${esc(sub)}</small>`:''}</button>`}).join('');
+  hint.textContent=(PAY_INFO[sel.value]||['','',''])[2];w.querySelectorAll('button').forEach(b=>b.onclick=()=>{sel.value=b.dataset.v;sel.dispatchEvent(new Event('change'));draw()})};
+ draw();sel.addEventListener('change',draw)}
+function closeSheet(){SHEET_O=null;$('#sheetRoot').innerHTML=''}
+document.addEventListener('backbutton',()=>{if($('#sbg'))sheetX()});
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&ME){ME=null;stopLoop();showLogin()}});
 applyLang();
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)await enter();else showLogin()})();
