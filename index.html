@@ -670,7 +670,7 @@ document.addEventListener('visibilitychange',()=>document.hidden?onPause():onRes
 const TABS={rider:[['home','Ride','home'],['trips','Trips','trips'],['wallet','Wallet','wallet'],['account','Account','user']],
  captain:[['home','Drive','home'],['earn','Earnings','rupee'],['rates','My Rate','tag'],['wallet','Wallet','wallet'],['account','Account','user']],
  admin:[['home','Dashboard','chart'],['caps','Captains','user'],['rides','Rides','trips'],['money','Money','rupee'],['more','More','gear']]};
-const TITLES={promos:'Local promotions',home:'',trips:'My Trips',wallet:'Wallet',account:'Account',earn:'Earnings',rates:'My Rate',caps:'Captains',rides:'Rides',sos:'Safety Alerts',settings:'Settings',why:'Why GrabVehicle',money:'Money',more:'More',docs:'My documents'};
+const TITLES={errors:'App errors',promos:'Local promotions',home:'',trips:'My Trips',wallet:'Wallet',account:'Account',earn:'Earnings',rates:'My Rate',caps:'Captains',rides:'Rides',sos:'Safety Alerts',settings:'Settings',why:'Why GrabVehicle',money:'Money',more:'More',docs:'My documents'};
 function renderTabs(){$('#tabs').innerHTML=TABS[ME.role].map(([k,l,i])=>`<button data-k="${k}" class="${TAB===k?'on':''}">${icon(i)}<span>${l}</span></button>`).join('')}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='home'&&TAB==='home'&&ME?.role==='rider'&&!ACTIVE){freshBook();render();scrollTo(0,0);return}go(b.dataset.k)};
 let NAV=[];const isRoot=t=>!!(ME&&TABS[ME.role].some(x=>x[0]===t));
@@ -681,7 +681,7 @@ async function render(){
  $('#hTitle').textContent=TAB==='drive'?'Drive with us':TAB==='invoices'?'Invoices':TAB==='company'?'Company & invoices':TAB==='home'?(ME.role==='rider'?'Where to?':ME.role==='captain'?'Drive':'Dashboard'):TITLES[TAB];
  $('#hSub').textContent=`${ME.full_name} · ${ME.role==='captain'?'Captain':ME.role==='admin'?'Admin':ME.city}`;
  const v=$('#view');const key=ME.role+'/'+TAB;if(LASTR!==key||!v.firstElementChild){v.innerHTML='<div class="loading">Loading…</div>'}LASTR=key;const tok=++RTOK;v._tok=tok;
- const V={rider:{home:riderHome,trips:trips,wallet:wallet,account:account,why:why,docs:docsView,drive:driveOnboard,invoices:myInvoices},captain:{home:capHome,earn:capEarn,rates:capRates,wallet:wallet,account:account,trips:trips,why:why,docs:docsView,invoices:myInvoices},admin:{home:aHome,caps:aCaps,rides:aRides,money:aMoney,more:aMore,sos:aSos,settings:aSettings,account:account,why:why,invoices:aInvoices,company:aCompany,promos:aPromos}};
+ const V={rider:{home:riderHome,trips:trips,wallet:wallet,account:account,why:why,docs:docsView,drive:driveOnboard,invoices:myInvoices},captain:{home:capHome,earn:capEarn,rates:capRates,wallet:wallet,account:account,trips:trips,why:why,docs:docsView,invoices:myInvoices},admin:{home:aHome,caps:aCaps,rides:aRides,money:aMoney,more:aMore,sos:aSos,settings:aSettings,account:account,why:why,invoices:aInvoices,company:aCompany,promos:aPromos,errors:aErrors}};
  // a screen that finished loading after you moved on must not draw over the newer screen
  const live=()=>tok===RTOK;const vp=new Proxy(v,{set(t,k,val){if(k==='innerHTML'&&!live())return true;t[k]=val;return true},
   get(t,k){if(k==='_tok')return tok;const x=t[k];if(typeof x!=='function')return x;if(['appendChild','insertAdjacentHTML','replaceChildren','append','prepend'].includes(k))return (...a)=>live()?x.apply(t,a):undefined;return x.bind(t)}});
@@ -1437,9 +1437,16 @@ async function aCaps(v){const f=FIL||'all';const list=await rpc('gv_admin_captai
 async function setCap(id,st,b){busy(b,true);try{await rpc('gv_admin_set_captain',{p_id:id,p_status:st});toast('Captain '+st);closeSheet();render()}catch(e){busy(b,false)}}
 async function aRides(v){const f=FIL||'all';const list=await rpc('gv_admin_rides',{p_status:f==='all'?null:f});
  v.innerHTML=`<div class="chips">${[['all','All'],['active','Active'],['completed','Completed'],['unpaid','Unpaid'],['flagged','⚠ Flagged'],['cancelled','Cancelled']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l}</button>`).join('')}</div>`+
- (list.map(t=>`<div class="list-i" onclick="tripDetail(${t.id})"><div style="font-size:24px">${vtIcon(t.vehicle_type)}</div><div style="flex:1;min-width:0"><b>#${t.id} · ${esc(t.rider||'')}</b><div class="muted">${esc(t.pickup_name)} → ${esc(t.drop_name)}</div><div class="muted">${esc(t.captain||'—')} · ${fdt(t.created_at)} · ${t.pay_mode}${t.status==='completed'&&!t.paid?' · <b style="color:var(--warn)">unpaid</b>':''}</div>${+t.end_away_km>2?`<div style="color:var(--bad);font-size:12px">⚠ Ended ${+t.end_away_km} km from the drop</div>`:''}${+t.otp_fails>=3?`<div style="color:var(--bad);font-size:12px">⚠ ${t.otp_fails} wrong OTP tries</div>`:''}</div><div style="text-align:right"><div class="num">${inr0(t.total)}</div>${pill(t.status)}</div></div>`).join('')||'<div class="empty">No rides</div>')}
+ (list.map(t=>`<div class="list-i" onclick="tripDetail(${t.id})"><div style="font-size:24px">${vtIcon(t.vehicle_type)}</div><div style="flex:1;min-width:0"><b>#${t.id} · ${esc(t.rider||'')}</b><div class="muted">${esc(t.pickup_name)} → ${esc(t.drop_name)}</div><div class="muted">${esc(t.captain||'—')} · ${fdt(t.created_at)} · ${t.pay_mode}${t.status==='completed'&&!t.paid?' · <b style="color:var(--warn)">unpaid</b>':''}</div>${['requested','accepted','arrived','started'].includes(t.status)?`<button class="btn sm ghost" style="margin-top:6px" onclick="event.stopPropagation();closeRideSheet(${t.id},'${t.status}')">Close ride</button>`:''}${+t.end_away_km>2?`<div style="color:var(--bad);font-size:12px">⚠ Ended ${+t.end_away_km} km from the drop</div>`:''}${+t.otp_fails>=3?`<div style="color:var(--bad);font-size:12px">⚠ ${t.otp_fails} wrong OTP tries</div>`:''}</div><div style="text-align:right"><div class="num">${inr0(t.total)}</div>${pill(t.status)}</div></div>`).join('')||'<div class="empty">No rides</div>')}
 async function aSos(v){const list=await rpc('gv_admin_sos');v.innerHTML=list.map(s=>`<div class="card" style="${s.status==='open'?'border:2px solid var(--bad)':''}"><div class="row"><b>🚨 ${esc(s.raised_by)} <span class="muted">(${s.role})</span></b>${pill(s.status)}</div><div class="muted">${s.ride_id?'Ride #'+s.ride_id+' · ':''}${fdt(s.created_at)}</div>
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${s.phone?`<a class="btn sm red" href="tel:${esc(s.phone)}">📞 Call ${esc(s.raised_by.split(' ')[0])}</a>`:''}${s.emergency_contact?`<a class="btn sm ghost" href="tel:${esc(s.emergency_contact)}">Emergency contact</a>`:''}${s.lat?`<a class="btn sm ghost" href="https://maps.google.com/?q=${s.lat},${s.lng}">📍 Location</a>`:''}${s.status==='open'?`<button class="btn sm green" onclick="resolveSos(${s.id},this)">Resolve</button>`:''}</div></div>`).join('')||'<div class="empty">No alerts</div>'}
+/* admin: finish or cancel a ride that is stuck (captain's phone died, app closed mid-trip) */
+function closeRideSheet(id,st){openSheet(`<h3>Close ride #${id}</h3><p class="muted">Use this only when the ride is stuck. Status now: <b>${st}</b>.</p>
+ ${st==='started'?`<button class="btn block green" id="crC">Complete trip — charge the agreed fare</button><p class="muted" style="font-size:12px">Same as the captain tapping Complete: fare, captain share, invoice.</p>`:''}
+ <button class="btn block ${st==='started'?'ghost':'red'}" id="crX" style="margin-top:8px">Cancel ride — no charge to anyone</button>
+ <div class="field" style="margin-top:10px"><label>Reason (kept for disputes) *</label><input id="crR" placeholder="e.g. Captain's phone switched off; rider confirmed drop by call"></div><div class="err" id="crE"></div>`);
+ const go2=async(mode,b)=>{const r=$('#crR').value.trim();if(!r){$('#crE').textContent='Write a short reason';return}busy(b,true);try{await rpc('gv_admin_close_ride',{p_ride:id,p_mode:mode,p_reason:r});closeSheet();toast(mode==='complete'?'Trip completed':'Ride cancelled');render()}catch(e){busy(b,false);$('#crE').textContent=cleanErr(e.message)}};
+ if($('#crC'))$('#crC').onclick=e=>go2('complete',e.target);$('#crX').onclick=e=>go2('cancel',e.target)}
 async function resolveSos(id,b){busy(b,true);try{await rpc('gv_admin_resolve_sos',{p_id:id});toast('Resolved');render()}catch(e){busy(b,false)}}
 async function aSettings(v){const {data:s}=await sb.from('gv_settings').select('*').single();
  v.innerHTML=`<div class="card"><b>Pricing & policy</b><p class="muted">Changes apply to new bookings immediately.</p>
@@ -1555,6 +1562,18 @@ function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destinatio
 /* Android back button: close payment → sheet → overlay → go home → leave app */
 (function(){try{const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable('App')))return;const App=C.registerPlugin('App');
  App.addListener('backButton',()=>{if(hwBack()==='leave')App.minimizeApp()})}catch(e){}})();
+/* ================= ERROR REPORTING (admin → More → App errors) ================= */
+const ERRSEEN={};
+function reportErr(msg,stack){try{msg=String(msg||'').slice(0,500);if(!msg||typeof ME==='undefined'||!ME||typeof sb==='undefined'||!sb)return;if(/ResizeObserver|Script error\.?$|Load failed|AbortError|NetworkError|Failed to fetch|cancelled/i.test(msg))return;
+ const k=msg.slice(0,120);if(ERRSEEN[k]&&Date.now()-ERRSEEN[k]<600000)return;ERRSEEN[k]=Date.now();
+ sb.rpc('gv_log_error',{p_msg:msg,p_stack:String(stack||'').slice(0,2000),p_ctx:`${ME.role}/${TAB} · app ${typeof APP_VERSION!=='undefined'?APP_VERSION:'?'} · ${navigator.userAgent.match(/Android [\d.]+|iPhone OS [\d_]+/)?.[0]||'web'}`}).then(()=>{},()=>{})}catch(e){}}
+window.addEventListener('error',e=>reportErr(e.message,e.error&&e.error.stack));
+window.addEventListener('unhandledrejection',e=>{const r=e.reason;reportErr(r&&(r.message||r.toString()),r&&r.stack)});
+async function aErrors(v){const list=await rpc('gv_admin_errors',{p_days:7});
+ v.innerHTML=`<p class="muted">Errors from riders' and captains' phones in the last 7 days, newest first. Same message = one row.</p>`+(list.map(x=>`<div class="card"><div class="row"><b style="word-break:break-word">${esc(x.msg)}</b><span class="pill p-${x.n>10?'bad':'warn'}">${x.n}×</span></div>
+  <div class="muted" style="font-size:12px">${x.users} user${x.users>1?'s':''} · ${esc(x.roles||'')} · last ${fdt(x.last_at)}</div><div class="muted" style="font-size:12px">${esc(x.ctx||'')}</div>
+  ${x.stack?`<details style="margin-top:6px"><summary class="muted" style="font-size:12px;cursor:pointer">Details</summary><pre style="white-space:pre-wrap;font-size:11px;max-height:180px;overflow:auto">${esc(x.stack)}</pre></details>`:''}</div>`).join('')||'<div class="empty">✅ No app errors in the last 7 days</div>')}
+
 /* ================= LOCAL PROMOTIONS ================= */
 const PROMO={items:[],at:0,seen:new Set(),busy:false};
 const PROMO_IC={'Food and Restaurants':'🍽️','Shopping':'🛍️','Grocery':'🛒','Fuel':'⛽','Bike Services':'🔧','Entertainment':'🎬','Events':'🎉','General Offers':'🏷️'};
@@ -1873,6 +1892,7 @@ async function aMore(v){const d=await rpc('gv_admin_dashboard');
  <div class="menu-i" onclick="go('promos')"><span>🏷️ Local promotions (merchant offers)</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="go('caps')"><span>🪪 Approve captains</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="go('settings')"><span>⚙️ Settings, pricing, fixed routes, keys</span><span class="muted">›</span></div>
+ <div class="menu-i" onclick="go('errors')"><span>🩺 App errors (last 7 days)</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="go('account')"><span>👤 Account</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="logout()" style="color:var(--bad)"><span>Sign out</span><span>⎋</span></div>`}
 async function capDetail(id){const c=(window._caps||[]).find(x=>x.id===id);if(!c)return;const docs=await rpc('gv_admin_captain_docs',{p_captain:id});
