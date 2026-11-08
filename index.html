@@ -636,7 +636,7 @@ async function enter(){
  const roleChanged=!cached||c.me.role!==me.role;applyBoot(b);const act=r[6];if(act!==undefined){const had=!!ACTIVE;ACTIVE=act;ACT_AT=Date.now();if(!roleChanged&&had!==!!act&&ME.role==='rider'&&TAB==='home'&&!$('#sbg'))render()}
  if(me.lang!==LANG)rpc('gv_set_lang',{p_lang:LANG},true).catch(()=>{});
  if(roleChanged)showApp();else{$('#avBtn').textContent=ini(ME.full_name);if(TAB==='account'||TAB==='wallet')render()}
- setTimeout(pushInit,1500);applyLang();setTimeout(()=>payRecover().then(x=>{if(x)render()}),2500);
+ setTimeout(pushInit,1500);setTimeout(()=>updateCheck().catch(()=>{}),2000);applyLang();setTimeout(()=>payRecover().then(x=>{if(x)render()}),2500);
  const ob=()=>{if(ME&&ME.role==='rider'&&ME.onboarded===false)onboardChoose()};const np=window._needPw;window._needPw=null;
  setTimeout(()=>{if(!ME)return;np?pwSheet(np==='forgot',ob):ob()},300)}
 function showLogin(){$('#app').classList.add('hidden');$('#login').classList.remove('hidden');initLogin()}
@@ -1089,7 +1089,7 @@ async function wallet(v){const w=await rpc('gv_wallet');const cap=ME.role==='cap
    Screens are written in English; every text the app shows is swapped for the chosen language as it appears.
    [Telugu, Hindi] */
 const I18N={
-'Ride':['రైడ్','राइड'],'Trips':['ట్రిప్స్','यात्राएँ'],'Wallet':['వాలెట్','वॉलेट'],'Account':['ఖాతా','खाता'],'Drive':['డ్రైవ్','ड्राइव'],'Earnings':['సంపాదన','कमाई'],'My Rate':['నా రేటు','मेरा रेट'],
+'Ride':['రైడ్','राइड'],'No internet — waiting to reconnect…':['ఇంటర్నెట్ లేదు — మళ్లీ కనెక్ట్ అవుతోంది…','इंटरनेट नहीं है — दोबारा जुड़ रहे हैं…'],'Update GrabVehicle':['GrabVehicle అప్‌డేట్ చేయండి','GrabVehicle अपडेट करें'],'Update now':['ఇప్పుడే అప్‌డేట్ చేయండి','अभी अपडेट करें'],'New version available':['కొత్త వెర్షన్ అందుబాటులో ఉంది','नया वर्शन उपलब्ध है'],'Vehicle insurance':['వాహన బీమా','वाहन बीमा'],'Upload now':['ఇప్పుడే అప్‌లోడ్ చేయండి','अभी अपलोड करें'],'Trips':['ట్రిప్స్','यात्राएँ'],'Wallet':['వాలెట్','वॉलेट'],'Account':['ఖాతా','खाता'],'Drive':['డ్రైవ్','ड्राइव'],'Earnings':['సంపాదన','कमाई'],'My Rate':['నా రేటు','मेरा रेट'],
 'Where to?':['ఎక్కడికి?','कहाँ जाना है?'],'My Trips':['నా ట్రిప్స్','मेरी यात्राएँ'],'Drive with us':['మాతో డ్రైవ్ చేయండి','हमारे साथ ड्राइव करें'],'Invoices':['ఇన్‌వాయిస్‌లు','इनवॉइस'],'My documents':['నా పత్రాలు','मेरे दस्तावेज़'],'Why GrabVehicle':['ఎందుకు GrabVehicle','GrabVehicle क्यों'],
 'Loading…':['లోడ్ అవుతోంది…','लोड हो रहा है…'],'Retry':['మళ్లీ ప్రయత్నించండి','फिर कोशिश करें'],'Save':['సేవ్','सेव करें'],'Cancel':['రద్దు','रद्द करें'],'Back':['వెనక్కి','वापस'],'Done':['పూర్తి','हो गया'],'Close':['మూసివేయి','बंद करें'],'Submit':['సమర్పించు','जमा करें'],'Continue':['కొనసాగించు','जारी रखें'],'Apply':['వర్తింపజేయి','लागू करें'],'Skip':['దాటవేయి','छोड़ें'],'Later':['తర్వాత','बाद में'],'Not now':['ఇప్పుడు కాదు','अभी नहीं'],
 'Log in':['లాగిన్','लॉग इन'],'Sign up':['సైన్ అప్','साइन अप'],'Sign out':['సైన్ అవుట్','साइन आउट'],'Password':['పాస్‌వర్డ్','पासवर्ड'],'Mobile number':['మొబైల్ నంబర్','मोबाइल नंबर'],'Email or mobile number':['ఈమెయిల్ లేదా మొబైల్ నంబర్','ईमेल या मोबाइल नंबर'],
@@ -1263,14 +1263,16 @@ async function capHome(v,update){const h=await rpc('gv_captain_home',{},update);
   ${['accepted','arrived'].includes(s.status)?`<div class="row" style="margin-top:8px"><input id="cOtp" inputmode="numeric" maxlength="4" oninput="otpAuto(this)" placeholder="${s.service==='parcel'?'Pickup':'Rider'} OTP" style="flex:1;min-width:0;padding:12px;font-size:18px;letter-spacing:4px;text-align:center;border:1px solid var(--line);border-radius:11px"><button class="btn green" onclick="capStart(${s.id},this)">Start</button></div>`:''}
   ${s.status==='started'?(s.service==='parcel'?`<div class="row" style="margin-top:8px"><input id="cDotp" inputmode="numeric" maxlength="4" placeholder="Receiver OTP" style="flex:1;min-width:0;padding:12px;font-size:18px;letter-spacing:4px;text-align:center;border:1px solid var(--line);border-radius:11px"><button class="btn green" onclick="capComplete(${s.id},this)">Delivered</button></div>`:`<button class="btn green block" style="margin-top:8px" onclick="capComplete(${s.id},this)">${s.service==='rental'?'End rental':'Complete trip'}</button>`):''}
   ${s.status!=='started'?`<button class="btn ghost block" style="margin-top:8px;color:var(--bad)" onclick="capCancel(${s.id},this)">Cancel ride</button>`:''}</div>`}
- const html=`<div class="card row"><div><b style="font-size:17px">${h.blocked?'Blocked':h.online?'You are online':'You are offline'}</b><div class="muted">${h.status!=='approved'?'Account '+h.status:h.blocked?`Wallet below ${inr0(h.floor)} — recharge to drive`:h.online?'Ride requests will appear here':'Go online to receive requests'}</div></div><button class="switch ${h.online?'on':''}" id="onSw" aria-label="Online"></button></div>
+ const da=await docAlerts();if(update&&!$('#cBox'))return;
+ const dab=da.map(a=>{const n=+a.days_left,l=label2(a.doc_type);return n<0?`<div class="card" style="background:#fdecec;border-color:#f5b5b5;padding:10px 12px">⛔ <b>Your ${l} has expired</b><div class="muted">Upload the renewed one to go online again.</div><button class="btn sm" style="margin-top:8px" onclick="go('docs')">Upload now</button></div>`:`<div class="card" style="background:var(--warn-soft);border-color:#f3d39a;padding:10px 12px">⚠️ <b>Your ${l} expires ${n===0?'today':'in '+n+' day'+(n===1?'':'s')}</b><div class="muted">Upload the renewed one so you can keep driving.</div><button class="btn sm ghost" style="margin-top:8px" onclick="go('docs')">Upload</button></div>`}).join('');
+ const html=`${dab}<div class="card row"><div><b style="font-size:17px">${h.blocked?'Blocked':h.online?'You are online':'You are offline'}</b><div class="muted">${h.status!=='approved'?'Account '+h.status:h.blocked?`Wallet below ${inr0(h.floor)} — recharge to drive`:h.online?'Ride requests will appear here':'Go online to receive requests'}</div></div><button class="switch ${h.online?'on':''}" id="onSw" aria-label="Online"></button></div>
   <div id="cBox">${box}</div>
   ${h.blocked&&h.status==='approved'?`<button class="btn block" style="margin-bottom:10px" onclick="go('wallet')">Recharge wallet</button>`:''}
   ${h.needs_pass&&!h.blocked?`<div class="card" style="background:var(--warn-soft);border-color:#f3d39a"><b>Day pass needed</b><div class="muted">You're on the Day pass plan. Buy today's pass (${inr0(h.pass_fee)}, 0% commission) or switch to pay-per-ride.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn ghost sm" onclick="setPlan('per_ride',this)">Pay per ride</button><button class="btn green sm" onclick="buyPass(this)">Buy pass ${inr0(h.pass_fee)}</button></div></div>`:''}
   ${h.plan==='day_pass'&&h.pass_active?`<div class="card" style="background:#ecfdf5;border-color:#a7f3d0;padding:10px 12px">🎟️ <b>Day pass active</b> — 0% commission until midnight</div>`:''}
   <div class="map" id="cMap"><div class="tag">${esc(h.city)} · ₹${h.rate}/km</div></div><div id="cRoutes"></div>
   <div class="kpis"><div class="kpi dark"><small>Today's earnings</small><b>${inr0(h.today_earned)}</b></div><div class="kpi"><small>Trips today</small><b>${h.today_trips}</b></div><div class="kpi" onclick="go('wallet')"><small>Wallet</small><b style="color:${+h.wallet<0?'var(--bad)':'inherit'}">${inr0(h.wallet)}</b></div><div class="kpi"><small>Rating</small><b>${h.rating?'★ '+h.rating:'—'}</b></div></div>`;
- const sig=JSON.stringify([s&&s.status,s&&s.id,h.online,h.blocked,s&&s.expires_in]);
+ const sig=JSON.stringify([s&&s.status,s&&s.id,h.online,h.blocked,s&&s.expires_in,da.length]);
  if(update&&v._sig===sig)return;v._sig=sig;
  const keepOtp=$('#cOtp')?.value,keepD=$('#cDotp')?.value;
  v.innerHTML=html;if(keepOtp&&$('#cOtp'))$('#cOtp').value=keepOtp;if(keepD&&$('#cDotp'))$('#cDotp').value=keepD;
@@ -1562,6 +1564,18 @@ function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destinatio
 /* Android back button: close payment → sheet → overlay → go home → leave app */
 (function(){try{const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable('App')))return;const App=C.registerPlugin('App');
  App.addListener('backButton',()=>{if(hwBack()==='leave')App.minimizeApp()})}catch(e){}})();
+/* ================= OFFLINE BAR + APP UPDATE ================= */
+function netBar(){const off=navigator.onLine===false;let b=document.getElementById('netbar');
+ if(off&&!b){b=document.createElement('div');b.id='netbar';b.setAttribute('role','status');b.style.cssText='position:fixed;left:0;right:0;top:0;z-index:9999;background:#b3261e;color:#fff;text-align:center;font:600 13px/1.3 inherit;padding:calc(env(safe-area-inset-top) + 6px) 12px 6px';b.textContent='No internet — waiting to reconnect…';document.body.appendChild(b);try{trNode(b)}catch(e){}}
+ else if(!off&&b){b.remove();try{if(typeof ME!=='undefined'&&ME&&POLL)tick()}catch(e){}}}
+addEventListener('online',netBar);addEventListener('offline',netBar);setTimeout(netBar,0);
+const STORE_URL='https://play.google.com/store/apps/details?id=com.cvv.grab_vehicle';
+function openStore(){location.href=STORE_URL}
+async function appBuild(){try{const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable('App')))return 0;const i=await C.registerPlugin('App').getInfo();return parseInt(i.build,10)||0}catch(e){return 0}}
+async function updateCheck(){const min=parseInt(CONF.min_app_build,10)||0,latest=parseInt(CONF.latest_app_build,10)||0;if(!min&&!latest)return;const b=window._gvBuild||await appBuild();if(!b)return;
+ if(min&&b<min){openSheet(`<h3>Update GrabVehicle</h3><p class="muted" style="margin:8px 0 14px">This version is no longer supported. Update to keep booking rides and getting paid.</p><button class="btn block" onclick="openStore()">Update now</button>`,{lock:true,noClose:true});return}
+ if(latest&&b<latest&&!$('#sbg')){const k='gvUpd'+latest;let seen=0;try{seen=+localStorage.getItem(k)||0}catch(e){}if(Date.now()-seen<864e5)return;try{localStorage.setItem(k,String(Date.now()))}catch(e){}
+  openSheet(`<h3>New version available</h3><p class="muted" style="margin:8px 0 14px">Update for the latest fixes and features.</p><button class="btn block" onclick="openStore()">Update now</button><button class="btn ghost block" style="margin-top:8px" onclick="closeSheet()">Later</button>`)}}
 /* ================= ERROR REPORTING (admin → More → App errors) ================= */
 const ERRSEEN={};
 function reportErr(msg,stack){try{msg=String(msg||'').slice(0,500);if(!msg||typeof ME==='undefined'||!ME||typeof sb==='undefined'||!sb)return;if(/ResizeObserver|Script error\.?$|Load failed|AbortError|NetworkError|Failed to fetch|cancelled/i.test(msg))return;
@@ -1812,7 +1826,12 @@ async function addMoney(amount,btn){amount=Math.round(+amount);if(!(amount>=1&&a
 function upiLink(vpa,name,amount,note){return `upi://pay?pa=${encodeURIComponent(vpa).replace(/%40/g,'@')}&pn=${encodeURIComponent(name||'GrabVehicle Captain')}&am=${(+amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(note||'GrabVehicle ride')}`}
 
 /* ================= CAPTAIN DOCUMENTS ================= */
-const DOCS=[['dl','Driving licence',true],['rc','Vehicle RC',true],['id_proof','ID proof (Aadhaar masked / PAN / Voter ID)',true],['vehicle_photo','Vehicle photo with number plate',true],['selfie','Your photo',false]];
+const DOCS=[['dl','Driving licence',true],['rc','Vehicle RC',true],['id_proof','ID proof (Aadhaar masked / PAN / Voter ID)',true],['vehicle_photo','Vehicle photo with number plate',true],['insurance','Vehicle insurance',false],['selfie','Your photo',false]];
+const DOC_EXP=['dl','rc','insurance'];
+function docDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+function label2(k){return({dl:'driving licence',rc:'vehicle RC',insurance:'vehicle insurance'})[k]||k}
+function docValid(d){if(!d||d.valid_until==null)return '';const n=+d.days_left;return n<0?`<div class="muted" style="color:var(--bad)">Expired on ${docDate(d.valid_until)} — upload the renewed one</div>`:n<=15?`<div class="muted" style="color:#b45309">Expires on ${docDate(d.valid_until)} (${n===0?'today':'in '+n+' day'+(n===1?'':'s')})</div>`:`<div class="muted">Valid till ${docDate(d.valid_until)}</div>`}
+let DOCAL=null;async function docAlerts(){if(DOCAL&&Date.now()-DOCAL.at<6e5)return DOCAL.v;let v=[];try{v=await rpc('gv_my_doc_alerts',{},true)||[]}catch(e){}DOCAL={at:Date.now(),v};return v}
 async function compressImage(file){if(!file.type.startsWith('image/'))return file;
  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)});
  const max=1600,sc=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
@@ -1823,12 +1842,12 @@ async function uploadDoc(type,input){const f=input.files&&input.files[0];if(!f)r
  try{const blob=await compressImage(f);if(blob.size>5*1024*1024)throw new Error('File is larger than 5 MB');
   const ext=blob.type==='application/pdf'?'pdf':'jpg';const path=`${ME.id}/${type}-${Date.now()}.${ext}`;
   const {error}=await sb.storage.from('gv-captain-docs').upload(path,blob,{contentType:blob.type||'image/jpeg',upsert:false});if(error)throw error;
-  await rpc('gv_submit_doc',{p_type:type,p_path:path});toast('Uploaded — under review');docsView($('#view'))}catch(e){toast(cleanErr(e.message||String(e)),true);if(lbl)lbl.innerHTML=pill('rejected')}}
+  await rpc('gv_submit_doc',{p_type:type,p_path:path});DOCAL=null;toast('Uploaded — under review');docsView($('#view'))}catch(e){toast(cleanErr(e.message||String(e)),true);if(lbl)lbl.innerHTML=pill('rejected')}}
 async function docsView(v){const docs=await rpc('gv_my_docs');const app=ME.role==='rider'?await rpc('gv_my_application'):null;
  $('#hTitle').textContent='My documents';
  v.innerHTML=`${app?`<div class="card"><b>Application: ${pill(app.status)}</b><div class="muted">${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · UPI ${esc(app.upi_id||'—')}</div><div class="muted" style="margin-top:4px">Upload all required documents. Our team verifies them, usually within 24 hours.</div></div>`:''}
- ${DOCS.map(([k,l,req])=>{const d=docs.find(x=>x.doc_type===k);return`<div class="list-i"><div style="flex:1;min-width:0"><b>${l}${req?'':' <span class="muted">(optional)</span>'}</b>${d?.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}${d?`<div class="muted">Uploaded ${fdt(d.uploaded_at)}</div>`:''}</div>
-  <div style="text-align:right"><div class="st">${d?pill(d.status):'<span class="pill p-mute">missing</span>'}</div>${!d||d.status!=='approved'?`<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end"><label class="btn sm ghost" style="cursor:pointer">📷 Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadDoc('${k}',this)"></label><label class="btn sm ghost" style="cursor:pointer">📎 File<input type="file" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${k}',this)"></label></div>`:''}</div></div>`}).join('')}
+ ${DOCS.map(([k,l,req])=>{const d=docs.find(x=>x.doc_type===k);return`<div class="list-i"><div style="flex:1;min-width:0"><b>${l}${req?'':' <span class="muted">(optional)</span>'}</b>${d?.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}${d?`<div class="muted">Uploaded ${fdt(d.uploaded_at)}</div>`:''}${docValid(d)}</div>
+  <div style="text-align:right"><div class="st">${d?pill(d.status):'<span class="pill p-mute">missing</span>'}</div>${!d||d.status!=='approved'||(d.valid_until!=null&&+d.days_left<=15)?`<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end"><label class="btn sm ghost" style="cursor:pointer">📷 Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadDoc('${k}',this)"></label><label class="btn sm ghost" style="cursor:pointer">📎 File<input type="file" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${k}',this)"></label></div>`:''}</div></div>`}).join('')}
  <button class="btn ghost block" onclick="go('account')">Back</button>`}
 
 /* ================= CAPTAIN PAYOUTS ================= */
@@ -1903,8 +1922,8 @@ async function capDetail(id){const c=(window._caps||[]).find(x=>x.id===id);if(!c
  <div class="section-h"><h3>Documents</h3></div>
  ${docs.map(d=>`<div class="card"><div class="row"><b>${esc(label(d.doc_type))}</b>${pill(d.status)}</div>
   ${urls[d.id]?(/\.pdf$/i.test(d.path)?`<a class="btn ghost sm" style="margin-top:8px" href="${urls[d.id]}" target="_blank">Open PDF</a>`:`<img src="${urls[d.id]}" alt="${esc(label(d.doc_type))}" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:8px;background:#f1f1f6" onerror="this.outerHTML='<div class=&quot;muted&quot; style=&quot;margin-top:6px&quot;>File not found in storage</div>'">`):'<div class="muted" style="margin-top:6px">File not found in storage</div>'}
-  ${d.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}
-  ${d.status!=='approved'?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn ghost sm" onclick="reviewDoc(${d.id},false,'${id}')">Reject</button><button class="btn green sm" onclick="reviewDoc(${d.id},true,'${id}')">Approve</button></div>`:''}</div>`).join('')||'<div class="empty">No documents uploaded yet</div>'}
+  ${d.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}${docValid(d)}${d.status==='approved'&&DOC_EXP.includes(d.doc_type)?`<button class="btn ghost sm" style="margin-top:8px" onclick="docValidSheet(${d.id},'${id}','${d.valid_until||''}')">${d.valid_until?'Change expiry date':'Add expiry date'}</button>`:''}
+  ${d.status!=='approved'?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn ghost sm" onclick="reviewDoc(${d.id},false,'${id}')">Reject</button><button class="btn green sm" onclick="reviewDoc(${d.id},true,'${id}','${d.doc_type}')">Approve</button></div>`:''}</div>`).join('')||'<div class="empty">No documents uploaded yet</div>'}
  <div style="display:flex;gap:8px;margin-top:6px">${c.status==='pending'||c.status==='rejected'?`<button class="btn ghost" style="flex:1" onclick="setCap('${c.id}','rejected',this)">Reject captain</button><button class="btn green" style="flex:1" onclick="approveCap('${c.id}',this)">Approve captain</button>`:c.status==='approved'?`<button class="btn ghost" style="flex:1;color:var(--bad)" onclick="setCap('${c.id}','blocked',this)">Block</button>`:`<button class="btn" style="flex:1" onclick="setCap('${c.id}','approved',this)">Unblock</button>`}${c.phone?`<a class="btn ghost" href="tel:${esc(c.phone)}">📞</a>`:''}</div>`)}
 async function approveCap(id,b,force){busy(b,true);let r;
  try{r=await rpc('gv_admin_approve_captain',{p_id:id,p_force:!!force})}catch(e){busy(b,false);return}
@@ -1916,8 +1935,12 @@ async function approveCap(id,b,force){busy(b,true);let r;
  <button class="btn green block" id="apF">Approve anyway — verified in person</button>
  <button class="btn ghost block" style="margin-top:8px" onclick="capDetail('${id}')">Back</button>`);
  $('#apF').onclick=function(){approveCap(id,this,true)}}
-function reviewDoc(docId,ok,capId){
- const go2=async note=>{try{await rpc('gv_admin_review_doc',{p_id:docId,p_ok:ok,p_note:note});toast(ok?'Document approved':'Document rejected');const sc=document.querySelector('.sheet')?.scrollTop||0;await capDetail(capId);const sh=document.querySelector('.sheet');if(sh)sh.scrollTop=sc}catch(e){}};
+function docValidSheet(docId,capId,cur){openSheet(`<h3>Expiry date</h3><div class="field"><label>Valid until</label><input id="dvD" type="date" value="${esc(cur)}"></div><button class="btn block" id="dvB">Save</button><button class="btn ghost block" style="margin-top:8px" onclick="capDetail('${capId}')">Back</button>`);
+ $('#dvB').onclick=async function(){const v=$('#dvD').value;if(!v){toast('Pick a date',true);return}busy(this,true);try{await rpc('gv_admin_doc_validity',{p_id:docId,p_valid:v});toast('Expiry date saved');await capDetail(capId)}catch(e){busy(this,false)}}}
+function reviewDoc(docId,ok,capId,type){
+ const go2=async(note,valid)=>{try{await rpc('gv_admin_review_doc',{p_id:docId,p_ok:ok,p_note:note,p_valid:valid||null});toast(ok?'Document approved':'Document rejected');const sc=document.querySelector('.sheet')?.scrollTop||0;await capDetail(capId);const sh=document.querySelector('.sheet');if(sh)sh.scrollTop=sc}catch(e){}};
+ if(ok&&DOC_EXP.includes(type)){openSheet(`<h3>Approve ${esc(label2(type))}</h3><div class="field"><label>Valid until (from the document, optional)</label><input id="dvD" type="date" min="${new Date().toISOString().slice(0,10)}"></div><p class="muted" style="margin:0 0 10px">With a date, the captain is warned 15 days before and cannot drive after it. You can add it later too.</p><button class="btn green block" id="dvB">Approve</button><button class="btn ghost block" style="margin-top:8px" onclick="capDetail('${capId}')">Back</button>`);
+  $('#dvB').onclick=function(){busy(this,true);go2(null,$('#dvD').value||null)};return}
  if(ok)return go2(null);
  openSheet(`<h3>Reject document</h3><div class="field"><label>Reason (shown to the captain)</label><input id="rjN" placeholder="e.g. Photo is blurred, licence expired"></div><button class="btn red block" id="rjB">Reject</button><button class="btn ghost block" style="margin-top:8px" onclick="capDetail('${capId}')">Back</button>`);
  $('#rjB').onclick=()=>{const n=$('#rjN').value.trim();if(n.length<3){toast('Enter a reason',true);return}go2(n)}}
