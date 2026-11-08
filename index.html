@@ -86,6 +86,13 @@ header.top{position:sticky;top:0;z-index:1000;color:#fff;padding:calc(12px + var
 header.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:repeating-linear-gradient(90deg,var(--y) 0 18px,transparent 18px 32px);opacity:.9}
 .hl{display:flex;align-items:center;gap:10px;min-width:0}.hback{width:38px;height:38px;border-radius:12px;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:30px;line-height:1;display:grid;place-items:center;flex:none;cursor:pointer;padding:0 0 4px}.sheet{position:relative}.sheet>.grab+.sheet-x+h3,.sheet>.grab+.sheet-x+div h3:first-child{padding-right:40px}.paybtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.paybtns button{border:1.5px solid var(--line,#e3e8f0);background:#fff;border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;cursor:pointer;color:inherit}.paybtns button span{font-size:22px;line-height:1}.paybtns button b{font-size:14px}.paybtns button small{font-size:11px;color:var(--muted,#64748b)}.paybtns button.on{border-color:var(--brand,#1565C0);background:#eef5ff;box-shadow:0 0 0 2px rgba(21,101,192,.15)}.paybtns button:disabled{opacity:.45}.payhint{font-size:12px;margin:6px 2px 0}
 .chips.one{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.chips.one::-webkit-scrollbar{display:none}.chips.one .chip{white-space:nowrap;flex:none}
+.promo-wrap{margin:12px 0 6px}.promo-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.promo-row::-webkit-scrollbar{display:none}
+.promo{position:relative;flex:none;width:210px;background:#fff;border:1px solid var(--line,#e3e8f0);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.05)}
+.promo-img{height:92px;background:#eef3fb center/cover no-repeat}.promo-img.ic{display:grid;place-items:center;font-size:40px;background:linear-gradient(135deg,#e8f1ff,#eaf7ea)}
+.promo-b{padding:8px 10px 10px;display:flex;flex-direction:column;gap:2px}.promo-b b{font-size:14px;line-height:1.25}.promo-b small{font-size:11px}
+.promo-x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(15,23,42,.55);color:#fff;font-size:12px;cursor:pointer}
+.promo-hero{height:150px;border-radius:14px;background:#eef3fb center/cover no-repeat;margin-top:6px}
+.linkbtn{background:none;border:0;color:var(--muted,#64748b);font:inherit;font-size:12px;text-decoration:underline;padding:6px 0;cursor:pointer}
 .sheet-x{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:0;background:var(--line,#eef1f6);color:#334;font-size:16px;cursor:pointer;z-index:2}.hlogo{width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.15)}.hlogo .gvlogo{width:24px;height:27px}
 header.top small{display:block;color:#D6E6FB;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header.top h2{font-size:20px}
 .av{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--p1);display:grid;place-items:center;font-weight:800;border:0;cursor:pointer}
@@ -663,7 +670,7 @@ document.addEventListener('visibilitychange',()=>document.hidden?onPause():onRes
 const TABS={rider:[['home','Ride','home'],['trips','Trips','trips'],['wallet','Wallet','wallet'],['account','Account','user']],
  captain:[['home','Drive','home'],['earn','Earnings','rupee'],['rates','My Rate','tag'],['wallet','Wallet','wallet'],['account','Account','user']],
  admin:[['home','Dashboard','chart'],['caps','Captains','user'],['rides','Rides','trips'],['money','Money','rupee'],['more','More','gear']]};
-const TITLES={home:'',trips:'My Trips',wallet:'Wallet',account:'Account',earn:'Earnings',rates:'My Rate',caps:'Captains',rides:'Rides',sos:'Safety Alerts',settings:'Settings',why:'Why GrabVehicle',money:'Money',more:'More',docs:'My documents'};
+const TITLES={promos:'Local promotions',home:'',trips:'My Trips',wallet:'Wallet',account:'Account',earn:'Earnings',rates:'My Rate',caps:'Captains',rides:'Rides',sos:'Safety Alerts',settings:'Settings',why:'Why GrabVehicle',money:'Money',more:'More',docs:'My documents'};
 function renderTabs(){$('#tabs').innerHTML=TABS[ME.role].map(([k,l,i])=>`<button data-k="${k}" class="${TAB===k?'on':''}">${icon(i)}<span>${l}</span></button>`).join('')}
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='home'&&TAB==='home'&&ME?.role==='rider'&&!ACTIVE){freshBook();render();scrollTo(0,0);return}go(b.dataset.k)};
 let NAV=[];const isRoot=t=>!!(ME&&TABS[ME.role].some(x=>x[0]===t));
@@ -674,7 +681,7 @@ async function render(){
  $('#hTitle').textContent=TAB==='drive'?'Drive with us':TAB==='invoices'?'Invoices':TAB==='company'?'Company & invoices':TAB==='home'?(ME.role==='rider'?'Where to?':ME.role==='captain'?'Drive':'Dashboard'):TITLES[TAB];
  $('#hSub').textContent=`${ME.full_name} · ${ME.role==='captain'?'Captain':ME.role==='admin'?'Admin':ME.city}`;
  const v=$('#view');const key=ME.role+'/'+TAB;if(LASTR!==key||!v.firstElementChild){v.innerHTML='<div class="loading">Loading…</div>'}LASTR=key;const tok=++RTOK;v._tok=tok;
- const V={rider:{home:riderHome,trips:trips,wallet:wallet,account:account,why:why,docs:docsView,drive:driveOnboard,invoices:myInvoices},captain:{home:capHome,earn:capEarn,rates:capRates,wallet:wallet,account:account,trips:trips,why:why,docs:docsView,invoices:myInvoices},admin:{home:aHome,caps:aCaps,rides:aRides,money:aMoney,more:aMore,sos:aSos,settings:aSettings,account:account,why:why,invoices:aInvoices,company:aCompany}};
+ const V={rider:{home:riderHome,trips:trips,wallet:wallet,account:account,why:why,docs:docsView,drive:driveOnboard,invoices:myInvoices},captain:{home:capHome,earn:capEarn,rates:capRates,wallet:wallet,account:account,trips:trips,why:why,docs:docsView,invoices:myInvoices},admin:{home:aHome,caps:aCaps,rides:aRides,money:aMoney,more:aMore,sos:aSos,settings:aSettings,account:account,why:why,invoices:aInvoices,company:aCompany,promos:aPromos}};
  // a screen that finished loading after you moved on must not draw over the newer screen
  const live=()=>tok===RTOK;const vp=new Proxy(v,{set(t,k,val){if(k==='innerHTML'&&!live())return true;t[k]=val;return true},
   get(t,k){if(k==='_tok')return tok;const x=t[k];if(typeof x!=='function')return x;if(['appendChild','insertAdjacentHTML','replaceChildren','append','prepend'].includes(k))return (...a)=>live()?x.apply(t,a):undefined;return x.bind(t)}});
@@ -908,7 +915,7 @@ function confirmRide(i){const r=window._offers,o=r.offers[i];const credit=+ME.cr
 
 /* ================= RIDER: LIVE ================= */
 const STAGE={requested:0,accepted:1,arrived:2,started:3,completed:4};
-async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTIVE},true);const v=$('#view');
+async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTIVE},true);const v=$('#view');promoSync('lPromos',!!s&&['requested','accepted'].includes(s.status));
  if(['completed','cancelled','expired','rejected'].includes(s.status)){const id=ACTIVE;ACTIVE=null;ME=await rpc('gv_me');
   if(s.status==='completed'){freshBook();render();return rateSheet(id,s)}
   // captain didn't accept / declined / cancelled: keep the trip and offer to retry or pick another captain
@@ -932,7 +939,7 @@ async function riderLive(update){const s=await rpc('gv_ride_status',{p_ride:ACTI
  if(update&&$('#lMap')&&MK.map&&window._lstage===stage){window._live=s;
   if(c.lat){const first=!VEH.cap||!MK.objs.includes(VEH.cap.m);vehMove('cap',c.lat,c.lng,ic,true);if(s.status==='accepted'||(s.status==='started'&&!RT))await trRoute(rkey,{lat:c.lat,lng:c.lng},tgt,s.vehicle_type);if(!(RT&&s.status==='started')&&(first||!inView(tgt)||!inView(c)))mapFit([[c.lat,c.lng],[tgt.lat,tgt.lng]])}
   $('#lPanel').innerHTML=etaHTML(s)+panel;return}
- window._lstage=stage;if(update&&$('#lMap')&&MK.map){$('#lPanel').innerHTML=etaHTML(s)+panel;mapClear()}else{v.innerHTML=`<div class="map" id="lMap"></div><div id="lRoutes"></div><div id="lPanel">${etaHTML(s)+panel}</div>`;await mapMount('lMap',[s.pickup.lat,s.pickup.lng])}
+ window._lstage=stage;if(update&&$('#lMap')&&MK.map){$('#lPanel').innerHTML=etaHTML(s)+panel;mapClear()}else{v.innerHTML=`<div class="map" id="lMap"></div><div id="lRoutes"></div><div id="lPanel">${etaHTML(s)+panel}</div><div id="lPromos"></div>`;await mapMount('lMap',[s.pickup.lat,s.pickup.lng])}
  window._live=s;trReset();mapPin(s.pickup.lat,s.pickup.lng,'#10b981');if(!RT)mapPin(s.drop.lat,s.drop.lng,'#e11d48');
  const lr=$('#lRoutes');if(lr)lr.innerHTML=`<div class="rnote">${RT?{requested:'Rental · '+durTxt(s.rental_unit,s.rental_qty),accepted:`Blue line: ${esc(c.name||'captain')}'s road to your pickup`,arrived:'Your captain is here — share the OTP to start the rental',started:'Rental running — tell your captain where to go'}[s.status]||'':{requested:'Route to your drop',accepted:`Blue line: ${esc(c.name||'captain')}'s road to your pickup`,arrived:'Your captain is at the pickup — share the OTP',started:'Blue line: road to your drop'}[s.status]||''}</div>`;
  if(RT){if(c.lat&&['accepted','arrived','started'].includes(s.status)){vehMove('cap',c.lat,c.lng,ic);if(s.status==='accepted')await trRoute(rkey,{lat:c.lat,lng:c.lng},s.pickup,s.vehicle_type);mapFit(s.status==='started'?[[c.lat,c.lng]]:[[c.lat,c.lng],[s.pickup.lat,s.pickup.lng]])}else mapFit([[s.pickup.lat,s.pickup.lng]]);$('#lPanel').innerHTML=etaHTML(s)+panel}
@@ -1166,6 +1173,7 @@ async function account(v){let app=null;if(ME.role==='rider')app=await rpc('gv_my
  ${ME.role!=='admin'?`<div class="menu-i" onclick="referSheet()"><span>🎁 Refer & earn</span><span class="muted">›</span></div>`:''}
  ${ME.role==='captain'?`<div class="menu-i" onclick="batteryTip(true)"><span>🔋 Battery & background</span><span class="muted">›</span></div>`:''}
  <div class="menu-i" onclick="langSheet()"><span>🌐 Language</span><span class="muted">${{en:'English',te:'తెలుగు',hi:'हिंदी'}[LANG]} ›</span></div>
+ ${ME.role==='rider'?`<div class="menu-i" onclick="promoPrefSheet()"><span>🏷️ Local offers</span><span class="muted">›</span></div>`:''}
  <div class="menu-i" onclick="pwSheet(true)"><span>🔑 Change password</span><span class="muted">›</span></div>
  ${ME.role!=='admin'?`<div class="menu-i" onclick="go('invoices')"><span>🧾 Tax invoices</span><span class="muted">›</span></div>`:''}
  <div class="menu-i" onclick="go('why')"><span>⭐ Why GrabVehicle</span><span class="muted">›</span></div>
@@ -1547,6 +1555,101 @@ function navUrl(to,vt){return `https://www.google.com/maps/dir/?api=1&destinatio
 /* Android back button: close payment → sheet → overlay → go home → leave app */
 (function(){try{const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable('App')))return;const App=C.registerPlugin('App');
  App.addListener('backButton',()=>{if(hwBack()==='leave')App.minimizeApp()})}catch(e){}})();
+/* ================= LOCAL PROMOTIONS ================= */
+const PROMO={items:[],at:0,seen:new Set(),busy:false};
+const PROMO_IC={'Food and Restaurants':'🍽️','Shopping':'🛍️','Grocery':'🛒','Fuel':'⛽','Bike Services':'🔧','Entertainment':'🎬','Events':'🎉','General Offers':'🏷️'};
+const promoImg=p=>p&&p.image_path?`${CFG.url}/storage/v1/object/public/gv-promos/${p.image_path.split('/').map(encodeURIComponent).join('/')}`:'';
+function promoClear(id){const el=$('#'+id);if(el)el.innerHTML='';PROMO.items=[];PROMO.at=0}
+/* allowed = this screen's ride state permits offers; the server checks everything again (ride state, place, dates, switches) */
+async function promoSync(id,allowed){if(!allowed){promoClear(id);return}
+ if(PROMO.busy)return;if(Date.now()-PROMO.at>60000){PROMO.busy=true;try{const r=await rpc('gv_promos_nearby',{},true);PROMO.items=r&&r.show?r.items:[];PROMO.at=Date.now()}catch(e){PROMO.items=[]}finally{PROMO.busy=false}}
+ const el=$('#'+id);if(!el)return;if(!PROMO.items.length){el.innerHTML='';return}
+ const sig=PROMO.items.map(p=>p.id).join(',');if(el.dataset.sig===sig&&el.firstChild)return;el.dataset.sig=sig;
+ el.innerHTML=`<div class="promo-wrap"><div class="row" style="margin-bottom:8px"><b>🏷️ Offers near you while you wait</b><span class="muted" style="font-size:11px">Ad</span></div>
+  <div class="promo-row">${PROMO.items.map(p=>`<div class="promo" onclick="promoSheet(${p.id})">${promoImg(p)?`<div class="promo-img" style="background-image:url('${promoImg(p)}')"></div>`:`<div class="promo-img ic">${PROMO_IC[p.category]||'🏷️'}</div>`}
+   <button class="promo-x" aria-label="Hide this offer" onclick="event.stopPropagation();promoDismiss(${p.id})">✕</button>
+   <div class="promo-b"><small>${esc(p.business)} · ${(+p.km).toFixed(1)} km</small><b>${esc(p.offer)}</b><small class="muted">${esc(p.title)}</small></div></div>`).join('')}</div>
+  <button class="linkbtn" onclick="promoOff()">Don't show offers</button></div>`;
+ PROMO.items.forEach(p=>{const k=p.id+':'+(ACTIVE||'c');if(!PROMO.seen.has(k)){PROMO.seen.add(k);rpc('gv_promo_event',{p_id:p.id,p_kind:'view'},true).catch(()=>{})}})}
+function promoEv(id,k){rpc('gv_promo_event',{p_id:id,p_kind:k},true).catch(()=>{})}
+function promoSheet(id){const p=PROMO.items.find(x=>x.id===id);if(!p)return;promoEv(id,'open');
+ const until=new Date(p.end_date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})+(p.end_time?' · till '+String(p.end_time).slice(0,5)+' daily':'');
+ openSheet(`${promoImg(p)?`<div class="promo-hero" style="background-image:url('${promoImg(p)}')"></div>`:`<div style="font-size:44px;text-align:center">${PROMO_IC[p.category]||'🏷️'}</div>`}
+  <div class="muted" style="font-size:12px;margin-top:8px">${esc(p.category)} · ${(+p.km).toFixed(1)} km away · Ad</div>
+  <h3 style="margin:2px 0">${esc(p.offer)}</h3><b>${esc(p.business)}</b> <span class="muted">· ${esc(p.title)}</span>
+  <p style="margin:8px 0">${esc(p.description)}</p>
+  <div class="card bd"><div class="row"><span>📍 ${esc(p.address)}</span></div><div class="row"><span>🗓️ Valid till ${until}</span></div>${p.offer_code?`<div class="row"><span>Code <b style="letter-spacing:1px">${esc(p.offer_code)}</b></span><button class="btn sm ghost" onclick="try{navigator.clipboard.writeText('${esc(p.offer_code)}');toast('Code copied')}catch(e){}">Copy</button></div>`:''}</div>
+  ${p.terms?`<p class="muted" style="font-size:12px">${esc(p.terms)}</p>`:''}
+  <div style="display:grid;grid-template-columns:${p.phone?'1fr 1fr':'1fr'};gap:8px;margin-top:10px">${p.phone?`<a class="btn ghost" href="tel:${esc(p.phone)}" onclick="promoEv(${p.id},'call')">📞 Call</a>`:''}<a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${+p.lat},${+p.lng}" target="_blank" rel="noopener" onclick="promoEv(${p.id},'navigate')">🧭 Directions</a></div>
+  <p class="muted" style="font-size:11px;text-align:center;margin-top:10px">Offer by ${esc(p.business)}. GrabVehicle does not sell these products.</p>`)}
+function promoDismiss(id){promoEv(id,'dismiss');PROMO.items=PROMO.items.filter(x=>x.id!==id);['lPromos','cPromos'].forEach(h=>{const el=$('#'+h);if(el){el.dataset.sig='';if(PROMO.items.length)promoSync(h,true);else el.innerHTML=''}});toast('Offer hidden for 24 hours')}
+async function promoOff(){await rpc('gv_set_promo_pref',{p_off:true});promoClear('lPromos');promoClear('cPromos');toast('Offers turned off — turn them on in Account → Local offers')}
+async function promoPrefSheet(){const r=await rpc('gv_promo_pref');
+ openSheet(`<h3>Local offers</h3><p class="muted">Offers from shops near your pickup, shown only while you wait for your captain. Never during your trip.</p>
+  ${r.enabled?'':'<p class="muted" style="font-size:12px">Offers are not running right now.</p>'}
+  <label class="menu-i" style="cursor:pointer"><span>Show local offers</span><input type="checkbox" id="ppOn" ${r.off?'':'checked'} style="width:22px;height:22px"></label>
+  <button class="btn block" id="ppB" style="margin-top:10px">Save</button>`);
+ $('#ppB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_set_promo_pref',{p_off:!$('#ppOn').checked});PROMO.at=0;closeSheet();toast('Saved')}catch(x){busy(e.target,false)}}}
+
+/* ---- admin ---- */
+const PROMO_CATS=Object.keys(PROMO_IC);
+const PROMO_ST={live:['Live','completed'],draft:['Draft','pending'],inactive:['Inactive','rejected'],expired:['Expired','rejected'],scheduled:['Scheduled','pending'],payment_due:['Payment due','rejected']};
+async function aPromos(v){const d=await rpc('gv_admin_promos');window._promos=d.items;const f=FIL||'all';const q=(window._pq||'').toLowerCase();
+ const list=d.items.filter(p=>(f==='all'||p.state===f)&&(!q||(p.title+' '+p.business+' '+p.category).toLowerCase().includes(q)));
+ const n=k=>d.items.filter(p=>p.state===k).length,st=d.settings;
+ v.innerHTML=`<div class="card"><div class="row"><b>Offers for riders</b><span class="muted" style="font-size:12px">Revenue so far ${inr0(d.revenue)}</span></div>
+  <label class="menu-i" style="cursor:pointer;margin-top:6px"><span>Show offers to riders while they wait for their captain</span><input type="checkbox" id="psR" ${st.rider?'checked':''} style="width:22px;height:22px"></label>
+  <div class="row" style="gap:8px;margin-top:6px"><div class="field" style="flex:1;margin:0"><label>Free period for new merchants (days)</label><input id="psF" type="number" value="${st.free_days}"></div><button class="btn sm" id="psB" style="align-self:end">Save</button></div></div>
+  <button class="btn green block" style="margin:4px 0 10px" onclick="promoForm()">＋ New promotion</button>
+  <div class="chips one">${[['all','All',d.items.length],['live','Live',n('live')],['payment_due','Payment due',n('payment_due')],['draft','Draft',n('draft')],['scheduled','Scheduled',n('scheduled')],['inactive','Inactive',n('inactive')],['expired','Expired',n('expired')]].map(([k,l,c])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l}${c?' · '+c:''}</button>`).join('')}</div>
+  <div class="field" style="margin:8px 0"><input id="pQ" placeholder="🔍 Search name, business or category" value="${esc(window._pq||'')}"></div>
+  ${list.map(p=>{const s=PROMO_ST[p.state]||[p.state,'pending'];const bill=+p.monthly_fee?`${inr0(p.monthly_fee)}/month · ${p.paid_until?'paid till '+p.paid_until:p.free_until?'free till '+p.free_until:'no end'}`:(p.free_until?'Free till '+p.free_until:'Free');
+   return `<div class="card"><div class="row"><div style="min-width:0"><b>${PROMO_IC[p.category]||'🏷️'} ${esc(p.title)}</b><div class="muted">${esc(p.business)} · ${esc(p.category)} · within ${(+p.radius_km)} km of pickup</div>
+    <div class="muted">${p.start_date} → ${p.end_date}${p.start_time?' · '+String(p.start_time).slice(0,5)+'–'+String(p.end_time).slice(0,5):''} · priority ${p.priority}</div><div class="muted">💰 ${bill}${+p.collected?' · collected '+inr0(p.collected):''}</div></div>
+    <span class="pill p-${s[1]==='completed'?'ok':s[1]==='rejected'?'bad':'warn'}">${s[0]}</span></div>
+    <div class="muted" style="font-size:12px;margin-top:6px">👁 ${p.views} seen · 👆 ${p.opens} opened · 📞 ${p.calls} calls · 🧭 ${p.visits} directions · ✕ ${p.dismissed} hidden</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px"><button class="btn ghost sm" onclick="promoForm(${p.id})">Edit</button>
+     ${p.status==='active'?`<button class="btn ghost sm" onclick="promoStatus(${p.id},'inactive',this)">Deactivate</button>`:`<button class="btn sm" onclick="promoStatus(${p.id},'active',this)">Activate</button>`}
+     <button class="btn ghost sm" onclick="promoPay(${p.id})">Payment</button></div></div>`}).join('')||'<div class="empty">No promotions here yet</div>'}`;
+ $('#pQ').oninput=e=>{window._pq=e.target.value;clearTimeout(window._pqT);window._pqT=setTimeout(()=>{const pos=e.target.selectionStart;render().then(()=>{const i=$('#pQ');if(i){i.focus();try{i.setSelectionRange(pos,pos)}catch(x){}}})},350)};
+ $('#psB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_admin_promo_settings',{p_rider:$('#psR').checked,p_captain:false,p_free_days:+$('#psF').value});toast('Saved');render()}catch(x){busy(e.target,false)}}}
+async function promoStatus(id,st,b){busy(b,true);try{await rpc('gv_admin_promo_status',{p_id:id,p_status:st});toast(st==='active'?'Promotion is live (if dates, location and billing allow)':'Promotion stopped');render()}catch(e){busy(b,false)}}
+function promoLatLng(t){t=String(t||'');let m=t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||t.match(/[?&](?:q|query|destination|ll)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/)||t.match(/^\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/);return m?[+m[1],+m[2]]:null}
+function promoForm(id){const p=id?window._promos.find(x=>x.id===id):{category:'Food and Restaurants',radius_km:3,priority:5,audience:'both',status:'active',start_date:new Date().toISOString().slice(0,10),end_date:new Date(Date.now()+30*864e5).toISOString().slice(0,10),monthly_fee:0};
+ const F=(k,l,t='text',x='')=>`<div class="field"><label>${l}</label><input id="pf_${k}" type="${t}" value="${esc(p[k]==null?'':String(p[k]).slice(0,t==='time'?5:200))}" ${x}></div>`;
+ openSheet(`<h3>${id?'Edit promotion':'New promotion'}</h3>
+  ${F('title','Promotion name *')}${F('business','Business name *')}
+  <div class="field"><label>Category *</label><select id="pf_category">${PROMO_CATS.map(c=>`<option ${p.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  ${F('offer','Offer * (e.g. 20% off on meals)')}<div class="field"><label>Description *</label><textarea id="pf_description" rows="3">${esc(p.description||'')}</textarea></div>
+  ${F('address','Business address *')}
+  <div class="field"><label>Location * — paste a Google Maps link or "lat, lng"</label><input id="pf_loc" value="${p.lat!=null?p.lat+', '+p.lng:''}" placeholder="18.4386, 79.1288"><button type="button" class="linkbtn" id="pf_here">Use my current location</button></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${F('radius_km','Show to riders within (km of pickup) *','number','step="0.5" min="0.5"')}${F('priority','Priority (higher first)','number','min="1" max="10"')}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${F('start_date','Start date *','date')}${F('end_date','End date *','date')}${F('start_time','Daily from (optional)','time')}${F('end_time','Daily till (optional)','time')}</div>
+  ${F('phone','Business phone (for Call button)','tel')}${F('offer_code','Offer code (optional)')}${F('terms','Terms (optional)')}
+  <div class="field"><label>Banner image (JPG/PNG, optional)</label><input id="pf_img" type="file" accept="image/*">${p.image_path?`<div class="promo-hero" style="height:90px;background-image:url('${promoImg(p)}')"></div>`:''}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${F('monthly_fee','Monthly fee after free period (₹)','number','min="0"')}${F('free_until','Free until (blank = never charge)','date')}</div>
+  ${id?'':'<p class="muted" style="font-size:12px;margin-top:-4px">Leave "Free until" empty to use the default free period.</p>'}
+  <div class="field"><label>Status</label><select id="pf_status"><option value="active" ${p.status==='active'?'selected':''}>Active</option><option value="draft" ${p.status==='draft'?'selected':''}>Draft</option><option value="inactive" ${p.status==='inactive'?'selected':''}>Inactive</option></select></div>
+  <div class="err" id="pf_err"></div><button class="btn block green" id="pf_save">Save promotion</button>`);
+ $('#pf_here').onclick=async()=>{const g=await getPos(true).catch(()=>null);if(g)$('#pf_loc').value=g.lat.toFixed(6)+', '+g.lng.toFixed(6);else toast('Location not available',true)};
+ $('#pf_save').onclick=async e=>{const err=$('#pf_err');err.textContent='';const ll=promoLatLng($('#pf_loc').value);if(!ll){err.textContent='Paste a Google Maps link or "lat, lng" for the location';return}
+  busy(e.target,true);try{let img='';const fl=$('#pf_img').files[0];
+   if(fl){if(fl.size>8e6)throw new Error('Image is too large (max 8 MB)');const blob=await shrinkImg(fl,1200,.82);img=`promo/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+    const {error}=await sb.storage.from('gv-promos').upload(img,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error}
+   const g=k=>($('#pf_'+k)||{}).value;const body={id:id||null,title:g('title'),business:g('business'),category:g('category'),offer:g('offer'),description:g('description'),address:g('address'),lat:ll[0],lng:ll[1],
+    radius_km:g('radius_km'),priority:g('priority'),start_date:g('start_date'),end_date:g('end_date'),start_time:g('start_time'),end_time:g('end_time'),
+    phone:g('phone'),offer_code:g('offer_code'),terms:g('terms'),monthly_fee:g('monthly_fee'),status:g('status'),image_path:img||''};
+   if(id||g('free_until'))body.free_until=g('free_until');
+   await rpc('gv_admin_save_promo',{p:body},true);closeSheet();toast('Promotion saved');render()}catch(x){busy(e.target,false);err.textContent=cleanErr(x.message||String(x))}}}
+function shrinkImg(file,max,q){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+ c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(b=>b?res(b):rej(new Error('Could not read the image')),'image/jpeg',q);URL.revokeObjectURL(im.src)};im.onerror=()=>rej(new Error('Could not read the image'));im.src=URL.createObjectURL(file)})}
+function promoPay(id){const p=window._promos.find(x=>x.id===id);if(!p)return;
+ openSheet(`<h3>Merchant payment</h3><p class="muted">${esc(p.business)} · ${+p.monthly_fee?inr0(p.monthly_fee)+'/month':'no monthly fee set'} · ${p.paid_until?'paid till '+p.paid_until:p.free_until?'free till '+p.free_until:'free'}</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="field"><label>Months paid</label><input id="pyM" type="number" min="1" max="24" value="1"></div><div class="field"><label>Amount received (₹)</label><input id="pyA" type="number" min="0" value="${+p.monthly_fee||0}"></div></div>
+  <div class="field"><label>Note (UPI ref / receipt no.)</label><input id="pyN"></div><button class="btn block green" id="pyB">Record payment</button>`);
+ $('#pyM').oninput=()=>{$('#pyA').value=(+p.monthly_fee||0)*(+$('#pyM').value||0)};
+ $('#pyB').onclick=async e=>{busy(e.target,true);try{const nu=await rpc('gv_admin_promo_payment',{p_id:id,p_months:+$('#pyM').value,p_amount:+$('#pyA').value,p_note:$('#pyN').value});closeSheet();toast('Paid till '+nu);render()}catch(x){busy(e.target,false)}}}
+
 /* one place decides what "back" means: payment → search/map → sheet → previous screen → home → leave */
 function hwBack(){if(RZ){try{RZ.close()}catch(e){}RZ=null;return 'pay'}
  const ov=document.querySelector('#srch,#mpick');if(ov){(ov.querySelector('#srB,#mpBack')||{click(){ov.remove();render()}}).click();return 'overlay'}
@@ -1755,6 +1858,7 @@ async function aMore(v){const d=await rpc('gv_admin_dashboard');
  v.innerHTML=`<div class="menu-i" onclick="go('sos')"><span>🚨 Safety alerts (SOS)</span><span>${d.sos_open?`<span class="pill p-bad">${d.sos_open} open</span>`:'<span class="muted">›</span>'}</span></div>
  <div class="menu-i" onclick="go('invoices')"><span>🧾 Invoices & GST report</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="go('company')"><span>🏢 Company & invoice details (GSTIN)</span><span class="muted">${CONF.company_gstin&&!/^PASTE_/.test(CONF.company_gstin)?esc(CONF.company_gstin):'<span class="pill p-warn">GSTIN not set</span>'} ›</span></div>
+ <div class="menu-i" onclick="go('promos')"><span>🏷️ Local promotions (merchant offers)</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="go('caps')"><span>🪪 Approve captains</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="go('settings')"><span>⚙️ Settings, pricing, fixed routes, keys</span><span class="muted">›</span></div>
  <div class="menu-i" onclick="go('account')"><span>👤 Account</span><span class="muted">›</span></div>
