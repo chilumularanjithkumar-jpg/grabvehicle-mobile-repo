@@ -73,6 +73,7 @@ h1,h2,h3{margin:0;letter-spacing:-.015em;font-family:Outfit,-apple-system,sans-s
 .lg-sheet{flex:0 0 auto;background:#fff;border-radius:28px 28px 0 0;padding:22px 20px calc(18px + var(--safe-b));box-shadow:0 -10px 30px rgba(0,0,0,.18);position:relative;z-index:2}
 .lg-sheet:before{content:"";display:block;width:44px;height:5px;border-radius:9px;background:#DDE6F1;margin:-8px auto 14px}
 .lcard{background:#fff}.lcard h2{font-size:22px}.lcard .sub{color:var(--muted);margin:4px 0 16px;font-size:14px}
+.lg-stores{display:flex;gap:10px;justify-content:center;margin:14px 0 4px}.lg-stores a{flex:1;max-width:170px;text-align:center;padding:11px 10px;border-radius:12px;background:#0B1F3A;color:#fff;font-weight:700;font-size:14px;text-decoration:none}
 .lg-foot{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;color:var(--muted);font-size:11.5px}.lg-foot img{height:30px}
 @media(min-height:820px){.lg-h{font-size:36px}.lg-feat{padding:13px}}
 @media(max-height:760px){.lg-hero{min-height:0;padding-top:calc(18px + var(--safe-t))}.lg-h{font-size:25px;margin-top:14px}.lg-scene{flex:none;height:78px;min-height:78px;margin-top:10px}.lg-feats{grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.lg-feat{padding:7px 6px;text-align:center}.lg-feat small{display:none}.lg-feat b{font-size:11px;line-height:1.25}}
@@ -376,6 +377,7 @@ body.lvm .lv-cap{padding:10px;margin-top:8px}
   </div>
   <p class="lg-legal">By continuing you agree to our <a href="#" data-legal="terms">Terms</a> and <a href="#" data-legal="privacy">Privacy policy</a>.</p>
   <div style="text-align:center;margin:8px 0 2px;font-size:13px"><a href="#" onclick="setLang('en',true);return false">English</a> · <a href="#" onclick="setLang('te');return false">తెలుగు</a> · <a href="#" onclick="setLang('hi');return false">हिंदी</a></div>
+  <div id="lgStores" class="lg-stores" style="display:none"><a href="https://play.google.com/store/apps/details?id=com.cvv.grab_vehicle" target="_blank" rel="noopener">▶ Google Play</a><a href="https://apps.apple.com/in/app/id6835746557" target="_blank" rel="noopener">📱 App Store</a></div>
   <div class="lg-foot"><span>A product of</span><img src="cvv-logo.png" alt="CVV Technologies"></div>
  </div>
 </section>
@@ -660,7 +662,7 @@ $('#vCode').onkeydown=e=>{if(e.key==='Enter')vVerify()};
 /* ---------- mobile OTP login (Firebase verifies the number; server exchanges it for a Supabase session) ---------- */
 let PHONE_OK=false,VID=null,PH_L=[],phDoing=false;
 function FA(){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable&&C.isPluginAvailable('FirebaseAuthentication'))return C.registerPlugin('FirebaseAuthentication')}catch(e){}return null}
-async function initLogin(){window._asTouched=false;try{const lm=localStorage.getItem('gvMode');if(lm==='rider'||lm==='captain')document.querySelectorAll('#inAs button').forEach(x=>x.classList.toggle('on',x.dataset.as===lm))}catch(e){}try{fetch(CFG.url+'/functions/v1/phone-login',{method:'OPTIONS'}).catch(()=>{})}catch(e){}let pc=null;try{pc=(await sb.rpc('gv_public_config')).data}catch(e){}
+async function initLogin(){try{const C=window.Capacitor,nat=C&&C.isNativePlatform&&C.isNativePlatform();const st=document.getElementById('lgStores');if(st)st.style.display=nat?'none':'flex'}catch(e){}window._asTouched=false;try{const lm=localStorage.getItem('gvMode');if(lm==='rider'||lm==='captain')document.querySelectorAll('#inAs button').forEach(x=>x.classList.toggle('on',x.dataset.as===lm))}catch(e){}try{fetch(CFG.url+'/functions/v1/phone-login',{method:'OPTIONS'}).catch(()=>{})}catch(e){}let pc=null;try{pc=(await sb.rpc('gv_public_config')).data}catch(e){}
  PHONE_OK=!!(pc&&pc.phone_login&&FA());$('#sEmailL').textContent=PHONE_OK?'Email (optional)':'Email';showCard('signinCard')}
 function showCard(id){['phoneCard','signinCard','signupCard','verifyCard','forgotCard'].forEach(x=>$('#'+x).classList.toggle('hidden',x!==id))}
 async function clearPh(){for(const l of PH_L){try{await l.remove()}catch(e){}}PH_L=[]}
@@ -1390,7 +1392,7 @@ async function passSheet(){const r=await rpc('gv_my_referral');const on=passOn()
  <button class="btn block green" id="psB">${+ME.wallet>=+r.pass_fee?(on?'Extend':'Buy')+' GV Pass · '+inr0(r.pass_fee):'Add money & buy'}</button>`);
  $('#psB').onclick=async e=>{busy(e.target,true);try{if(+ME.wallet<+r.pass_fee){const need=Math.ceil(+r.pass_fee-+ME.wallet);if(PAY.razorpay)await payOnline(need,'GV Pass');else if(PAY.demo)await rpc('gv_demo_topup',{p_amount:[100,200,500,1000].find(x=>x>=need)||1000});else throw new Error('Add money to your wallet first')}
   await rpc('gv_buy_rider_pass');ME=await rpc('gv_me');closeSheet();toast('GV Pass active — no convenience fee');render()}catch(x){if(x&&x.message&&!x.code)toast(cleanErr(x.message),true);busy(e.target,false)}}}
-async function referSheet(){const r=await rpc('gv_my_referral');const msg=`Ride with GrabVehicle — captains set fair prices, no surge. Use my code ${r.code} and we both get ₹${+r.credit} ride credit after your first ride. Download: ${STORE_URL}`;
+async function referSheet(){const r=await rpc('gv_my_referral');const msg=`Ride with GrabVehicle — captains set fair prices, no surge. Use my code ${r.code} and we both get ₹${+r.credit} ride credit after your first ride.\n${appLinks()}`;
  openSheet(`<div style="text-align:center"><div style="font-size:42px">🎁</div><h3>Refer & earn ₹${+r.credit}</h3><p class="muted">Your friend gets ₹${+r.credit} too, after their first ride.</p>
  <div class="otp" style="justify-content:center;margin:10px 0">${r.code.split('').map(c=>`<span>${c}</span>`).join('')}</div></div>
  <button class="btn block green" id="rfS">Share on WhatsApp</button>
@@ -1413,6 +1415,7 @@ async function account(v){let app=null;if(ME.role==='rider'){app=await rpc('gv_m
  <div class="menu-i" onclick="pwSheet(true)"><span>🔑 Change password</span><span class="muted">›</span></div>
  ${ME.role!=='admin'?`<div class="menu-i" onclick="go('invoices')"><span>🧾 Tax invoices</span><span class="muted">›</span></div>`:''}
  <div class="menu-i" onclick="go('why')"><span>⭐ Why GrabVehicle</span><span class="muted">›</span></div>
+ <div class="menu-i" onclick="shareApp()"><span>📲 Share GrabVehicle app</span><span class="muted">Android · iPhone ›</span></div>
  <a class="menu-i" style="text-decoration:none;color:inherit" href="tel:${esc(CONF.support_phone||'')}"><span>💬 Help & support</span><span class="muted">${esc(CONF.support_phone||'')} ›</span></a>
  <a class="menu-i" style="text-decoration:none;color:inherit" href="${esc(legalUrl('privacy'))}" target="_blank" rel="noopener"><span>🔒 Privacy policy</span><span class="muted">›</span></a>
  <a class="menu-i" style="text-decoration:none;color:inherit" href="${esc(legalUrl('terms'))}" target="_blank" rel="noopener"><span>📜 Terms of use</span><span class="muted">›</span></a>
@@ -1847,12 +1850,18 @@ function netBar(){const off=navigator.onLine===false;let b=document.getElementBy
  if(off&&!b){b=document.createElement('div');b.id='netbar';b.setAttribute('role','status');b.style.cssText='position:fixed;left:0;right:0;top:0;z-index:9999;background:#b3261e;color:#fff;text-align:center;font:600 13px/1.3 inherit;padding:calc(env(safe-area-inset-top) + 6px) 12px 6px';b.textContent='No internet — waiting to reconnect…';document.body.appendChild(b);try{trNode(b)}catch(e){}}
  else if(!off&&b){b.remove();try{if(typeof ME!=='undefined'&&ME&&POLL)tick()}catch(e){}}}
 addEventListener('online',netBar);addEventListener('offline',netBar);setTimeout(netBar,0);
-const STORE_URL='https://play.google.com/store/apps/details?id=com.cvv.grab_vehicle';
-function openStore(){location.href=STORE_URL}
+const PLAY_URL='https://play.google.com/store/apps/details?id=com.cvv.grab_vehicle',IOS_URL='https://apps.apple.com/in/app/id6835746557';
+function isIOS(){try{const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform())return C.getPlatform()==='ios'}catch(e){}return /iPhone|iPad|iPod/i.test(navigator.userAgent)}
+function playUrl(){return CONF.play_store_url||PLAY_URL}function iosUrl(){return CONF.app_store_url||IOS_URL}
+function storeUrl(){return isIOS()?iosUrl():playUrl()}
+function openStore(){location.href=storeUrl()}
+function appLinks(){return `Android: ${playUrl()}\niPhone: ${iosUrl()}`}
+function shareApp(){const msg=`GrabVehicle — bike taxi, auto, cab, parcel and rentals. Choose your captain, fair price, no surge.\n${appLinks()}`;
+ if(navigator.share){navigator.share({text:msg}).catch(()=>{})}else window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 async function appBuild(){try{const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.isPluginAvailable('App')))return 0;const i=await C.registerPlugin('App').getInfo();return parseInt(i.build,10)||0}catch(e){return 0}}
-async function updateCheck(){const min=parseInt(CONF.min_app_build,10)||0,latest=parseInt(CONF.latest_app_build,10)||0;if(!min&&!latest)return;const b=window._gvBuild||await appBuild();if(!b)return;
+async function updateCheck(){const ios=isIOS(),min=parseInt(ios?CONF.min_ios_build:CONF.min_app_build,10)||0,latest=parseInt(ios?CONF.latest_ios_build:CONF.latest_app_build,10)||0;if(!min&&!latest)return;const b=window._gvBuild||await appBuild();if(!b)return;
  if(min&&b<min){openSheet(`<h3>Update GrabVehicle</h3><p class="muted" style="margin:8px 0 14px">This version is no longer supported. Update to keep booking rides and getting paid.</p><button class="btn block" onclick="openStore()">Update now</button>`,{lock:true,noClose:true});return}
- if(latest&&b<latest&&!$('#sbg')){const k='gvUpd'+latest;let seen=0;try{seen=+localStorage.getItem(k)||0}catch(e){}if(Date.now()-seen<864e5)return;try{localStorage.setItem(k,String(Date.now()))}catch(e){}
+ if(latest&&b<latest&&!$('#sbg')){const k='gvUpd'+(ios?'i':'')+latest;let seen=0;try{seen=+localStorage.getItem(k)||0}catch(e){}if(Date.now()-seen<864e5)return;try{localStorage.setItem(k,String(Date.now()))}catch(e){}
   openSheet(`<h3>New version available</h3><p class="muted" style="margin:8px 0 14px">Update for the latest fixes and features.</p><button class="btn block" onclick="openStore()">Update now</button><button class="btn ghost block" style="margin-top:8px" onclick="closeSheet()">Later</button>`)}}
 /* ================= ERROR REPORTING (admin → More → App errors) ================= */
 const ERRSEEN={};
