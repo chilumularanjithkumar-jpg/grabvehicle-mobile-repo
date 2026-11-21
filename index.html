@@ -473,10 +473,23 @@ async function getPos(quick){const g=geoPlugin();let r=null;
  if(r)GEO.pos=r;return r}
 const shortAddr=a=>{const x=String(a||'').split(',').map(t=>t.trim()).filter(t=>t&&!/^india$/i.test(t)&&!/\b\d{6}\b/.test(t)&&!/^[A-Z0-9]{4}\+[A-Z0-9]{2,3}/.test(t));return x.slice(0,3).join(', ')};
 const ADDR={};
-function addrMem(lat,lng){try{const l=JSON.parse(localStorage.getItem('gvAddr')||'[]');let b=null,bd=0.04;l.forEach(x=>{const d=distKm(x[0],x[1],lat,lng);if(d<bd){bd=d;b=x}});return b?b[2]:null}catch(e){return null}}
-function addrKeep(lat,lng,a){try{const l=JSON.parse(localStorage.getItem('gvAddr')||'[]').filter(x=>distKm(x[0],x[1],lat,lng)>0.02);l.unshift([+lat.toFixed(6),+lng.toFixed(6),a]);localStorage.setItem('gvAddr',JSON.stringify(l.slice(0,40)))}catch(e){}}
+function addrMem(lat,lng){try{const l=JSON.parse(localStorage.getItem('gvAddr2')||'[]');let b=null,bd=0.04;l.forEach(x=>{const d=distKm(x[0],x[1],lat,lng);if(d<bd){bd=d;b=x}});return b?b[2]:null}catch(e){return null}}
+function addrKeep(lat,lng,a){try{const l=JSON.parse(localStorage.getItem('gvAddr2')||'[]').filter(x=>distKm(x[0],x[1],lat,lng)>0.02);l.unshift([+lat.toFixed(6),+lng.toFixed(6),a]);localStorage.setItem('gvAddr2',JSON.stringify(l.slice(0,40)))}catch(e){}}
 async function addrOf(lat,lng){lat=+lat;lng=+lng;const key=lat.toFixed(5)+','+lng.toFixed(5);if(ADDR[key])return ADDR[key];const m=addrMem(lat,lng);if(m){GEO.src='google';ADDR[key]=m;return m}
- const a=await addrOf0(lat,lng);if(GEO.src==='google'){ADDR[key]=a;addrKeep(lat,lng,a)}return a}
+ GEO.coarse=false;let a=await addrOf0(lat,lng);
+ if(GEO.src==='google'&&GEO.coarse){GEO.coarse=false;const lm=await landmark(lat,lng);if(lm&&!a.toLowerCase().includes(lm.toLowerCase()))a=`Near ${lm}, ${a}`}
+ if(GEO.src==='google'){ADDR[key]=a;addrKeep(lat,lng,a)}return a}
+/* nearest named place (shop, hall, temple, school…) within 150 m — Google Places API (New) */
+async function landmark(lat,lng){if(GEO.lmOff)return null;
+ const pick=list=>{let best=null,bd=0.16;(list||[]).forEach(p=>{const n=p.n&&String(p.n).trim();if(!n||/^[A-Z0-9]{4}\+/.test(n)||!isFinite(p.lat))return;const d=distKm(lat,lng,p.lat,p.lng);if(d<bd){bd=d;best=n}});return best};
+ if(GOOGLE)try{await loadGoogle();const {Place,SearchNearbyRankPreference}=await google.maps.importLibrary('places');
+  const {places}=await Place.searchNearby({fields:['displayName','location'],locationRestriction:{center:{lat,lng},radius:150},maxResultCount:10,rankPreference:SearchNearbyRankPreference.DISTANCE});
+  const b=pick((places||[]).map(p=>({n:p.displayName,lat:p.location&&p.location.lat(),lng:p.location&&p.location.lng()})));if(b)return b}catch(e){GEO.lmErr=String(e&&e.message||e)}
+ try{const k=CONF.google_maps_api_key;if(!k||/^PASTE_/.test(k))return null;const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
+  const r=await fetch('https://places.googleapis.com/v1/places:searchNearby',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json','X-Goog-Api-Key':k,'X-Goog-FieldMask':'places.displayName,places.location'},
+   body:JSON.stringify({locationRestriction:{circle:{center:{latitude:lat,longitude:lng},radius:150}},maxResultCount:10,rankPreference:'DISTANCE',languageCode:'en'})});
+  if(r.status===400||r.status===403){GEO.lmOff=true;return null}const j=await r.json();
+  return pick((j.places||[]).map(p=>({n:p.displayName&&p.displayName.text,lat:p.location&&p.location.latitude,lng:p.location&&p.location.longitude})))}catch(e){}return null}
 /* Google Geocoding web service (used when the Maps JS geocoder is not available) */
 async function geoRest(lat,lng){const k=CONF.google_maps_api_key;if(!k||/^PASTE_/.test(k))return null;
  const ctl=new AbortController();setTimeout(()=>ctl.abort(),7000);
@@ -484,12 +497,12 @@ async function geoRest(lat,lng){const k=CONF.google_maps_api_key;if(!k||/^PASTE_
  if(j.status!=='OK'){GEO.err=j.status+(j.error_message?': '+j.error_message:'');if(j.status==='REQUEST_DENIED')GEO.gOff=true;return null}return j.results||[]}
 async function addrOf0(lat,lng){GEO.src='near';
  if(GOOGLE&&!GEO.gOff&&!(window.google&&google.maps&&google.maps.importLibrary)){try{const res=await geoRest(lat,lng);if(res&&res.length){const rk=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:9};
-   const r=res.slice().sort((a,b)=>rk(a)-rk(b))[0];const a=rk(r)<99&&shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){}}
+   const r=res.slice().sort((a,b)=>rk(a)-rk(b))[0];const a=rk(r)<99&&shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;GEO.coarse=rk(r)>=3;return a}}}catch(e){}}
  if(GOOGLE&&!GEO.gOff){try{await loadGoogle();const {Geocoder}=await google.maps.importLibrary('geocoding');const {results}=await new Geocoder().geocode({location:{lat,lng}});
    const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:t.includes('neighborhood')||t.includes('sublocality_level_2')?3:t.includes('sublocality')?4:9};
-   const r=(results||[]).slice().sort((a,b)=>rank(a)-rank(b))[0];if(r&&rank(r)<99){const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=String(e&&e.message||e);console.warn('geocode',e)}
+   const r=(results||[]).slice().sort((a,b)=>rank(a)-rank(b))[0];if(r&&rank(r)<99){const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;GEO.coarse=rank(r)>=3;return a}}}catch(e){GEO.err=String(e&&e.message||e);console.warn('geocode',e)}
   if(/REQUEST_DENIED|billing|not authorized|ApiNotActivated/i.test(GEO.err||'')){GEO.gOff=true}else try{const res=await geoRest(lat,lng);if(res&&res.length){const rank=r=>{const t=r.types||[];return t.includes('plus_code')?99:t.includes('street_address')||t.includes('premise')||t.includes('subpremise')?0:t.includes('establishment')||t.includes('point_of_interest')?1:t.includes('route')?2:9};
-   const r=res.slice().sort((a,b)=>rank(a)-rank(b))[0];const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;return a}}}catch(e){GEO.err=GEO.err||String(e&&e.message||e)}}
+   const r=res.slice().sort((a,b)=>rank(a)-rank(b))[0];const a=shortAddr(r.formatted_address);if(a){GEO.src='google';GEO.err=null;GEO.coarse=rank(r)>=3;return a}}}catch(e){GEO.err=GEO.err||String(e&&e.message||e)}}
  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
   const j=await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`,{signal:ctl.signal})).json();
   const a=j.address||{};const house=[a.house_number,a.road||a.pedestrian||a.footway].filter(Boolean).join(' ');
@@ -1087,12 +1100,14 @@ function rentUsed(s){if(s.service!=='rental'||!s.started_at)return '';const m=Ma
 async function riderEndRental(id,b){openSheet(`<h3>End rental now?</h3><p class="muted">You pay for the booked time (plus any extra hours used). Your captain will be told the rental has ended.</p><button class="btn block red" id="erY">End rental</button><button class="btn ghost block" style="margin-top:8px" onclick="closeSheet()">Keep riding</button>`);
  $('#erY').onclick=async e=>{busy(e.target,true);try{await rpc('gv_rider_end_rental',{p_ride:id});closeSheet();toast('Rental ended');riderLive(true)}catch(x){busy(e.target,false)}}}
 /* same maths as the server (CVV.xlsx): used only for previews */
-function fareCalc(cf,pass){const fp=+SET.rider_fee_pct||0,g=+SET.gst_pct||18,rgp=+SET.ride_gst_pct||5,cp=+SET.captain_comm_pct||0,tp=+SET.tds_pct||0,r2=x=>Math.round(x*100)/100;
- const fm=+SET.rider_fee_min||0,fee=cf>0&&fm>0?Math.max(Math.round(cf*fp/100),fm):Math.round(cf*fp/100),rg=r2(cf*rgp/(100+rgp)),n=cf-rg,cc=pass?0:r2(n*cp/100),cg=r2(cc*g/100),td=r2(n*tp/100);return{fee,rg,cc,cg,td,net:r2(cf-rg-cc-cg-td),gross:cf+fee}}
+function fareCalc(q,pass){const fp=+SET.rider_fee_pct||0,g=+SET.gst_pct||18,rgp=+SET.ride_gst_pct||5,cp=+SET.captain_comm_pct||0,tp=+SET.tds_pct||0,r2=x=>Math.round(x*100)/100;
+ /* auditor model: the quoted fare is what the rider pays; the convenience fee is inside it */
+ const fm=+SET.rider_fee_min||0;let fee=r2(q*fp/(100+fp));if(q>0&&fm>0)fee=Math.min(q,Math.max(fee,fm));
+ const cf=r2(q-fee),rg=r2(cf*rgp/(100+rgp)),n=r2(cf-rg),cc=pass?0:r2(n*cp/100),cg=2*r2(cc*g/200),td=r2(q*tp/100);return{fee,cf,rg,cc,cg,td,net:r2(cf-rg-cc-cg-td),gross:q}}
 /* GV Pass: no convenience fee — show offers the way the server will charge them */
 const passOn=()=>!!(ME&&ME.pass_until&&new Date(ME.pass_until)>new Date());
-function passFix(r){if(!passOn()||!r||!r.offers)return;r.offers.forEach(o=>{if(!o.fare||o.fare.pass)return;const fee=+o.fare.rider_fee+ +o.fare.rider_gst;o.total=Math.max(0,Math.round(+o.total-fee));o.fare={...o.fare,rider_fee:0,rider_gst:0,pass:true}})}
-function bdHTML(f,credit,mode){const tot=Math.max(0,Math.round(+f.captain_fare+ +f.rider_fee+ +f.rider_gst-credit));return`<div class="bd"><div class="row"><span>Ride fare <span class="muted">(incl. GST)</span></span><span class="num">${inr(f.captain_fare)}</span></div><div class="row"><span>Convenience fee <span class="muted">(incl. GST)</span></span><span>${f.pass?'<b style="color:var(--ok)">Free · GV Pass</b>':inr(+f.rider_fee+ +f.rider_gst)}</span></div>${credit>0?`<div class="row" style="color:var(--ok)"><span>Ride credit</span><span>−${inr0(credit)}</span></div>`:''}${credit<0?`<div class="row" style="color:var(--warn);cursor:pointer" onclick="pendingSheet()"><span>Pending from earlier <u style="font-size:12px">why?</u></span><span>+${inr0(-credit)}</span></div>`:''}<div class="row tot"><b>${mode||'You pay'}</b><b class="num">${inr0(tot)}</b></div><div class="muted" style="margin-top:6px">Captain gets <b>${inr(f.captain_net)}</b> after GST, commission and TDS${+f.captain_comm===0?' — day-pass captain, 0% commission':''}. No surge, no hidden charges.</div></div>`}
+function passFix(r){if(!passOn()||!r||!r.offers)return;r.offers.forEach(o=>{if(!o.fare||o.fare.pass)return;const fee=+o.fare.rider_fee+ +o.fare.rider_gst;o.total=Math.max(0,Math.round((+o.total-fee)*100)/100);o.fare={...o.fare,rider_fee:0,rider_gst:0,pass:true}})}
+function bdHTML(f,credit,mode){const tot=Math.max(0,Math.round((+f.captain_fare+ +f.rider_fee+ +f.rider_gst-credit)*100)/100);return`<div class="bd"><div class="row"><span>Ride fare <span class="muted">(incl. GST)</span></span><span class="num">${inr(f.captain_fare)}</span></div><div class="row"><span>Convenience fee <span class="muted">(incl. GST)</span></span><span>${f.pass?'<b style="color:var(--ok)">Free · GV Pass</b>':inr(+f.rider_fee+ +f.rider_gst)}</span></div>${credit>0?`<div class="row" style="color:var(--ok)"><span>Ride credit</span><span>−${inr0(credit)}</span></div>`:''}${credit<0?`<div class="row" style="color:var(--warn);cursor:pointer" onclick="pendingSheet()"><span>Pending from earlier <u style="font-size:12px">why?</u></span><span>+${inr0(-credit)}</span></div>`:''}<div class="row tot"><b>${mode||'You pay'}</b><b class="num">${inr0(tot)}</b></div><div class="muted" style="margin-top:6px">Captain gets <b>${inr(f.captain_net)}</b> after GST, commission and TDS${+f.captain_comm===0?' — day-pass captain, 0% commission':''}. No surge, no hidden charges.</div></div>`}
 function confirmRide(i){const r=window._offers,o=r.offers[i];const credit=+ME.credit>0?Math.min(+ME.credit,+o.total):+ME.credit;const parcel=BOOK.v==='parcel';
  openSheet(`<h3>Confirm ${parcel?'parcel':'ride'}</h3><div class="card row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(o.name)}">${ini(o.name)}</div><div><b>${esc(o.name)}</b><div class="muted">${esc(o.vehicle_model)} · ${esc(o.vehicle_no)}</div></div></div>${o.rating?`<span class="star">★ ${o.rating}</span>`:''}</div>
  <div class="card">${bdHTML(o.fare,credit)}</div>
@@ -1586,7 +1601,7 @@ async function capRates(v){const h=await rpc('gv_captain_home');let rate=+h.rate
   <div class="card"><b>⏱ Rent by the hour / day</b><div class="muted">Riders can book you + your ${vtName(h.vehicle_type).toLowerCase()} for hours or a full day (12 h). Leave empty to not offer it.${h.rental_peers&&h.rental_peers.n?` Others nearby: ₹${h.rental_peers.hour||'–'}/hr · ₹${h.rental_peers.day||'–'}/day.`:''}</div>
    <div class="row" style="gap:10px;margin-top:10px"><div class="field" style="flex:1;margin:0"><label>₹ per hour</label><input id="rH" type="number" inputmode="numeric" placeholder="e.g. ${h.vehicle_type==='bike'?99:h.vehicle_type==='auto'?149:249}" value="${h.rent_hour!=null?+h.rent_hour:''}"></div><div class="field" style="flex:1;margin:0"><label>₹ per day (12 h)</label><input id="rD" type="number" inputmode="numeric" placeholder="e.g. ${h.vehicle_type==='bike'?699:h.vehicle_type==='auto'?999:1799}" value="${h.rent_day!=null?+h.rent_day:''}"></div></div>
    <div class="muted" id="rKeep" style="margin-top:6px"></div><button class="btn block" style="margin-top:10px" id="rSave">Save rental prices</button></div>
-  <div class="card"><b>Example: ${ex} km ${vtName(h.vehicle_type)} trip</b><div class="bd" style="margin-top:8px"><div class="row"><span>Base fare</span><span>${inr0(h.base_fare)}</span></div><div class="row"><span>Rider pays</span><b>${inr0(cf+rf+rg)}</b></div><div class="row"><span>GST u/s 9(5) + commission + GST + TDS</span><span>−${inr(cf-k.net)}</span></div><div class="row"><span>You keep</span><b style="color:var(--ok)">${inr(k.net)}</b></div></div></div>`;
+  <div class="card"><b>Example: ${ex} km ${vtName(h.vehicle_type)} trip</b><div class="bd" style="margin-top:8px"><div class="row"><span>Base fare</span><span>${inr0(h.base_fare)}</span></div><div class="row"><span>Rider pays</span><b>${inr0(cf)}</b></div><div class="row"><span>Convenience fee</span><span>−${inr(rf)}</span></div><div class="row"><span>GST u/s 9(5) + commission + GST + TDS</span><span>−${inr(k.cf-k.net)}</span></div><div class="row"><span>You keep</span><b style="color:var(--ok)">${inr(k.net)}</b></div></div></div>`;
   const set=x=>{rate=Math.min(+h.max_rate,Math.max(+h.min_rate,Math.round(x*2)/2));draw()};$('#rm').onclick=()=>set(rate-.5);$('#rp').onclick=()=>set(rate+.5);$('#rr').oninput=e=>set(+e.target.value);
   $('#rs').onclick=async e=>{busy(e.target,true);try{await rpc('gv_set_rate',{p_rate:rate});h.rate=rate;toast('Rate updated — riders see it now');draw()}catch(x){busy(e.target,false)}};
   const keep=()=>{const hv=+$('#rH').value,dv=+$('#rD').value,pass=h.plan==='day_pass';$('#rKeep').textContent=(hv||dv)?`You keep about ${hv?inr0(fareCalc(hv,pass).net)+' per hour':''}${hv&&dv?' · ':''}${dv?inr0(fareCalc(dv,pass).net)+' per day':''} after GST, commission and TDS.`:''};
@@ -1607,10 +1622,10 @@ async function aHome(v){let d;try{d=await rpc('gv_admin_overview',{p_days:DASH_D
  const al=[];const A=(c,ic,n,l,act)=>al.push(`<div class="alert ${c}" onclick="${act}"><span class="ai">${ic}</span><div><b>${n}</b><small>${l}</small></div></div>`);
  if(+T.sos_open)A('bad','🚨',T.sos_open,'Open SOS alerts',"go('sos')");
  if(+T.reports_open)A('bad','⚠️',T.reports_open,'Ride issues reported by riders',"go('issues')");
- if(+T.captains_pending)A('','🪪',T.captains_pending,'Captains to approve',"FIL='pending';go('caps')");
- if(+T.docs_pending)A('','📄',T.docs_pending,'Documents to review',"FIL='pending';go('caps')");
+ if(+T.captains_pending)A('','🪪',T.captains_pending,'Captains to approve',"go('caps');FIL='pending';render()");
+ if(+T.docs_pending)A('','📄',T.docs_pending,'Documents to review',"go('caps');FIL='pending';render()");
  if(+T.payouts_pending)A('','💸',inr0(T.payouts_amount),`${T.payouts_pending} payout request${T.payouts_pending>1?'s':''}`,"go('money')");
- if(+T.wallet_blocked)A('','⛔',T.wallet_blocked,'Captains blocked by dues',"FIL='approved';go('caps')");
+ if(+T.wallet_blocked)A('','⛔',T.wallet_blocked,'Captains blocked by dues',"go('caps');FIL='approved';render()");
  if(!al.length)al.push(`<div class="alert ok"><span class="ai">✅</span><div><b>All clear</b><small>Nothing waiting for you</small></div></div>`);
  // chart: bookings (bars) + platform revenue (line)
  const W=700,H=260,pl=46,pr=14,pt=14,pb=26,cw=W-pl-pr,chh=H-pt-pb,n=Math.max(1,ser.length),mx=Math.max(1,...ser.map(x=>+x.gmv)),mr=Math.max(1,...ser.map(x=>+x.revenue));
@@ -1648,7 +1663,7 @@ async function aHome(v){let d;try{d=await rpc('gv_admin_overview',{p_days:DASH_D
    <div class="livebox"><div><b>${L.requested}</b><small>Searching</small></div><div><b>${L.on_way}</b><small>Captain on way</small></div><div><b>${L.on_trip}</b><small>On trip</small></div></div>
    <div class="dmap" id="dMap"></div>
    <div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="#EEF3FA" stroke-width="7"/><circle cx="28" cy="28" r="22" fill="none" stroke="#22c55e" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(onl/tot*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 28 28)"/><text x="28" y="32" text-anchor="middle" font-size="12" font-weight="800" fill="#0B1F3A">${Math.round(onl/tot*100)}%</text></svg>
-    <div><b>${onl} of ${L.captains_total} captains online</b><div class="muted" style="font-size:12.5px">Today: ${L.rides_today} rides · ${inr0(L.gmv_today)}</div></div></div></div>
+    <div style="cursor:pointer" onclick="go('caps');FIL='online';render()"><b>${onl} of ${L.captains_total} captains online ›</b><div class="muted" style="font-size:12.5px">Today: ${L.rides_today} rides · ${inr0(L.gmv_today)}</div></div></div></div>
  </div>
  <div class="dgrid g111" style="margin-bottom:12px">
   <div class="card"><div class="ch"><h3>Peak booking hours</h3><span class="muted" style="font-size:12px">${+peak.n?'Busiest '+(peak.h%12||12)+(peak.h<12?' am':' pm'):''}</span></div>${heat}
@@ -1666,7 +1681,7 @@ async function aHome(v){let d;try{d=await rpc('gv_admin_overview',{p_days:DASH_D
   <div class="card"><div class="ch"><h3>🏆 Top captains</h3><a onclick="go('caps')">All captains ›</a></div>
    <div style="overflow-x:auto"><table class="mini"><tr><th>Captain</th><th>Vehicle</th><th class="r">Trips</th><th class="r">Earned</th><th class="r">Rating</th></tr>
    ${d.top_captains.map((c,i)=>`<tr><td>${['🥇','🥈','🥉'][i]||'·'} ${esc(c.name)}</td><td>${vtIcon(c.vehicle_type)} ${esc(c.vehicle_no)}</td><td class="r">${c.trips}</td><td class="r"><b>${inr0(c.earned)}</b></td><td class="r">${c.rating?'★ '+c.rating:'—'}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No trips yet</td></tr>'}</table></div></div>
-  <div class="card"><div class="ch"><h3>🪪 Waiting for approval</h3><a onclick="FIL='pending';go('caps')">Review all ›</a></div>
+  <div class="card"><div class="ch"><h3>🪪 Waiting for approval</h3><a onclick="go('caps');FIL='pending';render()">Review all ›</a></div>
    <div style="overflow-x:auto"><table class="mini"><tr><th>Name</th><th>Vehicle</th><th>City</th><th class="r">Docs</th><th class="r">Applied</th></tr>
    ${d.pending_captains.map(c=>`<tr class="cl" onclick="capDetail('${c.id}')"><td><b>${esc(c.name)}</b></td><td>${vtIcon(c.vehicle_type)} ${esc(c.vehicle_no)}</td><td>${esc(c.city)}</td><td class="r">${c.docs>=4?'✅ ':''}${c.docs}/4</td><td class="r">${fdt(c.created_at)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No pending applications 🎉</td></tr>'}</table></div></div>
  </div>
@@ -1677,8 +1692,10 @@ async function aHome(v){let d;try{d=await rpc('gv_admin_overview',{p_days:DASH_D
  try{const pts=d.map.captains.map(c=>[+c.lat,+c.lng]).concat(d.map.requests.map(r=>[+r.lat,+r.lng]));const c0=CITIES[0]||{lat:18.4386,lng:79.1288};
   await mapMount('dMap',pts[0]||[+c0.lat,+c0.lng]);d.map.captains.forEach(c=>mapPin(c.lat,c.lng,c.busy?'#f59e0b':'#22c55e',c.busy?'On a trip':'Available'));d.map.requests.forEach(r=>mapPin(r.lat,r.lng,'#e11d48','Searching for captain'));
   if(pts.length>1)mapFit(pts);else if(pts.length)mapCenter(pts[0][0],pts[0][1],14)}catch(e){}}
-async function aCaps(v){const f=FIL||'all';const list=await rpc('gv_admin_captains',{p_status:f==='all'?null:f});window._caps=list;
- v.innerHTML=`<div class="chips">${[['all','All'],['pending','To verify'],['approved','Approved'],['blocked','Blocked']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l}</button>`).join('')}</div>`+
+async function aCaps(v){const f=['all','online','pending','approved','blocked'].includes(FIL)?FIL:'all';const all=await rpc('gv_admin_captains',{p_status:null})||[];
+ const pick={all:c=>true,online:c=>!!c.online,pending:c=>c.status==='pending',approved:c=>c.status==='approved',blocked:c=>c.status==='blocked'};
+ const list=all.filter(pick[f]);window._caps=list;
+ v.innerHTML=`<div class="chips">${[['all','All'],['online','🟢 Online'],['pending','To verify'],['approved','Approved'],['blocked','Blocked']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" onclick="FIL='${k}';render()">${l} (${all.filter(pick[k]).length})</button>`).join('')}</div>`+
  (list.map(c=>`<div class="card" style="cursor:pointer" onclick="capDetail('${c.id}')"><div class="row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(c.name)};width:42px;height:42px">${ini(c.name)}</div><div><b>${esc(c.name)} ${c.gender==='F'?'👩':''}</b><div class="muted">${vtIcon(c.vehicle_type)} ${esc(c.vehicle_no)} · ${esc(c.vehicle_model)}</div><div class="muted">${esc(c.city)}${c.plan==='day_pass'?' · 🎟️ day pass':''}</div></div></div><div style="text-align:right">${pill(c.status)}${c.online?'<div class="muted">🟢 online</div>':''}</div></div>
  <div class="row muted" style="margin-top:8px"><span>₹${c.rate_per_km}/km</span><span>${c.rating?'★ '+c.rating:'—'}</span><span>${c.total_trips} trips</span><span style="color:${+c.wallet<0?'var(--bad)':'inherit'}">Wallet ${inr0(c.wallet)}</span></div>
  ${c.docs_pending?`<div class="pill p-warn" style="margin-top:8px">📄 ${c.docs_pending} document${c.docs_pending>1?'s':''} to review</div>`:''}</div>`).join('')||'<div class="empty">None</div>')}
@@ -1740,7 +1757,7 @@ async function aSettings(v){const {data:s}=await sb.from('gv_settings').select('
   <div class="field"><label>Fee after the free period (₹, captain on the way)</label><input id="cFa" type="number" step="1" value="${s.cancel_fee_accepted??5}"></div>
   <div class="field"><label>Captain can mark rider "no-show" after waiting (minutes)</label><input id="cNs" type="number" step="1" value="${s.noshow_wait_min??5}"></div>
   <button class="btn sm block" onclick="saveCancelRules(this)">Save cancellation rules</button></div>
-  <div class="card"><b>How a fare splits</b><div class="muted">Example ₹200 ride: rider pays ₹${fareCalc(200).gross} · GST u/s 9(5) ₹${fareCalc(200).rg} · commission ₹${fareCalc(200).cc} + GST ₹${fareCalc(200).cg} · TDS ₹${fareCalc(200).td} · captain gets ₹${fareCalc(200).net}</div></div>
+  <div class="card"><b>How a fare splits</b><div class="muted">Example ₹200 ride: rider pays ₹${fareCalc(200).gross} · convenience fee ₹${fareCalc(200).fee} · GST u/s 9(5) ₹${fareCalc(200).rg} · commission ₹${fareCalc(200).cc} + GST ₹${fareCalc(200).cg} · TDS ₹${fareCalc(200).td} · captain gets ₹${fareCalc(200).net}</div></div>
   <div class="card"><b>Google Maps check</b><div class="muted" id="gmRes">Tests the address lookup that sets exact pickup addresses.</div><button class="btn sm ghost" style="margin-top:8px" onclick="mapsCheck(this)">Run check</button></div>
   <div class="card"><b>Captain day pass (₹/day incl. GST)</b><div class="muted">0 = not offered for that vehicle</div>${VT.filter(x=>x.code!=='parcel').map(x=>`<div class="row" style="margin-top:8px"><span>${x.icon} ${x.name}</span><input id="pf_${x.code}" type="number" value="${x.day_pass_fee}" style="width:90px;padding:8px;border:1px solid var(--line);border-radius:9px;font-size:16px"><button class="btn sm ghost" onclick="savePassFee('${x.code}',this)">Save</button></div>`).join('')}</div>
   <div class="card"><div class="row"><b>Fixed-fare routes</b><button class="btn sm" onclick="routeForm()">+ Add</button></div><div id="frList" class="muted" style="margin-top:8px">Loading…</div></div>
@@ -1997,7 +2014,8 @@ function hwBack(){if(RZ){try{RZ.close()}catch(e){}RZ=null;return 'pay'}
  if(ME&&!isRoot(TAB)){goBack();return 'back'}
  if(ME&&TAB!=='home'){go('home');return 'home'}return 'leave'}
 /* ================= TAX INVOICES ================= */
-function words(n){n=Math.round(+n||0);if(!n)return 'Zero';const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+function amtWords(x){const t=Math.round(Math.abs(+x||0)*100),r=Math.floor(t/100),ps=t%100;return (r?'Rupees '+words(r):'')+(r&&ps?' and ':'')+(ps?words(ps)+' Paise':'')+(!r&&!ps?'Rupees Zero':'')+' only'}
+function words(n){n=Math.floor(+n||0);if(!n)return 'Zero';const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
  const two=x=>x<20?a[x]:b[Math.floor(x/10)]+(x%10?' '+a[x%10]:''),three=x=>(x>=100?a[Math.floor(x/100)]+' Hundred'+(x%100?' ':''):'')+(x%100?two(x%100):'');
  let o=[];const cr=Math.floor(n/1e7),lk=Math.floor(n/1e5)%100,th=Math.floor(n/1e3)%100,rest=n%1000;
  if(cr)o.push(three(cr)+' Crore');if(lk)o.push(two(lk)+' Lakh');if(th)o.push(two(th)+' Thousand');if(rest)o.push(three(rest));return o.join(' ')}
@@ -2008,7 +2026,7 @@ function invHTML(i){const d=i.data,c=d.company||{},t=d.trip||{},bt=d.bill_to||{}
  <div class="meta"><div><b>Invoice no.</b>${esc(i.number)}</div><div><b>Date</b>${fdt(i.issued_at)}</div><div><b>Billed to</b>${esc(bt.name||'')}${bt.phone?'<br>'+esc(bt.phone):''}${bt.vehicle_no?'<br>'+esc(bt.vehicle_no):''}</div><div><b>Place of supply</b>${esc(c.company_state||'')} (${esc(c.company_state_code||'')})</div>
  ${t.ride_id?`<div style="grid-column:1/-1"><b>Trip #${t.ride_id} · ${esc(vtName(t.vehicle_type))} · ${t.distance_km} km · ${esc(t.pay_mode||'')}</b>${esc(t.pickup||'')} → ${esc(t.drop||'')}<br>Captain: ${esc(t.captain||'')} ${t.vehicle_no?'('+esc(t.vehicle_no)+')':''}</div>`:''}</div>
  <table><tr><th>Particulars</th><th class="r">Amount (₹)</th></tr>${rows(d.lines||[])}<tr class="t"><td>Total</td><td class="r">${money(d.invoice_total)}</td></tr></table>
- <div class="words">Amount in words: Rupees ${words(d.invoice_total)} only</div>
+ <div class="words">Amount in words: ${amtWords(d.invoice_total)}</div>
  ${(d.other||[]).length?`<b>Other information</b><table>${rows(d.other)}<tr class="t"><td>${esc(d.grand_label||'Total paid')}</td><td class="r">${money(d.grand_total)}</td></tr></table>`:''}
  ${+d.tip?`<div class="muted">Tip of ₹${money(d.tip)} paid directly to the captain (not part of this invoice).</div>`:''}
  <div class="foot">${esc(c.invoice_footer||'')}<br>For ${esc(c.company_name||'')} — Authorised signatory</div></div>`}
@@ -2033,7 +2051,7 @@ async function invoicePdf(i,b){busy(b,true);try{await loadScript('jspdf.umd.min.
   arr.filter(l=>+l.amount!==0||!/credit/i.test(l.label)).forEach(l=>{const lines=doc.splitTextToSize(String(l.label).replace(/[^\x20-\x7E]/g,''),W-2*M-120);lines.forEach((ln,ix)=>{txt(ln,M+6,y);if(!ix)txt((+l.amount<0?'- ':'')+R(Math.abs(l.amount)),W-M-6,y,{align:'right'});y+=12});
    if(l.sac||l.note){doc.setFontSize(8);doc.setTextColor(110);txt([l.sac?'SAC '+l.sac:'',l.note||''].filter(Boolean).join('   '),M+6,y);doc.setTextColor(0);doc.setFontSize(9.5);y+=11}y+=3});
   doc.setDrawColor(0);doc.line(M,y-6,W-M,y-6);doc.setFont('helvetica','bold');txt(totLabel,M+6,y+6);txt(R(tot),W-M-6,y+6,{align:'right'});doc.setFont('helvetica','normal');y+=22};
- table('Particulars',d.lines||[],'Total',d.invoice_total);txt('Amount in words: Rupees '+words(d.invoice_total)+' only',M,y);y+=10;
+ table('Particulars',d.lines||[],'Total',d.invoice_total);txt('Amount in words: '+amtWords(d.invoice_total),M,y);y+=10;
  if((d.other||[]).length)table('Other information',d.other,d.grand_label||'Total paid',d.grand_total);
  if(+d.tip){txt('Tip of '+R(d.tip)+' paid directly to the captain (not part of this invoice).',M,y);y+=14}
  y=Math.max(y+20,720);doc.setFontSize(8.5);doc.setTextColor(100);txt(c.invoice_footer||'',M,y);y+=12;txt('For '+(c.company_name||'')+' - Authorised signatory',M,y);
