@@ -157,7 +157,8 @@ nav.tabs{box-shadow:0 -6px 20px rgba(13,71,161,.07)}nav.tabs svg{width:22px;heig
 .choose button:hover,.choose button:focus{border-color:var(--p1);background:#F5F9FF}
 .choose .ic{font-size:34px;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:#EEF4FF;flex:none}
 .choose b{display:block;font-size:16.5px}.choose span.muted{font-size:13px}
-.steps{counter-reset:st;margin:6px 0}.step{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line)}.step:last-child{border:0}
+.steps{counter-reset:st;margin:6px 0}.onb{padding-top:4px;padding-bottom:4px}
+.step{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line)}.step:last-child{border:0}
 .step i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;background:#EEF4FF;color:var(--p1);flex:none}
 .step.done i{background:var(--ok);color:#fff}.step.now i{background:var(--p1);color:#fff}
 /* tax invoice */
@@ -427,7 +428,7 @@ const nameOk=n=>{n=String(n||'').trim();return n.length>=2&&n.length<=60&&/\p{L}
 const mobileOk=p=>{let d=String(p||'').replace(/\D/g,'');if(!d)return true;if(d.length===12&&d.startsWith('91'))d=d.slice(2);else if(d.length===11&&d.startsWith('0'))d=d.slice(1);return /^[6-9]\d{9}$/.test(d)};
 async function rpc(fn,args,quiet){if(PUSH_FNS.has(fn))ACT_AT=0;const {data,error}=await sb.rpc(fn,args||{});if(error){if(!quiet)toast(errMsg(error),true);throw error}if(PUSH_FNS.has(fn))pushFlush();return data}
 /* ride actions that notify the other person; the push function sends them immediately */
-const PUSH_FNS=new Set(['gv_request_ride','gv_request_rental','gv_captain_respond','gv_captain_arrived','gv_captain_start','gv_captain_complete','gv_cancel_ride','gv_rider_end_rental','gv_admin_decide_payout','gv_admin_refund_ride','gv_request_payout']);
+const PUSH_FNS=new Set(['gv_submit_doc','gv_admin_approve_captain','gv_admin_review_doc','gv_admin_set_captain','gv_request_ride','gv_request_rental','gv_captain_respond','gv_captain_arrived','gv_captain_start','gv_captain_complete','gv_cancel_ride','gv_rider_end_rental','gv_admin_decide_payout','gv_admin_refund_ride','gv_request_payout']);
 let _pf=null;function pushFlush(){clearTimeout(_pf);_pf=setTimeout(()=>edgeFn('push',{}).catch(()=>{}),300)}
 async function edgeFn(name,body,route){const {data}=await sb.auth.getSession();const t=data?.session?.access_token;
  const r=await fetch(CFG.url+'/functions/v1/'+name+(route?'/'+route:''),{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.anonKey,...(t?{Authorization:'Bearer '+t}:{})},body:JSON.stringify(body||{})});
@@ -1476,15 +1477,23 @@ async function onboardSet(as){try{await rpc('gv_set_onboarding',{p_as:as})}catch
  if(as==='captain'){try{localStorage.setItem('gv_wants','captain')}catch(e){}go('drive')}else{toast('All set — where are you going?');render()}}
 /* captain sign-up as clear steps: vehicle → documents → verification */
 async function driveOnboard(v){const [app,docs]=await Promise.all([rpc('gv_my_application'),rpc('gv_my_docs').catch(()=>[])]);
- const need=['dl','rc','id_proof','vehicle_photo'];const up=new Set((docs||[]).filter(d=>d.status!=='rejected').map(d=>d.doc_type));const nUp=need.filter(k=>up.has(k)).length;
- const s1=!!app,s2=s1&&nUp===need.length,s3=app&&app.status==='approved';
- v.innerHTML=`<div class="card grad" style="color:#fff;border:0"><h3 style="font-size:19px">Become a GrabVehicle captain</h3><p style="margin:6px 0 0;color:#D6E6FB">Set your own price · keep ${100-(+SET.captain_comm_pct||0)}%+ of each fare after GST · instant UPI payouts</p></div>
- <div class="card steps">
-  <div class="step ${s1?'done':'now'}"><i>${s1?'✓':1}</i><div style="flex:1"><b>Vehicle & licence details</b><div class="muted">${s1?`${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · ${esc(app.city)}`:'Vehicle type, number, licence number, UPI ID'}</div>${s1?'':`<button class="btn sm" style="margin-top:8px" onclick="applyForm()">Add details</button>`}</div></div>
-  <div class="step ${s2?'done':s1?'now':''}"><i>${s2?'✓':2}</i><div style="flex:1"><b>Upload documents</b><div class="muted">${nUp}/${need.length} required uploaded — licence, RC, ID proof, vehicle photo</div>${s1&&!s2?`<button class="btn sm" style="margin-top:8px" onclick="go('docs')">Upload documents</button>`:''}</div></div>
-  <div class="step ${s3?'done':s2?'now':''}"><i>${s3?'✓':3}</i><div style="flex:1"><b>Verification</b><div class="muted">${s3?'Approved — sign out and in again to start driving':app&&app.status==='rejected'?'Application rejected — contact support':s2?'We are checking your documents (usually within 24 hours)':'Starts after you upload documents'}</div></div></div>
+ const need=[['dl','Driving licence'],['rc','Vehicle RC'],['id_proof','ID proof'],['vehicle_photo','Vehicle photo']];const D=docs||[];
+ const ok=new Set(D.filter(d=>d.status!=='rejected').map(d=>d.doc_type));const rej=need.map(([k,l])=>({l,d:D.find(x=>x.doc_type===k&&x.status==='rejected'&&!ok.has(k))})).filter(x=>x.d);
+ const nUp=need.filter(([k])=>ok.has(k)).length,s1=!!app,s2=s1&&nUp===need.length,s3=app&&app.status==='approved',bad=app&&['rejected','blocked'].includes(app.status);
+ const sp=(CONF.support_phone||'').replace(/\D/g,''),help=sp?`<a class="btn ghost block" href="https://wa.me/${sp.length===10?'91'+sp:sp}?text=${encodeURIComponent('Hi GrabVehicle, I need help with my captain registration ('+(ME.full_name||'')+')')}" target="_blank" rel="noopener">💬 Need help? WhatsApp us</a>`:'';
+ const left=need.filter(([k])=>!ok.has(k)).map(([,l])=>l);
+ v.innerHTML=`<div class="card grad" style="color:#fff;border:0"><h3 style="font-size:19px">Become a GrabVehicle captain</h3><p style="margin:6px 0 0;color:#D6E6FB">Set your own price · keep ${100-(+SET.captain_comm_pct||0)}%+ of each fare after GST · UPI payouts</p></div>
+ ${s3?`<div class="card" style="border:1.5px solid var(--ok);text-align:center"><div style="font-size:40px">🎉</div><h3 style="margin:4px 0">You're approved!</h3><p class="muted" style="margin:4px 0 12px">Switch to Captain mode, set your per-km price and go online to start getting rides.</p><button class="btn block green" onclick="switchMode('captain')">Start driving ›</button>
+   <div class="muted" style="text-align:left;font-size:13px;margin-top:12px;line-height:1.6"><b>Before your first ride</b><br>📍 Location: allow <b>“All the time”</b> so riders can see you<br>🔋 Battery: set GrabVehicle to <b>“Unrestricted”</b> so you don't drop offline<br>💰 Keep a little money in your wallet for commission</div></div>`:''}
+ ${bad?`<div class="card" style="border:1.5px solid var(--bad)"><b>Your application was not approved</b><div class="muted" style="margin-top:4px">Please WhatsApp us — we'll tell you what to fix.</div></div>`:''}
+ ${rej.length&&!s3?`<div class="card" style="border:1.5px solid var(--bad)"><b>⚠️ ${rej.length===1?'1 document needs':rej.length+' documents need'} a new photo</b>${rej.map(x=>`<div style="margin-top:6px"><b>${x.l}:</b> <span style="color:var(--bad)">${esc(x.d.note||'Please upload again')}</span></div>`).join('')}<button class="btn block" style="margin-top:10px" onclick="go('docs')">Upload again</button></div>`:''}
+ <div class="card onb">
+  <div class="step ${s1?'done':'now'}"><i>${s1?'✓':1}</i><div style="flex:1;min-width:0"><b>Vehicle & licence details</b><div class="muted">${s1?`${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · ${esc(app.city)}`:'Vehicle type & number, licence number, UPI ID — takes 1 minute'}</div>${s1?'':`<button class="btn sm" style="margin-top:8px" onclick="applyForm()">Add details</button>`}</div></div>
+  <div class="step ${s2?'done':s1?'now':''}"><i>${s2?'✓':2}</i><div style="flex:1;min-width:0"><b>Upload documents</b><div class="muted">${s2?'All 4 uploaded':`${nUp} of ${need.length} uploaded${left.length?' · still needed: '+left.join(', '):''}`}</div>${s1&&!s2?`<button class="btn sm" style="margin-top:8px" onclick="go('docs')">${nUp?'Continue uploading':'Upload documents'}</button>`:''}</div></div>
+  <div class="step ${s3?'done':s2&&!bad?'now':''}"><i>${s3?'✓':3}</i><div style="flex:1;min-width:0"><b>Verification</b><div class="muted">${s3?'Approved':bad?'Not approved — WhatsApp us':s2?'We are checking your documents — usually within 24 hours. We will notify you.':'Starts after you upload documents'}</div></div></div>
  </div>
- ${app&&app.status==='pending'&&s2?`<div class="card">🔔 We'll approve you after checking your documents. Keep the app installed.</div>`:''}
+ ${app&&app.status==='pending'&&s2&&!rej.length?`<div class="card">🔔 We'll send you a notification as soon as you're approved. Keep notifications on.</div>`:''}
+ ${s3?'':help}
  <button class="btn ghost block" onclick="try{localStorage.removeItem('gv_wants')}catch(e){};go('home')">Book a ride instead</button>`}
 function profileForm(){const cities=[...new Set(PLACES.map(p=>p.city))];openSheet(`<h3>Profile</h3><div class="field"><label>Full name</label><input id="pfN" value="${esc(ME.full_name)}"></div><div class="field"><label>Mobile</label><input id="pfP" type="tel" value="${esc(ME.phone||'')}"></div>
  <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Gender</label><select id="pfG"><option value="">—</option>${[['M','Male'],['F','Female'],['O','Other']].map(([k,l])=>`<option value="${k}" ${ME.gender===k?'selected':''}>${l}</option>`).join('')}</select></div><div class="field"><label>City</label><select id="pfC">${cities.map(c=>`<option ${c===ME.city?'selected':''}>${c}</option>`).join('')}</select></div></div>
@@ -1493,7 +1502,7 @@ function profileForm(){const cities=[...new Set(PLACES.map(p=>p.city))];openShee
 function applyForm(){const cities=[...new Set(PLACES.map(p=>p.city))];openSheet(`<h3>Become a captain</h3><p class="muted" style="margin:4px 0 12px">Set your own per-km price · ${+SET.captain_comm_pct||0}% commission or an optional day pass · 100% of tips.</p>
  <div class="field"><label>Vehicle</label><select id="aV">${VT.filter(x=>x.code!=='parcel').map(x=>`<option value="${x.code}">${x.icon} ${x.name}</option>`).join('')}</select></div>
  <div class="field"><label>Vehicle number</label><input id="aN" placeholder="TS02EK4421" style="text-transform:uppercase"></div><div class="field"><label>Make & model</label><input id="aM" placeholder="Honda Shine"></div>
- <div class="field"><label>Driving licence number</label><input id="aD" style="text-transform:uppercase"></div><div class="field"><label>Your UPI ID (riders pay you here; payouts go here)</label><input id="aU" placeholder="9876543210@ybl" autocapitalize="off"></div><div class="field"><label>City</label><select id="aC">${cities.map(c=>`<option ${c===ME.city?'selected':''}>${c}</option>`).join('')}</select></div>
+ <div class="field"><label>Driving licence number</label><input id="aD" placeholder="TS0220190012345" style="text-transform:uppercase"><div class="muted" style="font-size:12px;margin-top:4px">Printed on your licence next to “DL No.”</div></div><div class="field"><label>Your UPI ID (riders pay you here; payouts go here)</label><input id="aU" placeholder="9876543210@ybl" autocapitalize="off"></div><div class="field"><label>City</label><select id="aC">${cities.map(c=>`<option ${c===ME.city?'selected':''}>${c}</option>`).join('')}</select></div>
  <button class="btn block" id="aB">Submit application</button>`);
  $('#aB').onclick=async e=>{busy(e.target,true);try{await rpc('gv_apply_captain',{p_vtype:$('#aV').value,p_vehicle_no:$('#aN').value,p_model:$('#aM').value,p_dl:$('#aD').value,p_city:$('#aC').value,p_upi:$('#aU').value.trim()});window._appPending=true;closeSheet();toast('Details saved — now upload your documents');go('docs')}catch(x){busy(e.target,false)}}}
 function why(v){v.innerHTML=`<div class="card grad" style="color:#fff;border:0"><h3 style="font-size:19px">Why GrabVehicle?</h3><p style="margin:6px 0 0;color:#D6E6FB">Fair for riders. Fair for captains.</p></div>
@@ -1610,19 +1619,22 @@ async function capRates(v){const h=await rpc('gv_captain_home');let rate=+h.rate
 
 /* ================= ADMIN ================= */
 let DASH_DAYS=7;
-async function suList(d1,d2){const day=x=>new Date(x+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+let SUF='all';async function suList(d1,d2,keep){if(!keep)SUF='all';const day=x=>new Date(x+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
  openSheet(`<h3>👥 New users · ${d2&&d2!==d1?day(d1)+' – '+day(d2):day(d1)}</h3><div class="muted">Loading…</div>`);
  let L=[];try{L=await rpc('gv_admin_new_users',{p_from:d1,p_to:d2||d1})||[]}catch(e){closeSheet();return}
  const ago=t=>{if(!t)return '—';const m=Math.round((Date.now()-new Date(t))/60000);return m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
  const plat=x=>x.platform?(/ios/i.test(x.platform)?' iPhone':' Android'):' unknown',sig={phone:'Mobile OTP',email:'Email',google:'Google',apple:'Apple'};
  const capN=L.filter(x=>x.captain_status).length,rode=L.filter(x=>+x.rides_done).length;
+ const FL={all:[x=>true,'All'],riders:[x=>!x.captain_status,'Riders'],captains:[x=>!!x.captain_status,'Captains'],rode:[x=>+x.rides_done>0,'Took a ride'],norode:[x=>!x.captain_status&&!+x.rides_done,'No ride yet'],women:[x=>x.gender==='F','Women']};
+ const all=L;L=all.filter(FL[SUF][0]);
+ const chips=`<div class="chips" style="margin-bottom:10px">${Object.entries(FL).map(([k,[f,l]])=>`<button class="chip ${SUF===k?'on':''}" onclick="SUF='${k}';suList('${d1}','${d2||d1}',1)">${l} (${all.filter(f).length})</button>`).join('')}</div>`;
  openSheet(`<h3>👥 New users · ${d2&&d2!==d1?day(d1)+' – '+day(d2):day(d1)}</h3>
- <div class="muted" style="margin-bottom:10px">${L.length} joined · ${capN} registered as captain · ${rode} took a ride</div>
+ <div class="muted" style="margin-bottom:8px">${all.length} joined · ${capN} registered as captain · ${rode} took a ride</div>${chips}
  ${L.map(x=>{const ph=(x.phone||'').replace(/\D/g,'');return `<div class="card" style="margin-bottom:8px"><div class="row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(x.name||'?')};width:38px;height:38px">${ini(x.name||'?')}</div>
   <div><b>${esc(x.name||'(no name yet)')} ${x.gender==='F'?'👩':''}</b><div class="muted">${x.phone?`<a href="tel:${esc(x.phone)}">${esc(x.phone)}</a> · <a href="https://wa.me/${ph}" target="_blank" rel="noopener">WhatsApp</a>`:esc(x.email||'')}</div></div></div>
   <div style="text-align:right">${x.captain_status?pill(x.captain_status)+`<div class="muted">${vtIcon(x.vehicle_type)} captain</div>`:'<span class="pill p-info">rider</span>'}${x.blocked?'<div class="pill p-bad">blocked</div>':''}${x.deleted?'<div class="pill p-mute">deleted</div>':''}</div></div>
   <div class="row muted" style="margin-top:8px;flex-wrap:wrap;gap:4px 14px;font-size:12.5px"><span>Joined <b style="color:var(--ink)">${fdt(x.joined)}</b></span><span>${sig[x.signin]||esc(x.signin)}</span><span>📱${plat(x)}${x.notif_on?' · 🔔 on':' · 🔕 off'}</span><span>Last opened ${ago(x.last_open)}</span></div>
-  <div class="row muted" style="margin-top:4px;flex-wrap:wrap;gap:4px 14px;font-size:12.5px"><span>Rides <b style="color:var(--ink)">${x.rides_done}</b>${+x.rides>+x.rides_done?' / '+x.rides+' booked':''}</span><span>Spent <b style="color:var(--ink)">${inr0(x.spent)}</b></span><span>Last ride ${x.last_ride?fdt(x.last_ride):'—'}</span><span>Wallet ${inr0(x.wallet)}</span></div></div>`}).join('')||'<div class="empty">Nobody joined on this day</div>'}
+  <div class="row muted" style="margin-top:4px;flex-wrap:wrap;gap:4px 14px;font-size:12.5px"><span>Rides <b style="color:var(--ink)">${x.rides_done}</b>${+x.rides>+x.rides_done?' / '+x.rides+' booked':''}</span><span>Spent <b style="color:var(--ink)">${inr0(x.spent)}</b></span><span>Last ride ${x.last_ride?fdt(x.last_ride):'—'}</span><span>Wallet ${inr0(x.wallet)}</span></div></div>`}).join('')||'<div class="empty">No one in this list</div>'}
  <button class="btn ghost block" onclick="closeSheet()">Close</button>`)}
 function suSignups(S){if(!S||!S.series)return '';const sr=S.series,n=sr.length,R=sr.reduce((a,x)=>a+ +x.riders,0),K=sr.reduce((a,x)=>a+ +x.captains,0),last=sr[n-1]||{riders:0,captains:0};
  const dl=(c,p)=>{p=+p;if(!p)return '';const v=Math.round((c-p)/p*100);return `· <span class="dl ${v>=0?'up':'down'}">${v>=0?'▲':'▼'} ${Math.abs(v)}%</span>`};
@@ -1929,7 +1941,7 @@ const PROMO_IC={'Food and Restaurants':'🍽️','Shopping':'🛍️','Grocery':
 const promoImg=p=>p&&p.image_path?`${CFG.url}/storage/v1/object/public/gv-promos/${p.image_path.split('/').map(encodeURIComponent).join('/')}`:'';
 /* asked once after login: does the rider want offers while waiting? */
 let PROMO_ASKED=false;
-async function promoAsk(n){if(PROMO_ASKED||!ME||ME.role!=='rider')return;if($('#sbg')||$('#srch')||$('#mpick')){if(n<20)setTimeout(()=>promoAsk(n+1),4000);return}
+async function promoAsk(n){if(PROMO_ASKED||!ME||ME.role!=='rider'||TAB==='drive'||TAB==='docs'||(()=>{try{return localStorage.getItem('gv_wants')==='captain'}catch(e){return false}})())return;if($('#sbg')||$('#srch')||$('#mpick')){if(n<20)setTimeout(()=>promoAsk(n+1),4000);return}
  let r;try{r=await rpc('gv_promo_pref',{},true)}catch(e){return}if(!r||!r.enabled||r.asked)return;PROMO_ASKED=true;if($('#sbg'))return;
  openSheet(`<div style="text-align:center"><div style="font-size:42px">🏷️</div><h3>Offers while you wait?</h3>
   <p class="muted">While your captain is on the way, we can show deals from shops near your pickup — food, groceries, fuel and more. Never during your trip.</p></div>
@@ -2187,10 +2199,12 @@ async function uploadDoc(type,input){const f=input.files&&input.files[0];if(!f)r
   const ext=blob.type==='application/pdf'?'pdf':'jpg';const path=`${ME.id}/${type}-${Date.now()}.${ext}`;
   const {error}=await sb.storage.from('gv-captain-docs').upload(path,blob,{contentType:blob.type||'image/jpeg',upsert:false});if(error)throw error;
   await rpc('gv_submit_doc',{p_type:type,p_path:path});DOCAL=null;toast('Uploaded — under review');docsView($('#view'))}catch(e){toast(cleanErr(e.message||String(e)),true);if(lbl)lbl.innerHTML=pill('rejected')}}
+const DOCHINT={dl:'Front side, all text clearly readable',rc:'Smart card front, or the paper RC page with your vehicle number',id_proof:'Aadhaar (first 8 digits hidden), PAN or Voter ID',vehicle_photo:'Full vehicle with the number plate visible',insurance:'Current policy page showing the vehicle number',selfie:'Clear face photo — no helmet or sunglasses'};
 async function docsView(v){const docs=await rpc('gv_my_docs');const app=ME.role==='rider'?await rpc('gv_my_application'):null;if(ME.role==='rider')window._appPending=!!(app&&app.status==='pending');
  $('#hTitle').textContent='My documents';
- v.innerHTML=`${app?`<div class="card"><b>Application: ${pill(app.status)}</b><div class="muted">${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · UPI ${esc(app.upi_id||'—')}</div><div class="muted" style="margin-top:4px">Upload all required documents. Our team verifies them, usually within 24 hours.</div></div>`:''}
- ${DOCS.map(([k,l,req])=>{const d=docs.find(x=>x.doc_type===k);return`<div class="list-i"><div style="flex:1;min-width:0"><b>${l}${req?'':' <span class="muted">(optional)</span>'}</b>${d?.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}${d?`<div class="muted">Uploaded ${fdt(d.uploaded_at)}</div>`:''}${docValid(d)}</div>
+ v.innerHTML=`${app?`<div class="card"><b>Application: ${pill(app.status)}</b><div class="muted">${vtName(app.vehicle_type)} · ${esc(app.vehicle_no)} · UPI ${esc(app.upi_id||'—')}</div><div class="muted" style="margin-top:4px">Upload all required documents. Our team verifies them, usually within 24 hours, and we notify you.</div></div>`:''}
+ ${docs.filter(d=>d.status==='rejected').length?`<div class="card" style="border:1.5px solid var(--bad)"><b>⚠️ Some documents need a new photo</b><div class="muted">The reason is shown in red below. Tap Camera or File to upload again.</div></div>`:''}
+ ${DOCS.map(([k,l,req])=>{const d=docs.find(x=>x.doc_type===k);return`<div class="list-i"><div style="flex:1;min-width:0"><b>${l}${req?'':' <span class="muted">(optional)</span>'}</b>${!d||d.status==='rejected'?`<div class="muted" style="font-size:12px">${DOCHINT[k]||''}</div>`:''}${d?.note?`<div class="muted" style="color:var(--bad)">${esc(d.note)}</div>`:''}${d?`<div class="muted">Uploaded ${fdt(d.uploaded_at)}</div>`:''}${docValid(d)}</div>
   <div style="text-align:right"><div class="st">${d?pill(d.status):'<span class="pill p-mute">missing</span>'}</div>${!d||d.status!=='approved'||(d.valid_until!=null&&+d.days_left<=15)?`<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end"><label class="btn sm ghost" style="cursor:pointer">📷 Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadDoc('${k}',this)"></label><label class="btn sm ghost" style="cursor:pointer">📎 File<input type="file" accept="image/*,application/pdf" style="display:none" onchange="uploadDoc('${k}',this)"></label></div>`:''}</div></div>`}).join('')}
  <button class="btn ghost block" onclick="go('account')">Back</button>`}
 
