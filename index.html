@@ -1708,6 +1708,8 @@ async function aHome(v){let d,SU=null;const suP=rpc('gv_admin_signups',{p_days:M
   <div class="card"><div class="ch"><h3><span class="livedot"></span>Live now</h3><a onclick="go('rides')">All rides ›</a></div>
    <div class="livebox"><div><b>${L.requested}</b><small>Searching</small></div><div><b>${L.on_way}</b><small>Captain on way</small></div><div><b>${L.on_trip}</b><small>On trip</small></div></div>
    <div class="dmap" id="dMap"></div>
+   <div class="row" style="flex-wrap:wrap;gap:6px 12px;font-size:12px;margin:6px 0 2px"><span class="muted"><span style="color:#22c55e">●</span> Available &nbsp;<span style="color:#f59e0b">●</span> On a trip &nbsp;<span style="color:#e11d48">●</span> Rider searching</span>
+    <span style="display:flex;gap:6px"><button class="chip dmv ${DMV==='india'?'on':''}" data-v="india" onclick="dMapView('india')">All India</button><button class="chip dmv ${DMV==='fit'?'on':''}" data-v="fit" onclick="dMapView('fit')">Zoom to captains</button></span></div>
    <div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="#EEF3FA" stroke-width="7"/><circle cx="28" cy="28" r="22" fill="none" stroke="#22c55e" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(onl/tot*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 28 28)"/><text x="28" y="32" text-anchor="middle" font-size="12" font-weight="800" fill="#0B1F3A">${Math.round(onl/tot*100)}%</text></svg>
     <div style="cursor:pointer" onclick="go('caps');FIL='online';render()"><b>${onl} of ${L.captains_total} captains online ›</b><div class="muted" style="font-size:12.5px">Today: ${L.rides_today} rides · ${inr0(L.gmv_today)}</div></div></div></div>
  </div>
@@ -1737,7 +1739,9 @@ async function aHome(v){let d,SU=null;const suP=rpc('gv_admin_signups',{p_days:M
  // live map of captains and open requests
  try{const pts=d.map.captains.map(c=>[+c.lat,+c.lng]).concat(d.map.requests.map(r=>[+r.lat,+r.lng]));const c0=CITIES[0]||{lat:18.4386,lng:79.1288};
   await mapMount('dMap',pts[0]||[+c0.lat,+c0.lng]);d.map.captains.forEach(c=>mapPin(c.lat,c.lng,c.busy?'#f59e0b':'#22c55e',c.busy?'On a trip':'Available'));d.map.requests.forEach(r=>mapPin(r.lat,r.lng,'#e11d48','Searching for captain'));
-  if(pts.length>1)mapFit(pts);else if(pts.length)mapCenter(pts[0][0],pts[0][1],14)}catch(e){}}
+  window._dPts=pts;dMapView(DMV)}catch(e){}}
+let DMV='india';function dMapView(m){DMV=m;const pts=window._dPts||[];document.querySelectorAll('.dmv').forEach(x=>x.classList.toggle('on',x.dataset.v===m));
+ if(m==='fit'&&pts.length>1)mapFit(pts);else if(m==='fit'&&pts.length)mapCenter(pts[0][0],pts[0][1],13);else mapFit([[8.0,68.5],[35.5,97.0]])}
 async function aCaps(v){const f=['all','online','pending','approved','blocked'].includes(FIL)?FIL:'all';const all=await rpc('gv_admin_captains',{p_status:null})||[];
  const pick={all:c=>true,online:c=>!!c.online,pending:c=>c.status==='pending',approved:c=>c.status==='approved',blocked:c=>c.status==='blocked'};
  const list=all.filter(pick[f]);window._caps=list;
