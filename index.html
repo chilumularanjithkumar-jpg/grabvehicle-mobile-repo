@@ -32,6 +32,9 @@ h1,h2,h3{margin:0;letter-spacing:-.015em;font-family:Outfit,-apple-system,sans-s
 .btn.red{background:var(--bad)}.btn.sm{padding:8px 12px;font-size:13px;border-radius:9px}
 .field{margin-bottom:12px}.field label{display:block;font-size:12.5px;font-weight:650;margin-bottom:5px;color:#3b3f5c}
 .field input,.field select,.field textarea{width:100%;padding:12px;font-size:16px;border:1px solid var(--line);border-radius:11px;background:#fafaff;outline:none}
+.pw-wrap{position:relative;display:block}.pw-wrap input{padding-right:48px!important}
+.pw-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;background:transparent;color:#64748b;display:grid;place-items:center;cursor:pointer;border-radius:10px}
+.pw-eye:active{background:#eef2f7}.pw-eye svg{width:22px;height:22px}
 .field input:focus,.field select:focus{border-color:var(--p1);background:#fff}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
 .card.grad{background:var(--brand);border:0}.card.grad2{background:linear-gradient(135deg,var(--s1),var(--s2));border:0}
@@ -2319,6 +2322,14 @@ document.addEventListener('backbutton',()=>{if($('#sbg'))sheetX()});
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&ME){ME=null;stopLoop();showLogin()}});
 applyLang();
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)await enter();else showLogin()})();
+
+/* show / hide password: eye button on every password field, including ones in sheets */
+const EYE_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function pwEyes(root){(root||document).querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{i.dataset.eye='1';const w=document.createElement('span');w.className='pw-wrap';i.parentNode.insertBefore(w,i);w.appendChild(i);
+ const b=document.createElement('button');b.type='button';b.className='pw-eye';b.setAttribute('aria-label','Show password');b.innerHTML=EYE_ON;
+ b.onclick=e=>{e.preventDefault();const show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?EYE_OFF:EYE_ON;b.setAttribute('aria-label',show?'Hide password':'Show password');i.focus()};w.appendChild(b)})}
+try{pwEyes();new MutationObserver(()=>pwEyes()).observe(document.body,{childList:true,subtree:true})}catch(e){}
 </script>
 </body>
 </html>
