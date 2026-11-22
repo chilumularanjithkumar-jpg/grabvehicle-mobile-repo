@@ -1610,6 +1610,20 @@ async function capRates(v){const h=await rpc('gv_captain_home');let rate=+h.rate
 
 /* ================= ADMIN ================= */
 let DASH_DAYS=7;
+async function suList(d1,d2){const day=x=>new Date(x+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+ openSheet(`<h3>👥 New users · ${d2&&d2!==d1?day(d1)+' – '+day(d2):day(d1)}</h3><div class="muted">Loading…</div>`);
+ let L=[];try{L=await rpc('gv_admin_new_users',{p_from:d1,p_to:d2||d1})||[]}catch(e){closeSheet();return}
+ const ago=t=>{if(!t)return '—';const m=Math.round((Date.now()-new Date(t))/60000);return m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
+ const plat=x=>x.platform?(/ios/i.test(x.platform)?' iPhone':' Android'):' unknown',sig={phone:'Mobile OTP',email:'Email',google:'Google',apple:'Apple'};
+ const capN=L.filter(x=>x.captain_status).length,rode=L.filter(x=>+x.rides_done).length;
+ openSheet(`<h3>👥 New users · ${d2&&d2!==d1?day(d1)+' – '+day(d2):day(d1)}</h3>
+ <div class="muted" style="margin-bottom:10px">${L.length} joined · ${capN} registered as captain · ${rode} took a ride</div>
+ ${L.map(x=>{const ph=(x.phone||'').replace(/\D/g,'');return `<div class="card" style="margin-bottom:8px"><div class="row"><div class="row" style="justify-content:flex-start"><div class="cap-av" style="background:${col(x.name||'?')};width:38px;height:38px">${ini(x.name||'?')}</div>
+  <div><b>${esc(x.name||'(no name yet)')} ${x.gender==='F'?'👩':''}</b><div class="muted">${x.phone?`<a href="tel:${esc(x.phone)}">${esc(x.phone)}</a> · <a href="https://wa.me/${ph}" target="_blank" rel="noopener">WhatsApp</a>`:esc(x.email||'')}</div></div></div>
+  <div style="text-align:right">${x.captain_status?pill(x.captain_status)+`<div class="muted">${vtIcon(x.vehicle_type)} captain</div>`:'<span class="pill p-info">rider</span>'}${x.blocked?'<div class="pill p-bad">blocked</div>':''}${x.deleted?'<div class="pill p-mute">deleted</div>':''}</div></div>
+  <div class="row muted" style="margin-top:8px;flex-wrap:wrap;gap:4px 14px;font-size:12.5px"><span>Joined <b style="color:var(--ink)">${fdt(x.joined)}</b></span><span>${sig[x.signin]||esc(x.signin)}</span><span>📱${plat(x)}${x.notif_on?' · 🔔 on':' · 🔕 off'}</span><span>Last opened ${ago(x.last_open)}</span></div>
+  <div class="row muted" style="margin-top:4px;flex-wrap:wrap;gap:4px 14px;font-size:12.5px"><span>Rides <b style="color:var(--ink)">${x.rides_done}</b>${+x.rides>+x.rides_done?' / '+x.rides+' booked':''}</span><span>Spent <b style="color:var(--ink)">${inr0(x.spent)}</b></span><span>Last ride ${x.last_ride?fdt(x.last_ride):'—'}</span><span>Wallet ${inr0(x.wallet)}</span></div></div>`}).join('')||'<div class="empty">Nobody joined on this day</div>'}
+ <button class="btn ghost block" onclick="closeSheet()">Close</button>`)}
 function suSignups(S){if(!S||!S.series)return '';const sr=S.series,n=sr.length,R=sr.reduce((a,x)=>a+ +x.riders,0),K=sr.reduce((a,x)=>a+ +x.captains,0),last=sr[n-1]||{riders:0,captains:0};
  const dl=(c,p)=>{p=+p;if(!p)return '';const v=Math.round((c-p)/p*100);return `· <span class="dl ${v>=0?'up':'down'}">${v>=0?'▲':'▼'} ${Math.abs(v)}%</span>`};
  const W=700,H=290,pl=30,pr=8,pt=10,pb=24,cw=W-pl-pr,ch=H-pt-pb,mx=Math.max(2,...sr.map(x=>Math.max(+x.riders,+x.captains))),bw=cw/n,b1=Math.max(2,Math.min(14,bw*0.36));
@@ -1617,14 +1631,14 @@ function suSignups(S){if(!S||!S.series)return '';const sr=S.series,n=sr.length,R
  const bars=sr.map((x,i)=>{const cx=pl+bw*i+bw/2,hr=+x.riders/mx*ch,hc=+x.captains/mx*ch,dt=new Date(x.d+'T00:00:00');const t=`${dt.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}: ${x.riders} riders, ${x.captains} captains`;
   return `<g><title>${t}</title><rect x="${cx-b1-1}" y="${pt+ch-hr}" width="${b1}" height="${hr}" rx="2" fill="#1565C0"/><rect x="${cx+1}" y="${pt+ch-hc}" width="${b1}" height="${hc}" rx="2" fill="#43A047"/>${i%lab===0||i===n-1?`<text x="${cx}" y="${H-6}" text-anchor="middle" font-size="10" fill="#64748b">${dt.getDate()} ${dt.toLocaleDateString('en-IN',{month:'short'})}</text>`:''}</g>`}).join('');
  const grid=tk.map(t=>`<line x1="${pl}" x2="${W-pr}" y1="${pt+ch-t/mx*ch}" y2="${pt+ch-t/mx*ch}" stroke="#EEF3FA"/><text x="${pl-6}" y="${pt+ch-t/mx*ch+3}" text-anchor="end" font-size="10" fill="#64748b">${t}</text>`).join('');
- const rows=sr.slice(-7).reverse().map(x=>{const dt=new Date(x.d+'T00:00:00');return `<tr><td>${dt.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</td><td class="r"><b>${x.riders}</b></td><td class="r"><b>${x.captains}</b></td></tr>`}).join('');
+ const rows=sr.slice(-7).reverse().map(x=>{const dt=new Date(x.d+'T00:00:00');return `<tr class="cl" style="cursor:pointer" title="See who joined" onclick="suList('${x.d}')"><td>${dt.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</td><td class="r"><b>${x.riders}</b>${+x.riders?' ›':''}</td><td class="r"><b>${x.captains}</b></td></tr>`}).join('');
  return `<div class="dgrid g21" style="margin-bottom:12px"><div class="card"><div class="ch"><h3>👥 New sign-ups, day by day</h3><div class="legend"><span><i style="background:#1565C0"></i>Riders</span><span><i style="background:#43A047"></i>Captains</span></div></div>
   <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="New riders and captains per day">${grid}${bars}</svg>
   <div class="muted" style="font-size:12px;margin-top:4px">Last ${n} days · tap a bar to see the numbers</div></div>
   <div class="card"><div class="ch"><h3>Sign-ups</h3><span class="muted" style="font-size:12px">last ${n} days</span></div>
-   <div class="tax"><div><small>New riders</small><b>${R}</b><small>Today ${last.riders} ${dl(R,S.riders_prev)}</small></div><div><small>New captains</small><b>${K}</b><small>Today ${last.captains} ${dl(K,S.captains_prev)}</small></div>
+   <div class="tax"><div style="cursor:pointer" onclick="suList('${sr[0].d}','${last.d}')"><small>New riders ›</small><b>${R}</b><small>Today ${last.riders} ${dl(R,S.riders_prev)}</small></div><div><small>New captains</small><b>${K}</b><small>Today ${last.captains} ${dl(K,S.captains_prev)}</small></div>
    <div><small>Total users</small><b>${S.riders_total}</b><small>all time</small></div><div><small>Total captains</small><b>${S.captains_total}</b><small>${S.captains_approved} approved</small></div></div>
-   <table class="mini" style="margin-top:10px"><tr><th>Day</th><th class="r">Riders</th><th class="r">Captains</th></tr>${rows}</table></div></div>`}
+   <div class="muted" style="font-size:12px;margin-top:10px">Tap a day to see who joined</div><table class="mini" style="margin-top:4px"><tr><th>Day</th><th class="r">Riders</th><th class="r">Captains</th></tr>${rows}</table></div></div>`}
 async function aHome(v){let d,SU=null;const suP=rpc('gv_admin_signups',{p_days:Math.max(7,DASH_DAYS)},true).catch(()=>null);try{d=await rpc('gv_admin_overview',{p_days:DASH_DAYS},true)}catch(e){const m=String(e&&e.message||e||'');const db=/function|does not exist|column|relation|schema cache/i.test(m);v.innerHTML=`<div class="card"><b>${db?'Dashboard needs a database update':'Could not load the dashboard'}</b><p class="muted">${db?'Run the latest update scripts in Supabase → SQL Editor, then reload.':'Check your internet and try again.'}</p><p class="muted" style="font-size:12px;word-break:break-word">Error: ${esc(m.slice(0,300))}</p><button class="btn" onclick="go('home')">Retry</button></div>`;return}
  const k=d.kpi,L=d.live,T=d.todo,P=d.people,ser=d.series||[];const rev=+k.revenue+ +d.pass_revenue,revP=+k.revenue_prev+ +d.pass_revenue_prev;
  const hr=new Date().getHours(),greet=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
